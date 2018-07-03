@@ -1,0 +1,8 @@
+
+on init 
+    declare array[5]
+
+    declare ui_button button
+    button -> x := myvar_object
+    button -> text := "my_text"
+end on
