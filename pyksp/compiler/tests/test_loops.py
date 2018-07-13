@@ -79,10 +79,12 @@ class TestForEach(DevTest, t.TestCase):
             out = unpack_lines(self.code)
             self.assertEqual(out, default_for_string)
 
+    # @t.skip
     def test_folded_out(self):
         KSP.toggle_test_state(False)
         self.folded_for()
 
+    # @t.skip
     def test_folded_returns(self):
         KSP.toggle_test_state(True)
         self.folded_for()
@@ -107,6 +109,7 @@ class TestForEach(DevTest, t.TestCase):
                             Break()
         if not KSP.is_under_test():
             out = unpack_lines(self.code)
+            # print(out)
             self.assertEqual(out, folded_for_string)
 
 
@@ -141,6 +144,7 @@ dec($_for_loop_curr_idx)
 '''
 
 
+# @t.skip
 class TestForRange(DevTest, t.TestCase):
 
     def setUp(self):

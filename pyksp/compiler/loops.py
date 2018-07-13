@@ -40,6 +40,7 @@ from context_tools import KspCondError
 from interfaces import IOutput
 from pyksp_ast import AstBool
 from pyksp_ast import AstGetItem
+# from pyksp_ast import AstGetItem
 from abstract import KSP
 from abstract import KspObject
 from abstract import Singleton
@@ -61,9 +62,13 @@ class ForLoops(KspObject):
 
     def __init__(self, maxlen=20):
         super().__init__('for_loops')
-        self.name = '%_for_loop_idx'
+        # self.name = '%_for_loop_idx'
+        self.name = self.name_func
         self.idx = '$_for_loop_curr_idx'
         self.maxlen = maxlen
+
+    def name_func(self):
+        return '%_for_loop_idx'
 
     def _generate_init(self):
         init_lines = list()
@@ -80,7 +85,8 @@ class ForLoops(KspObject):
             i = 0
             return i
         IOutput.put(f'inc({self.idx})')
-        return f'{self.name}[{self.idx}]'
+        # return f'{self.name}[{self.idx}]'
+        return AstGetItem(self, self.idx)
 
     def end(self):
         '''puts in output dec(idx-var) line'''
@@ -140,7 +146,7 @@ class For(KSP):
     def __init__(self, start: int=None, stop: int=None,
                  step: int=None, arr: KspNativeArray=None):
         self.__master = ForLoops()
-        self.__idx = self.__master.get_idx()
+        self.__idx = expand_if_callable(self.__master.get_idx())
         if self.__is_foreach(arr, start, stop, step):
             return
         self.__duck_typing(start, stop, step)
@@ -160,7 +166,9 @@ class For(KSP):
             if start or stop or step:
                 raise KspCondError(for_wrong_syntax_msg)
             if not isinstance(arr, KspNativeArray):
-                raise KspCondError('For loop accept only KSP arrays')
+                raise KspCondError(
+                    'For loop accepts only KSP arrays.' +
+                    f' Pasted {type(arr)}')
             self.__func = self.__foreach_handler
             self.__seq = arr
             return True
@@ -224,7 +232,8 @@ class For(KSP):
 
         IOutput.put(f'{self.__idx} := 0')
         IOutput.put(f'while({self.__idx} < {len(self.__seq)})')
-        yield self.__seq[self.__idx]
+        # yield self.__seq[self.__idx]
+        yield AstGetItem(self.__seq, self.__idx)
 
         return True
 
