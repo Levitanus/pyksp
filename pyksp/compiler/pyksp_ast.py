@@ -3,6 +3,7 @@ from abc import abstractmethod
 # from abstract import KSP
 # from interfaces import IOutput
 # from dev_tools import Infix
+# from dev_tools import expand_if_callable
 
 # from native_types import kInt
 # from native_types import kStr
@@ -408,6 +409,25 @@ class AstAsgn(AstOperator):
         return self.operator(' := ')
 
 
+def expand_if_callable(*args):
+    """Call and return passed args.
+
+    Returns
+    -------
+    If passed more than 1 objects returnes tuple
+    otherwise, returns obj
+    """
+    out = list()
+    for obj in args:
+        if callable(obj):
+            print(f'expanded to {obj()}')
+            obj = obj()
+        out.append(obj)
+    if len(out) == 1:
+        out = out[0]
+    return out
+
+
 class AstGetItem(AstOperator):
 
     def method(self):
@@ -416,6 +436,7 @@ class AstGetItem(AstOperator):
         idx = self.args[1]
         if callable(idx):
             idx = idx()
+        # print('AstGetItem name is', expand_if_callable(iterable.name))
         return f'{iterable.name()}[{idx}]'
 
     def __add__(self, other):

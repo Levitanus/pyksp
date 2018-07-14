@@ -1,40 +1,35 @@
-class SingletoneMeta(type):
-
-    def __new__(cls, name, bases, dct):
-        access = SingletoneMeta.access
-        dct['__new__'] = access
-        dct['instance'] = None
-        class_ = type.__new__(cls, name, bases, dct)
-        return class_
-
-    def access(cls, *args, **kwargs):
-        if cls.instance is None:
-            cls.instance = cls
-            return cls.__init__(cls, *args, **kwargs)
-        return cls.instance.__call__(cls, *args, **kwargs)
+FrameVar = 1
+kLocal = 1
+KSP = 1
 
 
-class Test():
-    instance = None
+def _append_frame_item(self, name, item, frame, count):
+    idx = self.idx_arr[self.idx_curr] + count
+    if isinstance(item, kLocal):
+        var = FrameVar(
+            name,
+            self.arr,
+            length=item.len,
+            start_idx=idx)
+        frame.append(name, var)
+        return count + item.len
 
-    def __new__(cls, *args, **kwargs):
-        if cls.instance is None:
-            cls.instance = cls
-            return cls.__init__(cls, *args, **kwargs)
-        return cls.instance.__call__(cls, *args, **kwargs)
+    if KSP.is_under_test():
+        var = FrameVar(name, item)
+        frame.append(name, var)
+        return count + var.len
 
-    def __init__(self, arg):
-        print('init')
-
-    def __call__(self, arg):
-        print('call')
-        return arg
-
-
-x = Test(1)
-y = Test(2)
-z = Test(3)
-
-print(x)
-print(y)
-print(z)
+    try:
+        length = len(item)
+        var = FrameVar(
+            name,
+            self.arr,
+            length=length,
+            start_idx=idx)
+        frame.append(name, var)
+        return count + length
+    except TypeError:
+        self.arr[idx] = item
+        var = FrameVar(name, self.arr[idx], length=1)
+        frame.append(name, var)
+        return count + 1

@@ -79,10 +79,12 @@ class TestForEach(DevTest, t.TestCase):
             out = unpack_lines(self.code)
             self.assertEqual(out, default_for_string)
 
+    # @t.skip
     def test_folded_out(self):
         KSP.toggle_test_state(False)
         self.folded_for()
 
+    # @t.skip
     def test_folded_returns(self):
         KSP.toggle_test_state(True)
         self.folded_for()
@@ -107,7 +109,22 @@ class TestForEach(DevTest, t.TestCase):
                             Break()
         if not KSP.is_under_test():
             out = unpack_lines(self.code)
+            # print(out)
             self.assertEqual(out, folded_for_string)
+
+    def test_enumerate_code(self):
+        KSP.toggle_test_state(False)
+        arrY = kArrInt('arrY', [1, 2, 3, 6])
+        with For(arr=arrY, enumerate=True) as seq:
+            for idx, val in seq:
+                self.assertEqual(
+                    idx,
+                    '%_for_loop_idx[$_for_loop_curr_idx]')
+                self.arrX[idx] = val
+                self.assertEqual(
+                    IOutput.get()[-1],
+                    '%arrX[%_for_loop_idx[$_for_loop_curr_idx]] ' +
+                    ':= %arrY[%_for_loop_idx[$_for_loop_curr_idx]]')
 
 
 start_string = '''inc($_for_loop_curr_idx)
@@ -141,6 +158,7 @@ dec($_for_loop_curr_idx)
 '''
 
 
+# @t.skip
 class TestForRange(DevTest, t.TestCase):
 
     def setUp(self):

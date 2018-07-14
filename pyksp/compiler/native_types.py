@@ -161,6 +161,7 @@ class KspNativeArray(KspNative):
         return cls, value
 
     def __getitem__(self, idx):
+        # print('native get')
         if self.is_under_test():
             if callable(self.seq[idx]):
                 return self.seq[idx]()
@@ -168,6 +169,7 @@ class KspNativeArray(KspNative):
         return AstGetItem(self, idx)
 
     def __setitem__(self, idx, val):
+        # print('native set')
         if self.is_under_test():
             # print('val type = %s, ref_type = %s' % (
             #     type(val), self.ref_type))
@@ -188,6 +190,7 @@ class KspNativeArray(KspNative):
         pass
 
     def __iter__(self):
+        # print('native iter')
         if not KSP.is_under_test():
             raise self.error(
                 'for using KSP array in for loop use For() object')
@@ -202,11 +205,13 @@ class KspNativeArray(KspNative):
         return self.seq
 
     def append(self, value):
+        if self.init_length:
+            raise self.error('can not append to fixed-sized array')
         if not isinstance(value, self.ref_type):
             raise TypeError(
                 'has to be one of %s, passed %s' % (
                     self.ref_type, type(value)))
-        if KSP.is_under_test():
+        if not KSP.is_under_test():
             IOutput.put(f'{self.name()}[{len(self.seq)}] := ' +
                         f'{value}')
         self.seq.append(value)
