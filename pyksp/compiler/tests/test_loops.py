@@ -112,6 +112,20 @@ class TestForEach(DevTest, t.TestCase):
             # print(out)
             self.assertEqual(out, folded_for_string)
 
+    def test_enumerate_code(self):
+        KSP.toggle_test_state(False)
+        arrY = kArrInt('arrY', [1, 2, 3, 6])
+        with For(arr=arrY, enumerate=True) as seq:
+            for idx, val in seq:
+                self.assertEqual(
+                    idx,
+                    '%_for_loop_idx[$_for_loop_curr_idx]')
+                self.arrX[idx] = val
+                self.assertEqual(
+                    IOutput.get()[-1],
+                    '%arrX[%_for_loop_idx[$_for_loop_curr_idx]] ' +
+                    ':= %arrY[%_for_loop_idx[$_for_loop_curr_idx]]')
+
 
 start_string = '''inc($_for_loop_curr_idx)
 %_for_loop_idx[$_for_loop_curr_idx] := 0

@@ -6,7 +6,7 @@ path = os.path.abspath(os.path.dirname(__file__)) + '/..'
 sys.path.append(path)
 
 from stack import *
-from kspvar import KspVarObj
+# from kspvar import KspVarObj
 from interfaces import IOutput
 # from interfaces import IName
 from native_types import kInt
@@ -15,15 +15,12 @@ from native_types import kStr
 from native_types import kReal
 from native_types import KspNativeArray
 
-from local_types import kLocInt
-from local_types import kLocArrInt
-
 from dev_tools import DevTest
-from dev_tools import unpack_lines
+# from dev_tools import unpack_lines
 from dev_tools import expand_if_callable
 
 from abstract import KSP
-from abstract import KspObject
+# from abstract import KspObject
 
 from loops import For
 
@@ -113,8 +110,6 @@ class TestFrameVar(DevTest, t.TestCase):
         self.Int = kInt('int', 2)
         self.y = kInt('y', 3)
         self.IntArr = kArrInt('intArr', [1, 2, 3], length=3)
-        self.LInt = kLocInt('int', 3)
-        self.LIntArr = kLocArrInt('intArr', [1, 2, 3], length=3)
 
     def test_main_test(self):
         KSP.toggle_test_state(True)
@@ -128,9 +123,11 @@ class TestFrameVar(DevTest, t.TestCase):
         x = FrameVar('x', self.Int)
         arr = FrameVar('arr', self.IntArr)
         val = FrameVar('val', 1)
-        loc_int = FrameVar('loc_int', self.arr, length=1, start_idx=0)
+        loc_int = FrameVar('loc_int', self.arr,
+                           length=1, start_idx=0)
         # tmp = kLocArrInt('loc_arr_temp', length=4)
-        loc_arr = FrameVar('loc_arr', self.arr, length=4, start_idx=1)
+        loc_arr = FrameVar('loc_arr', self.arr,
+                           length=4, start_idx=1)
 
         self.assertEqual(x.len, 1)
         self.assertEqual(arr.len, 3)
@@ -183,16 +180,21 @@ class TestFrameVar(DevTest, t.TestCase):
         if KSP.is_under_test():
             self.assertEqual(loc_arr[self.y], 3)
         else:
-            self.assertEqual(loc_arr[self.y](), '%intStackArr[$y + 1]')
+            self.assertEqual(
+                loc_arr[self.y](),
+                '%intStackArr[1 + $y]')
 
 
 class TestStackFrame(DevTest, t.TestCase):
 
     def setUp(self):
         super().setUp()
-        self.intvar = FrameVar('intvar', kInt('intvar', 2))
-        self.strvar = FrameVar('strvar', kStr('strvar', 'str'))
-        self.arr = FrameVar('arrInt', kArrInt('arrInt', [1, 2, 3, 4]))
+        self.intvar = \
+            FrameVar('intvar', kInt('intvar', 2))
+        self.strvar = \
+            FrameVar('strvar', kStr('strvar', 'str'))
+        self.arr = \
+            FrameVar('arrInt', kArrInt('arrInt', [1, 2, 3, 4]))
 
     def tearDown(self):
         super().tearDown()
@@ -235,7 +237,8 @@ class TestStackFrame(DevTest, t.TestCase):
 
         with self.assertRaises(AssertionError) as e:
             frame.append('new', 1)
-        self.assertEqual(f'{e.exception}', f'has to be {FrameVar}')
+        self.assertEqual(f'{e.exception}',
+                         f'has to be {FrameVar}')
 
         with self.assertRaises(AssertionError) as e:
             frame.append(2, self.arr)
@@ -252,11 +255,144 @@ class TestStackFrame(DevTest, t.TestCase):
 
     def test_extend(self):
         frame = StackFrame()
-        frame.extend(int=self.intvar, str=self.strvar, arr=self.arr)
+        frame.extend(int=self.intvar,
+                     str=self.strvar, arr=self.arr)
 
         frame_vars = self.intvar, self.strvar, self.arr
         for idx, item in enumerate(frame.items()):
             self.assertIs(item, frame_vars[idx])
+
+
+push_lines = [
+    'inc($_for_loop_curr_idx)',
+    '%_for_loop_idx[$_for_loop_curr_idx] := 0',
+    'while(%_for_loop_idx[$_for_loop_curr_idx] < 100000)',
+    '%stack_int_arr[%stack_int_idx[$stack_int_curr]' +
+    ' + 0 + %_for_loop_idx[$_for_loop_curr_idx]]' +
+    ' := %full_arr[%_for_loop_idx[$_for_loop_curr_idx]]',
+    'inc(%_for_loop_idx[$_for_loop_curr_idx])', 'end while',
+    'dec($_for_loop_curr_idx)',
+    '%stack_int_arr[%stack_int_idx[$stack_int_curr] + 100000] := $x'
+]
+
+
+class TestStack(DevTest, t.TestCase):
+
+    def setUp(self):
+        super().setUp()
+
+    def tearDown(self):
+        super().tearDown()
+
+    def test_types(self):
+        stack = Stack('intstack', 1000, kInt)
+        self.assertIsInstance(stack.idx_curr, kInt)
+        self.assertIsInstance(stack.arr, StackArray)
+        self.assertIsInstance(stack.arr.seq, kArrInt)
+        self.assertIsInstance(stack.idx_arr, kArrInt)
+
+        stack = Stack('strstack', 1000, kStr)
+        self.assertIsInstance(stack.idx_curr, kInt)
+        self.assertIsInstance(stack.arr, StackArray)
+        self.assertIsInstance(stack.arr.seq, kArrStr)
+        self.assertIsInstance(stack.idx_arr, kArrInt)
+
+    def test_push_returns(self):
+        KSP.toggle_test_state(True)
+        self.push()
+
+    def test_push_code(self):
+        KSP.toggle_test_state(False)
+        self.push()
+
+    def push(self):
+        stack = Stack('int', 1000000, kInt)
+        full = kArrInt('full_arr', [i for i in range(100000)])
+        x = kInt('x', 4)
+        stack.push(full=full, x=x)
+        if not KSP.is_under_test():
+            self.assertEqual(IOutput.get(), push_lines)
+
+        frame = stack.peek()
+        full, x = frame.items()
+        if KSP.is_under_test():
+            self.assertEqual(full[1], 1)
+            self.assertEqual(full[2], 2)
+        else:
+            self.assertEqual(
+                full[1],
+                '%stack_int_arr' +
+                '[%stack_int_idx[$stack_int_curr] + 0 + 1]')
+        if KSP.is_under_test():
+            self.assertEqual(x(), 4)
+        else:
+            self.assertEqual(
+                full[1],
+                '%stack_int_arr' +
+                '[%stack_int_idx[$stack_int_curr] + 0 + 100000]')
+        x += 1
+        if not KSP.is_under_test():
+            self.assertEqual(
+                IOutput.get()[-1],
+                '%stack_int_arr[%stack_int_idx[$stack_int_curr]' +
+                ' + 100000] := %stack_int_arr[%stack_int_idx' +
+                '[$stack_int_curr] + 100000] + 1')
+            self.assertEqual(
+                x(),
+                '%stack_int_arr[%stack_int_idx' +
+                '[$stack_int_curr] + 100000]')
+        else:
+            self.assertEqual(x(), 4)
+
+        full[1] += 1
+        if not KSP.is_under_test():
+            self.assertEqual(
+                IOutput.get()[-1],
+                '%stack_int_arr[%stack_int_idx[$stack_int_curr]' +
+                ' + 0 + 1] := %stack_int_arr[%stack_int_idx' +
+                '[$stack_int_curr] + 0 + 1] + 1')
+            self.assertEqual(
+                full[1](),
+                '%stack_int_arr[%stack_int_idx' +
+                '[$stack_int_curr] + 0 + 1]')
+        else:
+            self.assertEqual(full[1], 2)
+
+    def test_local_return(self):
+        KSP.toggle_test_state(True)
+        self.local()
+
+    def test_local_code(self):
+        KSP.toggle_test_state(False)
+        self.local()
+
+    def local(self):
+        stack = Stack('int', 1000000, kInt)
+        x = kLocal(int)
+        arrY = kLocal(int, 10)
+        stack.push(x=x, arrY=arrY)
+
+        frame = stack.peek()
+        x, arrY = frame.items()
+        if not KSP.is_under_test():
+            self.assertEqual(
+                expand_if_callable(x()),
+                "%stack_int_arr[%stack_int_idx[$stack_int_curr] + 0]")
+            self.assertEqual(
+                expand_if_callable(arrY[9]),
+                '%stack_int_arr[%stack_int_idx[$stack_int_curr]' +
+                ' + 1 + 9]')
+        with self.assertRaises(IndexError):
+            arrY[10]
+
+        arrY[2] = 5
+        if not KSP.is_under_test():
+            self.assertEqual(
+                IOutput.get()[-1],
+                '%stack_int_arr[%stack_int_idx[$stack_int_curr]' +
+                ' + 1 + 2] := 5')
+        else:
+            self.assertEqual(arrY[2], 5)
 
 
 if __name__ == '__main__':

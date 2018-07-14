@@ -1,4 +1,4 @@
-import collections
+# import collections
 
 from native_types import kInt
 from native_types import kStr
@@ -9,22 +9,25 @@ from native_types import kArrReal
 from native_types import KspNative
 from native_types import KspNativeArray
 
-from local_types import KspLocal
+# from local_types import KspLocal
 
 # from interfaces import IOutput
 
 from abstract import KSP
 from dev_tools import expand_if_callable
+# from dev_tools import native_from_input_obj
 
 from pyksp_ast import AstMethod
 from pyksp_ast import AstAdd
+# from pyksp_ast import AstAsgn
 
-# from loops import For
+from loops import For
 
 
 class StackArray(KspNativeArray):
+    '''Used in stack as data array'''
 
-    def __init__(self, name, ref_type, size):
+    def __init__(self, name: str, ref_type: type, size: int):
         self.init_length = size
         if ref_type in (kArrInt, kInt, int):
             self.seq = kArrInt(name, length=size)
@@ -32,6 +35,7 @@ class StackArray(KspNativeArray):
             self.seq = kArrStr(name, length=size)
         if ref_type in (kArrReal, kReal, float):
             self.seq = kArrReal(name, length=size)
+        self.ref_type = self.seq.ref_type
         self.name = self.seq.name
 
     def __call__(self):
@@ -46,7 +50,15 @@ class StackArray(KspNativeArray):
         self.seq[idx] = val
 
     def _generate_init(self):
+        '''for blocking errors caused by inheritance'''
         pass
+
+
+class kLocal:
+
+    def __init__(self, ref_type: [int, str, float], length: int=1):
+        self.len = length
+        self.ref_type = ref_type
 
 
 class FrameVar(KspNativeArray):
@@ -66,12 +78,27 @@ class FrameVar(KspNativeArray):
         if start_idx is not None:
             assert isinstance(val, StackArray), \
                 f'Expected {StackArray} or not start_idx'
+            self.seq = self.val
         self._iterated = False
+        if isinstance(val, KspNative):
+            self.ref_type = val.ref_type
+
+    def value_get(self):
+        if KSP.is_under_test():
+            if self._start_idx is not None:
+                return [self.val[i]for i in
+                        range(self._start_idx,
+                              self._start_idx + self.len)]
+            return self.val
+        if self.len > 1:
+            raise TypeError("can't return array on compilation")
+        return self.val
 
     def _name_func(self):
+        '''intuition tells something wrong here'''
         if self._start_idx is not None:
             return self.val.name()
-        return self._name
+        return self.val()
 
     def __call__(self, value=None):
         if value:
@@ -91,12 +118,11 @@ class FrameVar(KspNativeArray):
         return expand_if_callable(self.val)
 
     def __getitem__(self, idx):
-        # print('self get')
         if self.len == 1:
             raise TypeError("is not sequence")
         if self._start_idx:
             idx = self.__check_idx(idx)
-            idx = idx
+            # idx = idx
         return self.val[idx]
 
     def __setitem__(self, idx, value):
@@ -114,12 +140,12 @@ class FrameVar(KspNativeArray):
 
     def __check_idx(self, idx):
         if not KSP.is_under_test() and isinstance(idx, KspNative):
-            return idx + self._start_idx
+            return self._start_idx + idx
         if idx >= self.len:
             raise IndexError(f'invalid index {idx}')
         if isinstance(idx, AstMethod):
-            return AstAdd(idx, self._start_idx)
-        return idx + self._start_idx
+            return AstAdd(self._start_idx, idx)
+        return self._start_idx + idx
 
     def __len__(self):
         return self.len
@@ -132,15 +158,10 @@ class StackFrame:
         self._keys = list()
         self.size = 0
 
-    def __setitem__(self, key, val):
-        assert key in self._vars, \
-            'to add var use append()'
-        self._vars[key] = val
-
     def __getitem__(self, key):
         return self._vars[key]
 
-    def append(self, key, var):
+    def append(self, key: str, var: FrameVar):
         assert isinstance(var, FrameVar), \
             f'has to be {FrameVar}'
         assert key not in self._vars, \
@@ -171,22 +192,13 @@ class Stack(KSP):
     def __init__(self, name: str, size: int,
                  ref_type: KspNative, recursion_depth: int=100):
         self.ref_type = ref_type
-        arr_type = self._get_arr_type(ref_type)
 
         self.idx_curr = kInt('stack_%s_curr' % name, 0)
-        self.arr = arr_type('stack_%s_arr' % name, length=size)
+        self.arr = StackArray('stack_%s_arr' % name, ref_type, size)
         self.idx_arr = kArrInt('stack_%s_idx' % name,
                                length=recursion_depth)
 
         self.frames = list()
-
-    def _get_arr_type(self, ref_type):
-        if ref_type in (kInt, kArrInt, int):
-            return kArrInt
-        if ref_type in (kStr, kArrStr, str):
-            return kArrStr
-        if ref_type in (kReal, kArrReal, float):
-            return kArrReal
 
     def _update_idx(self):
         if not self.IsEmpty():
@@ -194,6 +206,48 @@ class Stack(KSP):
             self.idx_arr[self.idx_curr + 1] =\
                 self.idx_arr[self.idx_curr] + frame.size
             self.idx_curr += 1
+
+    def _append_frame_item(self, name, item, frame, count):
+        idx = self.idx_arr[self.idx_curr] + count
+        if isinstance(item, kLocal):
+            var = FrameVar(
+                name,
+                self.arr,
+                length=item.len,
+                start_idx=idx)
+            frame.append(name, var)
+            return count + item.len
+
+        if KSP.is_under_test():
+            var = FrameVar(name, item)
+            frame.append(name, var)
+            return count + var.len
+
+        try:
+            length = len(item)
+            with For(arr=item, enumerate=True) as gen:
+                for gen_idx, val in gen:
+                    self.arr[idx + gen_idx] = val
+            var = FrameVar(
+                name,
+                self.arr,
+                length=length,
+                start_idx=idx)
+            frame.append(name, var)
+            return count + length
+        except TypeError:
+            self.arr[idx] = item
+            var = FrameVar(name, self.arr[idx], length=1)
+            frame.append(name, var)
+            return count + 1
+
+    def push(self, **kwargs):
+        self._update_idx()
+        self.frames.append(StackFrame())
+        frame = self.frames[-1]
+        count = 0
+        for name, item in kwargs.items():
+            count = self._append_frame_item(name, item, frame, count)
 
     def pop(self) -> StackFrame:
         '''get last frame and delete it'''

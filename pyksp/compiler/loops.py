@@ -144,11 +144,16 @@ class For(KSP):
     """
 
     def __init__(self, start: int=None, stop: int=None,
-                 step: int=None, arr: KspNativeArray=None):
+                 step: int=None, arr: KspNativeArray=None,
+                 enumerate=False):
         self.__master = ForLoops()
         self.__idx = expand_if_callable(self.__master.get_idx())
         if self.__is_foreach(arr, start, stop, step):
+            self.enumerate = enumerate
             return
+        if enumerate:
+            raise AttributeError(
+                'enumerate par accesible only in for_each loop')
         self.__duck_typing(start, stop, step)
         self.__func = self.__range_handler
         args = list()
@@ -226,16 +231,28 @@ class For(KSP):
         '''Uder tests returns iterator over self.__seq,
         under compilation idx assignement and while cond lines'''
         if KSP.is_under_test():
-            for item in self.__seq:
+            if self.enumerate:
+                seq = enumerate(self.__seq)
+            else:
+                seq = self.__seq
+            for item in seq:
                 yield item
             return
 
         IOutput.put(f'{self.__idx} := 0')
         IOutput.put(f'while({self.__idx} < {len(self.__seq)})')
-        # yield self.__seq[self.__idx]
-        yield AstGetItem(self.__seq, self.__idx)
+
+        if self.enumerate:
+            out = self.__idx, AstGetItem(self.__seq, self.__idx)
+        else:
+            out = AstGetItem(self.__seq, self.__idx)
+        yield out
 
         return True
+
+    # def enumerate(self):
+    #     if KSP.is_under_test():
+    #         return [(idx, val) for idx, val in enumerate(self.__seq)]
 
     def __parse_args(self):
         '''Prepares arguments rof range() function'''
