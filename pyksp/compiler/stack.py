@@ -15,7 +15,7 @@ from native_types import KspNativeArray
 
 from abstract import KSP
 from dev_tools import expand_if_callable
-# from dev_tools import native_from_input_obj
+from dev_tools import ref_type_from_input
 
 from pyksp_ast import AstMethod
 from pyksp_ast import AstAdd
@@ -63,7 +63,8 @@ class kLocal:
 
 class FrameVar(KspNativeArray):
 
-    def __init__(self, name, val, length=None, start_idx=None):
+    def __init__(self, name, val, length=None,
+                 start_idx=None):
         self._name = name
         self.name = self._name_func
         self.val = val
@@ -79,24 +80,47 @@ class FrameVar(KspNativeArray):
             assert isinstance(val, StackArray), \
                 f'Expected {StackArray} or not start_idx'
             self.seq = self.val
+        if self.len == 1:
+            if start_idx is not None:
+                self.ref_type = ref_type_from_input(self.val[0])
+            else:
+                self.ref_type = ref_type_from_input(self.val)
+        else:
+            self.ref_type = ref_type_from_input(self.val[0])
         self._iterated = False
-        if isinstance(val, KspNative):
-            self.ref_type = val.ref_type
 
     def value_get(self):
         if KSP.is_under_test():
             if self._start_idx is not None:
+                if self.len == 1:
+                    return self.val[self._start_idx]
                 return [self.val[i]for i in
                         range(self._start_idx,
                               self._start_idx + self.len)]
             return self.val
         if self.len > 1:
             raise TypeError("can't return array on compilation")
+        if self._start_idx is not None:
+            return self.val[self._start_idx]
         return self.val
+
+    def value_set(self, other):
+        if not KSP.is_under_test():
+            return
+        if self.len == 1:
+            if self._start_idx is not None:
+                self.val[self._start_idx] = other
+                return
+            self.val.value_set(other)
+            return
+        raise TypeError('can not assign to array. use For()')
 
     def _name_func(self):
         '''intuition tells something wrong here'''
         if self._start_idx is not None:
+            if self.len == 1:
+                return f'{self.val.name()}[' +\
+                    f'{expand_if_callable(self._start_idx)}]'
             return self.val.name()
         return self.val()
 

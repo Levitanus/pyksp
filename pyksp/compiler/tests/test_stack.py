@@ -297,10 +297,12 @@ class TestStack(DevTest, t.TestCase):
         self.assertIsInstance(stack.arr.seq, kArrStr)
         self.assertIsInstance(stack.idx_arr, kArrInt)
 
+    @t.skip
     def test_push_returns(self):
         KSP.toggle_test_state(True)
         self.push()
 
+    @t.skip
     def test_push_code(self):
         KSP.toggle_test_state(False)
         self.push()
@@ -358,10 +360,17 @@ class TestStack(DevTest, t.TestCase):
         else:
             self.assertEqual(full[1], 2)
 
+        stack.pop()
+        if not KSP.is_under_test():
+            self.assertEqual(
+                IOutput.get()[-1],
+                '$stack_int_curr := $stack_int_curr - 1')
+
     def test_local_return(self):
         KSP.toggle_test_state(True)
         self.local()
 
+    # @t.skip
     def test_local_code(self):
         KSP.toggle_test_state(False)
         self.local()
@@ -393,6 +402,15 @@ class TestStack(DevTest, t.TestCase):
                 ' + 1 + 2] := 5')
         else:
             self.assertEqual(arrY[2], 5)
+        x += 1
+        if not KSP.is_under_test():
+            self.assertEqual(
+                IOutput.get()[-1],
+                '%stack_int_arr[%stack_int_idx[$stack_int_curr] + 0]' +
+                ' := %stack_int_arr[%stack_int_idx' +
+                '[$stack_int_curr] + 0] + 1')
+        else:
+            self.assertEqual(x(), 1)
 
 
 if __name__ == '__main__':

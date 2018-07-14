@@ -169,7 +169,8 @@ class KspNativeArray(KspNative):
         return AstGetItem(self, idx)
 
     def __setitem__(self, idx, val):
-        # print('native set')
+        # print('native set',
+        #       f'ref_type is {self.ref_type}')
         if self.is_under_test():
             # print('val type = %s, ref_type = %s' % (
             #     type(val), self.ref_type))
@@ -291,6 +292,8 @@ class kArrStr(KspNativeArray):
                 val = f'{val}'
             self.seq[idx] = val
             return
+        if isinstance(val, str):
+            val = f'"{val}"'
         IOutput.put(AstSetItem(self, idx, val)())
         return
 

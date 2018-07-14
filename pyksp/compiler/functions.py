@@ -139,12 +139,6 @@ class Func(KspObject):
         IOutput.unlock()
         return out
 
-    def __push_args(self, *args, **kwargs):
-        self.update_args(*args, **kwargs)
-        l_int = list()
-        l_str = list()
-        l_real = list()
-
     def update_args(self, *args, **kwargs):
         for idx, val in enumerate(args):
             self.args[idx].val = val
