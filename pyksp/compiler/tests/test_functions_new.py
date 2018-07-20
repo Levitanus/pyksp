@@ -1,7 +1,7 @@
 import os
 import sys
 import unittest as t
-# import re
+import re
 
 path = os.path.abspath(os.path.dirname(__file__)) + '/..'
 sys.path.append(path)
@@ -9,9 +9,9 @@ sys.path.append(path)
 from abstract import KSP
 
 from interfaces import IOutput
-from interfaces import IName
+# from interfaces import IName
 from dev_tools import DevTest
-# from dev_tools import print_lines
+from dev_tools import print_lines
 # from dev_tools import expand_if_callable
 from stack import kLocal
 
@@ -20,7 +20,7 @@ from native_types import kStr
 from functions_new import *
 
 
-# @t.skip
+@t.skip
 class TestFuncArgs(DevTest, t.TestCase):
 
     def setUp(self):
@@ -62,7 +62,7 @@ class TestFuncArgs(DevTest, t.TestCase):
             'arg': 1, 'arg2': '2', 'vararg': 1,
             'kwarg': str_arg
         }
-        return_full = FuncArgs(Foo).return_full(*args, **kwargs)
+        obj, return_full = FuncArgs(Foo).return_full(*args, **kwargs)
         self.assertEqual(desired_dict, return_full)
 
         def foo(x=kLocal(int)):
@@ -72,6 +72,29 @@ class TestFuncArgs(DevTest, t.TestCase):
             FuncArgs(foo).return_full(1)
 
 
+# @t.skip
+class TestOut(DevTest, t.TestCase):
+
+    def setUp(self):
+        super().setUp()
+
+    def tearDown(self):
+        super().tearDown()
+
+    def test_anno(self):
+        out = kInt('out')
+
+        def foo(self, arg: int, arg2: kOut(int)):
+            arg2(arg)
+
+        obj, return_full = FuncArgs(foo).return_full(self, 1, out)
+        self.assertEqual(
+            return_full,
+            {'arg': 1, 'arg2': out})
+        self.assertEqual(obj, self)
+
+
+@t.skip
 class TestFuncStack(DevTest, t.TestCase):
 
     def setUp(self):
@@ -149,16 +172,13 @@ class TestFuncStack(DevTest, t.TestCase):
         self.assertTrue(stack.IsEmpty())
 
 
-class TestCallStack(DevTest, t.TestCase):
-
-    def test_independence(self):
-        stack = CallStack()
-
-
+# @t.skip
 class TestFunc(DevTest, t.TestCase):
 
     def setUp(self):
         super().setUp()
+        self.str = 'self string'
+        self.ret = kStr('ret')
 
     def tearDown(self):
         super().tearDown()
@@ -168,43 +188,58 @@ class TestFunc(DevTest, t.TestCase):
         def myfunc():
             pass
         name = myfunc.name
+        module = re.sub(r'\.', '__', __name__)
         self.assertEqual(name(),
-                         '__main__TestFunc__test_name__myfunc')
-        IName.compact = True
-        self.assertEqual(name(), 'bfdg3')
+                         module + 'TestFunc__test_name__myfunc')
 
-    def test_return(self):
-        def foo() -> kArrInt:
-            return kArrInt('arr', [1, 2, 3])
-        return_type = FuncReturn(foo)
-        ret = foo()
-        self.assertTrue(return_type.check(ret))
+    @Func
+    def myfunc(self, arg: int, int_arg: int, arg2: str='string',
+               ret: kOut(str)=None):
+        IOutput.put('arg += 1')
+        arg += 1
+        IOutput.put('ret(int_arg)')
+        ret(int_arg())
+        IOutput.put('ret += arg')
+        ret += arg
+        IOutput.put('ret += arg2')
+        ret += arg2
+        return self.str
 
-        def foo() -> kInt:
-            return 0
-        return_type = FuncReturn(foo)
-        ret = foo()
-        self.assertTrue(return_type.check(ret))
+    @t.skip
+    def test_call(self):
+        x = kStr('x')
+        y = kInt('y')
 
-        def foo() -> int:
-            return 0.0
-        return_type = FuncReturn(foo)
-        ret = foo()
-        with self.assertRaises(AttributeError):
-            return_type.check(ret)
+        self.myfunc(y, 1, ret=x)
+        # print_lines(IOutput.get())
+        expected_output = [
+            '%stack_func_int_arr[%stack_func_int_idx[' +
+            '$stack_func_int_curr] + 0] := $y',
+            '%stack_func_int_arr[%stack_func_int_idx' +
+            '[$stack_func_int_curr] + 1] := 1',
+            '!stack_func_str_arr[%stack_func_str_idx' +
+            '[$stack_func_str_curr] + 0] := "string"',
+            '!stack_func_str_arr[%stack_func_str_idx' +
+            '[$stack_func_str_curr] + 1] := @x',
+            f'call {TestFunc.myfunc.name()}',
+            '@x := !stack_func_str_arr[%stack_func_str_idx' +
+            '[$stack_func_str_curr] + 1]',
+            '$stack_func_int_curr := $stack_func_int_curr - 1',
+            '$stack_func_str_curr := $stack_func_str_curr - 1'
+        ]
+        self.assertEqual(IOutput.get(), expected_output)
 
-        def foo():
-            return 0.0
-        return_type = FuncReturn(foo)
-        ret = foo()
-        with self.assertRaises(AttributeError):
-            return_type.check(ret)
+        KSP.toggle_test_state(True)
+        string = self.myfunc(y, 1, ret=x)
+        self.assertEqual(x, '11string')
+        self.assertEqual(x(), '11string')
+        self.assertEqual(string, self.str)
 
-        def foo():
-            return
-        return_type = FuncReturn(foo)
-        ret = foo()
-        self.assertTrue(return_type.check(ret))
+    def test_simple(self):
+        # KSP.toggle_test_state(False)
+        y = kInt('y')
+        self.myfunc(2, 1, ret=self.ret, inline=True)
+        print_lines(IOutput.get())
 
 
 if __name__ == '__main__':

@@ -1,13 +1,16 @@
 import re
+import functools
+# from collections import OrderedDict
 
 from inspect import signature
 from inspect import Parameter as ipar
-from inspect import Signature
-from inspect import _empty
+# from inspect import Signature
+# from inspect import _empty
 
 from warnings import warn
 
 from abstract import KspObject
+from abstract import KSP
 from interfaces import IOutput
 # from interfaces import IName
 
@@ -24,9 +27,11 @@ from native_types import KspNative
 
 from dev_tools import native_from_input
 from dev_tools import native_from_input_obj
-from dev_tools import ref_type_from_input_class
-from dev_tools import SingletonMeta
+# from dev_tools import ref_type_from_input_class
+# from dev_tools import SingletonMeta
 # from dev_tools import expand_if_callable
+
+from pyksp_ast import AstGetItem
 
 
 not_native_type_msg = \
@@ -41,12 +46,20 @@ class FuncArg:
     def __init__(self, name, par):
         self._name = name
 
+        if name == 'self':
+            return
         self._par = par
+        self.default = par.default
+        self.is_out = False
+        #     self.ref_type =
+        if isinstance(par.annotation, kOut):
+            self.ref_type = par.annotation.ref_type
+            self.is_out = True
+            return
         if isinstance(par.default, kLocal):
             self.ref_type = kLocal
         else:
             self.ref_type = self._pars_annotation(par.annotation)
-        self.default = par.default
 
     def _pars_annotation(self, anno):
         if anno is ipar.empty:
@@ -75,15 +88,20 @@ class FuncArgs:
 
     def __init__(self, func):
         self._args = dict()
+        self.has_self = False
 
         self._sig = signature(func)
         for name, par in self._sig.parameters.items():
+            if name == 'self':
+                self.has_self = True
             arg = FuncArg(name, par)
             self._args[name] = arg
 
     def check_args(self, *args, **kwargs):
         pasted = self._sig.bind(*args, **kwargs).arguments
         for arg, val in pasted.items():
+            if arg == 'self':
+                continue
             ref = self._args[arg].ref_type
             if not isinstance(val, ref):
                 if ref is kLocal:
@@ -93,16 +111,40 @@ class FuncArgs:
                     f'arg {arg} is {type(val)} ' +
                     f'has to be {ref}')
 
-    def return_full(self, *args, **kwargs):
-        self.check_args(*args, **kwargs)
+    def return_full(self, *args, check=True, **kwargs):
+        if check:
+            self.check_args(*args, **kwargs)
         pasted = self._sig.bind(*args, **kwargs).arguments
         newargs = dict()
+
+        try:
+            obj = pasted['self']
+        except KeyError:
+            obj = None
         for arg, val in self._args.items():
+            if arg == 'self':
+                continue
             if arg in pasted:
                 newargs[arg] = pasted[arg]
                 continue
             newargs[arg] = val.default
-        return newargs
+        return obj, newargs
+
+    def get_outs(self, args, pushed):
+        # if 'self' in pushed:
+        #     del pushed['self']
+        pasted = self._sig.bind(self, *pushed).arguments
+        # print('get_outs. pasted =', pasted)
+
+        for key in pasted:
+            if key == 'self':
+                continue
+            arg = self._args[key]
+            val = args[key]
+            var = pasted[key]
+            if arg.is_out:
+
+                val(var())
 
 
 class FuncStackCall:
@@ -129,7 +171,7 @@ class FuncStack:
         str_vars = dict()
         real_vars = dict()
         for arg, val in kwargs.items():
-            if isinstance(val, KspNative):
+            if isinstance(val, (KspNative, int, str, float)):
                 ref = native_from_input_obj(val)
             elif isinstance(val, kLocal):
                 ref = native_from_input(val.ref_type)
@@ -195,38 +237,9 @@ def _func_name(func):
     return name
 
 
-class FuncReturn:
-
-    def __init__(self, func):
-        sig = signature(func)
-        if sig.return_annotation is _empty:
-            self.return_type = None
-        else:
-            self.return_type = \
-                ref_type_from_input_class(
-                    sig.return_annotation)
-
-    def _raise(self, val):
-        raise AttributeError(
-            f'return value is "{val}" ({type(val)}). ' +
-            f'Has to be instance of {self.return_type}')
-
-    def check(self, val):
-        if self.return_type is None:
-            if val is None:
-                return True
-            raise AttributeError(
-                f'return value is "{val}". Has to be None')
-        if isinstance(val, self.return_type):
-            return True
-        raise AttributeError(
-            f'return value is "{val}" ({type(val)}). ' +
-            f'Has to be instance of {self.return_type}')
-
-
 class CallStack:
 
-    _stack = list
+    _stack = list()
 
     @staticmethod
     def append(seq):
@@ -240,6 +253,46 @@ class CallStack:
     @staticmethod
     def pop():
         Stack._stack.pop()
+
+
+class kOut:
+
+    def __init__(self, val, size=1):
+        self.size = size
+        ref = val
+        self.var = kLocal(ref, size)
+        # self.name = name
+        self.ref_type = self.var.ref_type
+        self.ref_type = native_from_input(self.ref_type)
+        if self.size > 1:
+            if self.duck_type is kInt:
+                self.duck_type = kArrInt
+            if self.duck_type is kStr:
+                self.duck_type = kArrStr
+            if self.duck_type is kReal:
+                self.duck_type = kArrReal
+
+    def check(self, val):
+        if not self._duck_type(val):
+            raise TypeError(
+                f'out arg "{self.name}" is <{val}> ({type(val)}). ' +
+                'has to be instance of ' +
+                f'{self.duck_type}')
+        return True
+
+    def _duck_type(self, val):
+        if isinstance(val, self.duck_type):
+            return True
+        if self.size == 1 and isinstance(val, AstGetItem):
+            if self.duck_type is kInt:
+                if isinstance(val.args[0], kArrInt):
+                    return True
+            if self.duck_type is kStr:
+                if isinstance(val.args[0], kArrStr):
+                    return True
+            if self.duck_type is kReal:
+                if isinstance(val.args[0], kArrReal):
+                    return True
 
 
 class Func(KspObject):
@@ -259,16 +312,53 @@ class Func(KspObject):
         self.stack = Func._stack
         self.func = func
         self.args = FuncArgs(func)
-        self.return_type = FuncReturn(func)
+        # self.ret = FuncReturn(func)
         self.call_stack = set()
+        self.used_in_call = False
         Func._instances.append(self)
 
-    def __call__(self, inline=False, **kwargs):
-        if not inline:
-            return self._called(**kwargs)
+    def __call__(self, *args, inline=False, **kwargs):
+        if inline is False:
+            return self._called(*args, **kwargs)
+        return self._inlined(*args, **kwargs)
 
-    def _called(self, **kwargs):
-        CallStack.put(self)
-        CallStack.append(self.call_stack)
+    def _inlined(self, *args, **kwargs):
+        obj, args = self.args.return_full(*args, **kwargs)
+        pushed_vars = self.stack.push(**args)
+        # IOutput.put(f'call {self.name()}')
+        if obj:
+            out = self.func(obj, *pushed_vars)
+        else:
+            out = self.func(*pushed_vars)
+        args = self.args.get_outs(args, pushed_vars)
 
-        CallStack.pop()
+        self.stack.pop()
+        return out
+
+    def _called(self, *args, **kwargs):
+        out = None
+        self.used_in_call = True
+        obj, args = self.args.return_full(*args, **kwargs)
+        pushed_vars = self.stack.push(**args)
+        IOutput.put(f'call {self.name()}')
+        if KSP.is_under_test():
+            if obj:
+                out = self.func(obj, *pushed_vars)
+            else:
+                out = self.func(*pushed_vars)
+        args = self.args.get_outs(args, pushed_vars)
+
+        self.stack.pop()
+        return out
+
+    def __get__(self, instance, instancetype):
+        """Implement the descriptor protocol to make decorating
+        instance method possible.
+        """
+
+        # Return a partial function with the first argument
+        # is the instance of the class decorated.
+        if instance is None:
+            return self
+        # print(self, instance, instancetype)
+        return functools.partial(self.__call__, instance)

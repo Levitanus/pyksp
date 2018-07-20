@@ -102,7 +102,7 @@ class kStr(KspNative):
 
     def __iadd__(self, other):
         other = self.convert_to_str(other)
-        self.value_set(self._value + other)
+        self.value_set(self.value_get() + other)
         if not self.is_under_test():
             self._ast_assign('%s & %s' % (self.name(), other))
         return self
@@ -280,11 +280,21 @@ class kArrStr(KspNativeArray):
                  preserve_name: bool=False, persist: bool=False):
         super().__init__(sequence, name, '!', (str, kStr),
                          length, preserve_name, persist)
+        if len(sequence) == 0:
+            for idx, val in enumerate(self.seq):
+                self.seq[idx] = ''
 
     def append(self, value):
         if isinstance(value, kInt):
             value = str(value())
         super().append(value)
+
+    def __getitem__(self, idx):
+        if self.is_under_test():
+            if callable(self.seq[idx]):
+                return self.seq[idx]()
+            return self.seq[idx]
+        return AstGetItemStr(self, idx)
 
     def __setitem__(self, idx, val):
         if self.is_under_test():
@@ -294,7 +304,7 @@ class kArrStr(KspNativeArray):
             return
         if isinstance(val, str):
             val = f'"{val}"'
-        IOutput.put(AstSetItem(self, idx, val)())
+        IOutput.put(AstSetItemStr(self, idx, val)())
         return
 
 

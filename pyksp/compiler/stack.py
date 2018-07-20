@@ -11,7 +11,7 @@ from native_types import KspNativeArray
 
 # from local_types import KspLocal
 
-# from interfaces import IOutput
+from interfaces import IOutput
 
 from abstract import KSP
 from dev_tools import expand_if_callable
@@ -19,7 +19,7 @@ from dev_tools import ref_type_from_input
 
 from pyksp_ast import AstMethod
 from pyksp_ast import AstAdd
-# from pyksp_ast import AstAsgn
+from pyksp_ast import AstAsgn
 
 from loops import For
 
@@ -65,6 +65,8 @@ class FrameVar(KspNativeArray):
 
     def __init__(self, name, val, length=None,
                  start_idx=None):
+        FrameVar.__bases__ = tuple([kArrStr])
+        print(FrameVar.__bases__)
         self._name = name
         self.name = self._name_func
         self.val = val
@@ -85,9 +87,11 @@ class FrameVar(KspNativeArray):
                 self.ref_type = ref_type_from_input(self.val[0])
             else:
                 self.ref_type = ref_type_from_input(self.val)
+            # self._value = self.__call__(val)
         else:
             self.ref_type = ref_type_from_input(self.val[0])
-        self._iterated = False
+        self.convert_to_str = \
+            lambda val, self=self: kStr.convert_to_str(self, val)
 
     def value_get(self):
         if KSP.is_under_test():
@@ -97,6 +101,8 @@ class FrameVar(KspNativeArray):
                 return [self.val[i]for i in
                         range(self._start_idx,
                               self._start_idx + self.len)]
+            if isinstance(self.val, FrameVar):
+                return self.val.val
             return self.val
         if self.len > 1:
             raise TypeError("can't return array on compilation")
@@ -125,6 +131,7 @@ class FrameVar(KspNativeArray):
         return self.val()
 
     def __call__(self, value=None):
+        # print(f'{self.name()}.__call__({self}, {value})')
         if value:
             assert self.len == 1, \
                 "can't assign value to array. " +\
@@ -132,7 +139,14 @@ class FrameVar(KspNativeArray):
             if self._start_idx is not None:
                 self.val[self._start_idx] = value
                 return
-            self.val = value
+            if isinstance(self.val, KspNative):
+                if KSP.is_under_test():
+                    value = expand_if_callable(value)
+                    if isinstance(self.val, (str, kStr)):
+                        value = str(value)
+                    return self.val(value)
+                self.val(value)
+            IOutput.put(AstAsgn(self.val, value)())
             return
         if self.len > 1:
             assert not self._start_idx, \
@@ -173,6 +187,16 @@ class FrameVar(KspNativeArray):
 
     def __len__(self):
         return self.len
+
+    def __iadd__(self, other):
+        print(f'FrameVar.__iadd__({self.name()}, {other})')
+        print(f'ref_type = {self.ref_type}')
+        if str not in self.ref_type:
+            return kInt.__iadd__(self, other)
+        # if self.len > 1:
+        #     raise TypeError('has not iadd')
+        if self._start_idx is not None:
+            return kStr.__iadd__(self, other)
 
 
 class StackFrame:
@@ -249,6 +273,9 @@ class Stack(KSP):
 
         try:
             length = len(item)
+            # print(f'push item = {item}')
+            if isinstance(item, str):
+                raise TypeError
             with For(arr=item, enumerate=True) as gen:
                 for gen_idx, val in gen:
                     self.arr[idx + gen_idx] = val

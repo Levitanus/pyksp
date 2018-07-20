@@ -1,43 +1,30 @@
-
-class KspCondBrake(Exception):
-    pass
-
-
-__condition = True
+from abc import abstractmethod
+from abc import ABCMeta
 
 
-def Break():
-    raise KspCondBrake()
+class Parent1:
+    def method(self):
+        print('Parent1, val =', self.val)
 
 
-def check(condition=None):
-    global __condition
-
-    if condition is None:
-        if __condition is False:
-            __condition = True
-            Break()
-        return True
-    __condition = condition
+class Parent2:
+    def method(self):
+        print(f'Parent2, val = "{self.val}"')
 
 
-class For:
+class A(Parent1, Parent2):
+    def __init__(self, val):
+        if isinstance(val, int):
+            self.type = Parent1
+        if isinstance(val, str):
+            self.type = Parent2
+        self.val = val
 
-    def __init__(self, array):
-        self.seq = array
-
-    def __enter__(self):
-        return self.for_handler
-
-    def __exit__(self, exc, value, trace):
-        return True
-
-    def for_handler(self):
-        for i in self.seq:
-            yield i
+    def method(self):
+        print(self.type)
+        # self.type.method(self)
+        super(self.type, self).method()
 
 
-array = [1, 3, 4, 7]
-with For(array) as f:
-    for i in f():
-        print(i)
+obj = A(1)
+obj.method()

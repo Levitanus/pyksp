@@ -110,6 +110,7 @@ class TestFrameVar(DevTest, t.TestCase):
         self.Int = kInt('int', 2)
         self.y = kInt('y', 3)
         self.IntArr = kArrInt('intArr', [1, 2, 3], length=3)
+        self.StrArr = StackArray('strStackArr', str, 100)
 
     def test_main_test(self):
         KSP.toggle_test_state(True)
@@ -128,12 +129,15 @@ class TestFrameVar(DevTest, t.TestCase):
         # tmp = kLocArrInt('loc_arr_temp', length=4)
         loc_arr = FrameVar('loc_arr', self.arr,
                            length=4, start_idx=1)
+        loc_str = FrameVar('string', self.StrArr,
+                           length=1, start_idx=5)
 
         self.assertEqual(x.len, 1)
         self.assertEqual(arr.len, 3)
         self.assertEqual(val.len, 1)
         self.assertEqual(loc_int.len, 1)
         self.assertEqual(loc_arr.len, 4)
+        self.assertEqual(loc_str.len, 1)
 
         self.assertEqual(x(), self.Int())
         # print(x(), self.Int())
@@ -143,6 +147,7 @@ class TestFrameVar(DevTest, t.TestCase):
         with self.assertRaises(AssertionError):
             self.assertEqual(loc_arr(), 1)
         self.assertEqual(loc_arr[0], 0)
+        self.assertEqual(loc_str(), '')
 
         with self.assertRaises(IndexError):
             loc_arr[4] = 1
@@ -162,6 +167,23 @@ class TestFrameVar(DevTest, t.TestCase):
                 f'{self.arr.name()}[0] := 1')
         else:
             self.assertEqual(self.arr[0], 1)
+
+        loc_str(1)
+        if not KSP.is_under_test():
+            self.assertEqual(
+                IOutput.get()[-1],
+                f'{self.StrArr.name()}[5] := 1')
+        else:
+            self.assertEqual(self.StrArr[5], '1')
+
+        loc_str += '1'
+        if not KSP.is_under_test():
+            self.assertEqual(
+                IOutput.get()[-1],
+                f'{self.StrArr.name()}[5] := ' +
+                f'{self.StrArr.name()}[5] & 1')
+        else:
+            self.assertEqual(loc_str(), '11')
 
         loc_arr[0] = 2
         if not KSP.is_under_test():
@@ -185,6 +207,7 @@ class TestFrameVar(DevTest, t.TestCase):
                 '%intStackArr[1 + $y]')
 
 
+@t.skip
 class TestStackFrame(DevTest, t.TestCase):
 
     def setUp(self):
@@ -276,6 +299,7 @@ push_lines = [
 ]
 
 
+@t.skip
 class TestStack(DevTest, t.TestCase):
 
     def setUp(self):
@@ -297,12 +321,10 @@ class TestStack(DevTest, t.TestCase):
         self.assertIsInstance(stack.arr.seq, kArrStr)
         self.assertIsInstance(stack.idx_arr, kArrInt)
 
-    @t.skip
     def test_push_returns(self):
         KSP.toggle_test_state(True)
         self.push()
 
-    @t.skip
     def test_push_code(self):
         KSP.toggle_test_state(False)
         self.push()
