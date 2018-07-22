@@ -80,13 +80,20 @@ class kStr(KspNative):
             value = '%s' % value.value_get()
         super().value_set(value)
 
+    def __call__(self, value=None):
+        if value:
+            value = self.convert_to_str(value)
+        super().__call__(value=value)
+
     def convert_to_str(self, value):
         if isinstance(value, (KspVarObj)):
             return '%s' % value()
-        if not isinstance(value, str):
-            raise TypeError('String Var can accept only str, and ksp,'
-                            ' objects. You passed %s' % type(value))
-        return value
+        if isinstance(value, str):
+            return f'"{value}"'
+        if isinstance(value, (int, float)):
+            return f'{value}'
+        raise TypeError('String Var can accept only str, and ksp,'
+                        ' objects. You passed %s' % type(value))
 
     def __add__(self, other):
         other = self.convert_to_str(other)
@@ -102,7 +109,7 @@ class kStr(KspNative):
 
     def __iadd__(self, other):
         other = self.convert_to_str(other)
-        self.value_set(self._value + other)
+        self.value_set(self.value_get() + other)
         if not self.is_under_test():
             self._ast_assign('%s & %s' % (self.name(), other))
         return self
@@ -169,7 +176,8 @@ class KspNativeArray(KspNative):
         return AstGetItem(self, idx)
 
     def __setitem__(self, idx, val):
-        # print('native set')
+        # print('native set',
+        #       f'ref_type is {self.ref_type}')
         if self.is_under_test():
             # print('val type = %s, ref_type = %s' % (
             #     type(val), self.ref_type))
@@ -279,11 +287,21 @@ class kArrStr(KspNativeArray):
                  preserve_name: bool=False, persist: bool=False):
         super().__init__(sequence, name, '!', (str, kStr),
                          length, preserve_name, persist)
+        if len(sequence) == 0:
+            for idx, val in enumerate(self.seq):
+                self.seq[idx] = ''
 
     def append(self, value):
         if isinstance(value, kInt):
             value = str(value())
         super().append(value)
+
+    def __getitem__(self, idx):
+        if self.is_under_test():
+            if callable(self.seq[idx]):
+                return self.seq[idx]()
+            return self.seq[idx]
+        return AstGetItemStr(self, idx)
 
     def __setitem__(self, idx, val):
         if self.is_under_test():
@@ -291,7 +309,9 @@ class kArrStr(KspNativeArray):
                 val = f'{val}'
             self.seq[idx] = val
             return
-        IOutput.put(AstSetItem(self, idx, val)())
+        if isinstance(val, str):
+            val = f'"{val}"'
+        IOutput.put(AstSetItemStr(self, idx, val)())
         return
 
 

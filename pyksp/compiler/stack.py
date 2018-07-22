@@ -11,15 +11,18 @@ from native_types import KspNativeArray
 
 # from local_types import KspLocal
 
-# from interfaces import IOutput
+from interfaces import IOutput
 
 from abstract import KSP
 from dev_tools import expand_if_callable
-# from dev_tools import native_from_input_obj
+from dev_tools import ref_type_from_input
 
 from pyksp_ast import AstMethod
 from pyksp_ast import AstAdd
-# from pyksp_ast import AstAsgn
+from pyksp_ast import AstAddString
+from pyksp_ast import AstAsgn
+from pyksp_ast import AstGetItem
+from pyksp_ast import AstGetItemStr
 
 from loops import For
 
@@ -63,7 +66,8 @@ class kLocal:
 
 class FrameVar(KspNativeArray):
 
-    def __init__(self, name, val, length=None, start_idx=None):
+    def __init__(self, name, val, length=None,
+                 start_idx=None):
         self._name = name
         self.name = self._name_func
         self.val = val
@@ -79,28 +83,58 @@ class FrameVar(KspNativeArray):
             assert isinstance(val, StackArray), \
                 f'Expected {StackArray} or not start_idx'
             self.seq = self.val
-        self._iterated = False
-        if isinstance(val, KspNative):
-            self.ref_type = val.ref_type
+        if self.len == 1:
+            if start_idx is not None:
+                self.ref_type = self.val.ref_type
+            else:
+                if isinstance(self.val, AstGetItemStr):
+                    self.ref_type = (str, kStr)
+                elif isinstance(self.val, AstGetItem):
+                    self.ref_type = (int, kInt)
+                else:
+                    self.ref_type = ref_type_from_input(self.val)
+        else:
+            self.ref_type = self.val.ref_type
 
     def value_get(self):
         if KSP.is_under_test():
             if self._start_idx is not None:
+                if self.len == 1:
+                    return self.val[self._start_idx]
                 return [self.val[i]for i in
                         range(self._start_idx,
                               self._start_idx + self.len)]
+            if isinstance(self.val, FrameVar):
+                return self.val.val
             return self.val
         if self.len > 1:
             raise TypeError("can't return array on compilation")
+        if self._start_idx is not None:
+            return self.val[self._start_idx]
         return self.val
+
+    def value_set(self, other):
+        if not KSP.is_under_test():
+            return
+        if self.len == 1:
+            if self._start_idx is not None:
+                self.val[self._start_idx] = other
+                return
+            self.val.value_set(other)
+            return
+        raise TypeError('can not assign to array. use For()')
 
     def _name_func(self):
         '''intuition tells something wrong here'''
         if self._start_idx is not None:
+            if self.len == 1:
+                return f'{self.val.name()}[' +\
+                    f'{expand_if_callable(self._start_idx)}]'
             return self.val.name()
         return self.val()
 
     def __call__(self, value=None):
+        # print(f'{self.name()}.__call__({self}, {value})')
         if value:
             assert self.len == 1, \
                 "can't assign value to array. " +\
@@ -108,7 +142,16 @@ class FrameVar(KspNativeArray):
             if self._start_idx is not None:
                 self.val[self._start_idx] = value
                 return
-            self.val = value
+            if isinstance(self.val, KspNative):
+                if KSP.is_under_test():
+                    value = expand_if_callable(value)
+                    if isinstance(self.val, (str, kStr)):
+                        value = str(value)
+                    return self.val(value)
+                self.val(value)
+            if isinstance(value, (str, kStr, AstGetItemStr)):
+                value = f'"{expand_if_callable(value)}"'
+            IOutput.put(AstAsgn(self.val, value)())
             return
         if self.len > 1:
             assert not self._start_idx, \
@@ -149,6 +192,38 @@ class FrameVar(KspNativeArray):
 
     def __len__(self):
         return self.len
+
+    def __add__(self, other):
+        if self.is_under_test():
+            return self.value_get() + other
+        if str in self.ref_type:
+            if isinstance(self.val, StackArray):
+                return self.val[self._start_idx] + other
+            AstAddString(self, other)
+        return AstAdd(self.name(), other)
+
+    def __radd__(self, other):
+        if self.is_under_test():
+            return other + self.value_get()
+        if str in self.ref_type:
+            if isinstance(self.val, StackArray):
+                return other + self.val[self._start_idx]
+            AstAddString(other, self)
+        return AstAdd(other, self.name())
+
+    def __iadd__(self, other):
+        if self.is_under_test():
+            self.value_set(self.value_get() + other)
+            return self
+        if str in self.ref_type:
+            if isinstance(self.val, StackArray):
+                self.val[self._start_idx] = \
+                    self.val[self._start_idx] + other
+                return self
+            self._ast_assign(AstAddString(self, other))
+            return self
+        self._ast_assign(AstAdd(self.name(), other))
+        return self
 
 
 class StackFrame:
@@ -225,6 +300,9 @@ class Stack(KSP):
 
         try:
             length = len(item)
+            # print(f'push item = {item}')
+            if isinstance(item, str):
+                raise TypeError
             with For(arr=item, enumerate=True) as gen:
                 for gen_idx, val in gen:
                     self.arr[idx + gen_idx] = val

@@ -306,6 +306,9 @@ class AstAdd(AstOperator):
 class AstAddString(AstOperator):
 
     def method(self):
+        for idx, arg in enumerate(self.args):
+            if isinstance(arg, str):
+                self.args[idx] = f'"{arg}"'
         return self.operator(' & ')
 
 
@@ -428,6 +431,45 @@ def expand_if_callable(*args):
     return out
 
 
+class AstGetItemStr(AstOperator):
+
+    def method(self):
+
+        iterable = self.args[0]
+        idx = self.args[1]
+        if callable(idx):
+            idx = idx()
+        # print('AstGetItem name is', expand_if_callable(iterable.name))
+        return f'{iterable.name()}[{idx}]'
+
+    def __add__(self, other):
+        # if isinstance(other, str):
+        #     return AstAddString(self, other)
+        return AstAddString(self, other)
+
+    def __iadd__(self, other):
+        # if isinstance(other, str):
+        #     return AstAsgn(AstAddString(self, other))
+        return AstAsgn(AstAddString(self, other))
+
+    def __radd__(self, other):
+        # if isinstance(other, str):
+        #     return AstAddString(other, self)
+        return AstAddString(other, self)
+
+
+class AstSetItemStr(AstGetItemStr):
+
+    def method(self):
+        iterable = self.args[0]
+        idx = self.args[1]
+        value = self.args[2]
+        if callable(idx):
+            idx = idx()
+        # out = self.return_item_type(iterable, idx)
+        return AstAsgn(f'{iterable.name()}[{idx}]', value)()
+
+
 class AstGetItem(AstOperator):
 
     def method(self):
@@ -440,18 +482,18 @@ class AstGetItem(AstOperator):
         return f'{iterable.name()}[{idx}]'
 
     def __add__(self, other):
-        if isinstance(other, str):
-            return AstAddString(self, other)
+        # if isinstance(other, str):
+        #     return AstAddString(self, other)
         return AstAdd(self, other)
 
     def __iadd__(self, other):
-        if isinstance(other, str):
-            return AstAsgn(AstAddString(self, other))
+        # if isinstance(other, str):
+        #     return AstAsgn(AstAddString(self, other))
         return AstAsgn(AstAdd(self, other))
 
     def __radd__(self, other):
-        if isinstance(other, str):
-            return AstAddString(other, self)
+        # if isinstance(other, str):
+        #     return AstAddString(other, self)
         return AstAdd(other, self)
 
     def __sub__(self, other):

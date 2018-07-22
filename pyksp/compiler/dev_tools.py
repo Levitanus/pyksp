@@ -1,4 +1,4 @@
-from typing import Callable
+# from typing import Callable
 import unittest as t
 
 from interfaces import IOutput
@@ -112,6 +112,42 @@ def native_from_input_obj(obj: object) -> KspNative:
     if isinstance(obj, kArrStr):
         return kArrStr
     raise TypeError('has to be instance of %s' % KspNative)
+
+
+def ref_type_from_input(obj: object) -> [type]:
+    obj = expand_if_callable(obj)
+    if isinstance(obj, (int, kInt)):
+        return (kInt, int)
+    if isinstance(obj, (str, kStr)):
+        return (kStr, str)
+    if isinstance(obj, (float, kReal)):
+        return (float, kReal)
+    if isinstance(obj, kArrInt):
+        return (int, kInt, kArrInt)
+    if isinstance(obj, kArrReal):
+        return (kStr, str, kArrReal)
+    if isinstance(obj, kArrStr):
+        return (float, kReal, kArrStr)
+    raise TypeError('pasted: %s has to be instance of %s'
+                    % (obj, KspNative))
+
+
+def ref_type_from_input_class(class_: type) -> [type]:
+    obj = class_
+    if obj in (int, kInt):
+        return (kInt, int)
+    if obj in (str, kStr):
+        return (str, kStr)
+    if obj in (float, kReal):
+        return (float, kReal)
+    if obj is kArrInt:
+        return (int, kInt, kArrInt)
+    if obj is kArrReal:
+        return (str, kStr, kArrReal)
+    if obj is kArrStr:
+        return (float, kReal, kArrStr)
+    raise TypeError('pasted: %s has to be instance of %s'
+                    % (obj, KspNative))
 
 
 class SingletonMeta(type):
