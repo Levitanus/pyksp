@@ -4,3 +4,7 @@
 *.sublime-workspace
 
 pyksp\.egg-info/
+
+pyksp/compiler2/__pycache__/
+
+pyksp/compiler2/tests/__pycache__/
