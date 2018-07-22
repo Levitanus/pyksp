@@ -72,7 +72,7 @@ class TestFuncArgs(DevTest, t.TestCase):
             FuncArgs(foo).return_full(1)
 
 
-# @t.skip
+@t.skip
 class TestOut(DevTest, t.TestCase):
 
     def setUp(self):
@@ -195,14 +195,11 @@ class TestFunc(DevTest, t.TestCase):
     @Func
     def myfunc(self, arg: int, int_arg: int, arg2: str='string',
                ret: kOut(str)=None):
-        IOutput.put('arg += 1')
         arg += 1
-        IOutput.put('ret(int_arg)')
-        ret(int_arg())
-        IOutput.put('ret += arg')
+        ret(int_arg)
         ret += arg
-        IOutput.put('ret += arg2')
         ret += arg2
+        ret(self.str)
         return self.str
 
     @t.skip
@@ -238,7 +235,7 @@ class TestFunc(DevTest, t.TestCase):
     def test_simple(self):
         # KSP.toggle_test_state(False)
         y = kInt('y')
-        self.myfunc(2, 1, ret=self.ret, inline=True)
+        self.myfunc(2, y, ret=self.ret, inline=True)
         print_lines(IOutput.get())
 
 

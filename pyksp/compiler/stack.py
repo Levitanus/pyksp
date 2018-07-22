@@ -19,7 +19,10 @@ from dev_tools import ref_type_from_input
 
 from pyksp_ast import AstMethod
 from pyksp_ast import AstAdd
+from pyksp_ast import AstAddString
 from pyksp_ast import AstAsgn
+from pyksp_ast import AstGetItem
+from pyksp_ast import AstGetItemStr
 
 from loops import For
 
@@ -65,8 +68,6 @@ class FrameVar(KspNativeArray):
 
     def __init__(self, name, val, length=None,
                  start_idx=None):
-        FrameVar.__bases__ = tuple([kArrStr])
-        print(FrameVar.__bases__)
         self._name = name
         self.name = self._name_func
         self.val = val
@@ -84,14 +85,16 @@ class FrameVar(KspNativeArray):
             self.seq = self.val
         if self.len == 1:
             if start_idx is not None:
-                self.ref_type = ref_type_from_input(self.val[0])
+                self.ref_type = self.val.ref_type
             else:
-                self.ref_type = ref_type_from_input(self.val)
-            # self._value = self.__call__(val)
+                if isinstance(self.val, AstGetItemStr):
+                    self.ref_type = (str, kStr)
+                elif isinstance(self.val, AstGetItem):
+                    self.ref_type = (int, kInt)
+                else:
+                    self.ref_type = ref_type_from_input(self.val)
         else:
-            self.ref_type = ref_type_from_input(self.val[0])
-        self.convert_to_str = \
-            lambda val, self=self: kStr.convert_to_str(self, val)
+            self.ref_type = self.val.ref_type
 
     def value_get(self):
         if KSP.is_under_test():
@@ -146,6 +149,8 @@ class FrameVar(KspNativeArray):
                         value = str(value)
                     return self.val(value)
                 self.val(value)
+            if isinstance(value, (str, kStr, AstGetItemStr)):
+                value = f'"{expand_if_callable(value)}"'
             IOutput.put(AstAsgn(self.val, value)())
             return
         if self.len > 1:
@@ -188,15 +193,37 @@ class FrameVar(KspNativeArray):
     def __len__(self):
         return self.len
 
+    def __add__(self, other):
+        if self.is_under_test():
+            return self.value_get() + other
+        if str in self.ref_type:
+            if isinstance(self.val, StackArray):
+                return self.val[self._start_idx] + other
+            AstAddString(self, other)
+        return AstAdd(self.name(), other)
+
+    def __radd__(self, other):
+        if self.is_under_test():
+            return other + self.value_get()
+        if str in self.ref_type:
+            if isinstance(self.val, StackArray):
+                return other + self.val[self._start_idx]
+            AstAddString(other, self)
+        return AstAdd(other, self.name())
+
     def __iadd__(self, other):
-        print(f'FrameVar.__iadd__({self.name()}, {other})')
-        print(f'ref_type = {self.ref_type}')
-        if str not in self.ref_type:
-            return kInt.__iadd__(self, other)
-        # if self.len > 1:
-        #     raise TypeError('has not iadd')
-        if self._start_idx is not None:
-            return kStr.__iadd__(self, other)
+        if self.is_under_test():
+            self.value_set(self.value_get() + other)
+            return self
+        if str in self.ref_type:
+            if isinstance(self.val, StackArray):
+                self.val[self._start_idx] = \
+                    self.val[self._start_idx] + other
+                return self
+            self._ast_assign(AstAddString(self, other))
+            return self
+        self._ast_assign(AstAdd(self.name(), other))
+        return self
 
 
 class StackFrame:

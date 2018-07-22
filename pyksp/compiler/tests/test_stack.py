@@ -181,7 +181,7 @@ class TestFrameVar(DevTest, t.TestCase):
             self.assertEqual(
                 IOutput.get()[-1],
                 f'{self.StrArr.name()}[5] := ' +
-                f'{self.StrArr.name()}[5] & 1')
+                f'{self.StrArr.name()}[5] & "1"')
         else:
             self.assertEqual(loc_str(), '11')
 
