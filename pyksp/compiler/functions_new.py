@@ -324,15 +324,16 @@ class Func(KspObject):
 
     def _inlined(self, *args, **kwargs):
         obj, args = self.args.return_full(*args, **kwargs)
-        pushed_vars = self.stack.push(**args)
+        print(obj, args, sep='|: ')
+        # pushed_vars = self.stack.push(**args)
         # IOutput.put(f'call {self.name()}')
         if obj:
-            out = self.func(obj, *pushed_vars)
+            out = self.func(obj, **args)
         else:
-            out = self.func(*pushed_vars)
-        args = self.args.get_outs(args, pushed_vars)
+            out = self.func(*args)
+        # args = self.args.get_outs(args, pushed_vars)
 
-        self.stack.pop()
+        # self.stack.pop()
         return out
 
     def _called(self, *args, **kwargs):

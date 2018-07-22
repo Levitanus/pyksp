@@ -80,13 +80,20 @@ class kStr(KspNative):
             value = '%s' % value.value_get()
         super().value_set(value)
 
+    def __call__(self, value=None):
+        if value:
+            value = self.convert_to_str(value)
+        super().__call__(value=value)
+
     def convert_to_str(self, value):
         if isinstance(value, (KspVarObj)):
             return '%s' % value()
-        if not isinstance(value, str):
-            raise TypeError('String Var can accept only str, and ksp,'
-                            ' objects. You passed %s' % type(value))
-        return value
+        if isinstance(value, str):
+            return f'"{value}"'
+        if isinstance(value, (int, float)):
+            return f'{value}'
+        raise TypeError('String Var can accept only str, and ksp,'
+                        ' objects. You passed %s' % type(value))
 
     def __add__(self, other):
         other = self.convert_to_str(other)

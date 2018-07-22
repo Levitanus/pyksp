@@ -233,7 +233,7 @@ class TestFunc(DevTest, t.TestCase):
         self.assertEqual(string, self.str)
 
     def test_simple(self):
-        # KSP.toggle_test_state(False)
+        KSP.toggle_test_state(False)
         y = kInt('y')
         self.myfunc(2, y, ret=self.ret, inline=True)
         print_lines(IOutput.get())
