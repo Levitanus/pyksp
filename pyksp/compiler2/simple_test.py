@@ -1,90 +1,45 @@
 
+class Test:
 
-class Stack:
-    stack = list()
+    def __init__(self, val, name):
+        self._val = val
+        self._name = name
+        self.named = False
 
-    @staticmethod
-    def append(seq):
-        Stack.stack.append(seq)
+    def __ilshift__(self, other):
+        if hasattr(other, 'val'):
+            other = other.val
+        self.set(other)
+        return self
 
-    @staticmethod
-    def put(func):
-        for item in Stack.stack:
-            item.add(func)
+    def __rlshift__(self, other):
+        return self.get()
 
-    @staticmethod
-    def pop():
-        Stack.stack.pop()
+    def set(self, val):
+        self._val = val
 
+    def get(self):
+        if self.named:
+            return self._name
+        return self._val
 
-class Handle:
-
-    _instances = list()
-
-    def __init__(self, func):
-        self.func = func
-        self.stack = set()
-        Handle._instances.append(self)
-
-    def __call__(self, **kwargs):
-        Stack.put(self)
-        Stack.append(self.stack)
-        out = self.func(**kwargs)
-        if self in self.stack:
-            raise Exception(f'recursive call of {self} detected')
-        Stack.pop()
-        return out
-
-    @staticmethod
-    def sort():
-        new = list()
-        for instance in Handle._instances:
-            if len(instance.stack) == 0:
-                new.append(instance)
-                continue
-            if instance in instance.stack:
-                raise Exception('recursion detected')
-            for func in instance.stack:
-                if func not in new:
-                    new.append(func)
-                    Handle._instances.remove(func)
-                continue
-            new.append(instance)
-
-        Handle._instances = new
+    @property
+    def val(self):
+        return self._val
 
 
-@Handle
-def foo():
-    pass
+x = Test(1, 'x')
+y = Test(2, 'y')
 
+print('x.val =', x.val)
+print('y.val =', y.val)
 
-@Handle
-def foo2(exit=False):
-    if exit:
-        return
-    Simple.foo1()
-
-
-class Simple:
-
-    @staticmethod
-    @Handle
-    def foo1():
-        foo()
-        # foo2(exit=True)
-
-
-Simple.foo1()
-foo2()
-
-print([inst.stack for inst in Handle._instances])
-print([inst for inst in Handle._instances])
-
-Handle.sort()
-
-print('\nsorted:')
-print([inst.stack for inst in Handle._instances])
-print([inst for inst in Handle._instances])
-
-print(Stack.stack)
+x <<= y
+print('x.val =', x.val)
+z: int = None
+z <<= x
+print('z =', z)
+x <<= 3
+y <<= x
+print('y.val =', y.val)
+y.val = 4
