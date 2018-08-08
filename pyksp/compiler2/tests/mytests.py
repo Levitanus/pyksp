@@ -14,15 +14,13 @@ from abstract import KSP
 class DevTest(t.TestCase):
 
     def setUp(self):
-        KSP.set_compiled(False)
-        KSP.set_bool(False)
+        KSP.refresh()
         KspObject.refresh()
         Output().refresh()
         IName.refresh()
 
     def tearDown(self):
-        KSP.set_compiled(False)
-        KSP.set_bool(False)
+        KSP.refresh()
         KspObject.refresh()
         Output().refresh()
         IName.refresh()

@@ -1,5 +1,13 @@
-from main import DevTest
+import os
+import sys
 import unittest as t
+
+path = os.path.abspath(os.path.dirname(__file__)) + '/..'
+sys.path.append(path)
+path = os.path.abspath(os.path.dirname(__file__))
+sys.path.append(path)
+
+from mytests import DevTest
 
 from abstract import *
 
@@ -53,6 +61,11 @@ class TestKSP(DevTest):
         self.assertEqual(b.is_bool(), True)
         a.set_bool(False)
         self.assertEqual(b.is_bool(), False)
+        a.set_bool(True)
+        self.assertEqual(b.is_bool(), True)
+        self.assertTrue(a.in_init())
+        a.in_init(False)
+        self.assertFalse(b.in_init())
 
 
 class TestName(DevTest):
@@ -72,6 +85,10 @@ class TestName(DevTest):
         def __init__(self, name='my name', preserve=False):
             self.name = IName(name, prefix='$', preserve=preserve)
 
+    class Test4:
+        def __init__(self, name='my name', postfix='[20]'):
+            self.name = IName(name, prefix='@', postfix=postfix)
+
     def test_name(self):
         a = self.Test()
         self.assertEqual(a.name(), 'my name')
@@ -82,8 +99,8 @@ class TestName(DevTest):
         c = self.Test3()
         with self.assertRaises(NameError):
             self.Test3()
-        d = self.Test3(name='my name1', preserve=True)
         IName.set_compact(True)
+        d = self.Test3(name='my name1', preserve=True)
         self.assertEqual(c.name(), '$my name')
         self.assertEqual(d.name(), '$my name1')
 
@@ -92,6 +109,9 @@ class TestName(DevTest):
         IName.refresh()
         f = self.Test2()
         self.assertEqual(f.name(), '$my name')
+        IName.set_compact(True)
+        g = self.Test4()
+        self.assertEqual(g.name(), '@bu20h[20]')
 
 
 class TestKspObject(DevTest):
@@ -104,12 +124,12 @@ class TestKspObject(DevTest):
                              has_init=has_init, is_local=is_local,
                              has_executable=has_executable)
 
-        def generate_executable(self):
-            super().generate_executable()
+        def _generate_executable(self):
+            super()._generate_executable()
             return [f'{self.name()} executable']
 
-        def generate_init(self):
-            super().generate_init()
+        def _generate_init(self):
+            super()._generate_init()
             return [f'{self.name()} init']
 
     class BadGenerators(KspObject):
@@ -120,12 +140,12 @@ class TestKspObject(DevTest):
                              has_init=has_init, is_local=is_local,
                              has_executable=has_executable)
 
-        def generate_executable(self):
-            super().generate_executable()
+        def _generate_executable(self):
+            super()._generate_executable()
             return f'{self.name()} executable'
 
-        def generate_init(self):
-            super().generate_init()
+        def _generate_init(self):
+            super()._generate_init()
             return f'{self.name()} init'
 
     def runTest(self):
