@@ -726,9 +726,10 @@ class KspNumeric(KspVar):
     class TypeWarn(Warning):
         '''raised when type convertion is needed'''
 
-        def __init__(self):
+        def __init__(self, val):
             super().__init__(
-                'Has to be converted within built-in func')
+                f'Value {val} (type{type(val)}) ' +
+                'has to be converted within built-in func')
 
     def __new__(cls, *args, **kwargs):
         '''checks correct assignement of cls.warning_types'''
@@ -748,7 +749,7 @@ class KspNumeric(KspVar):
 
     def _warn_other(self, value):
         if isinstance(value, self.warning_types):
-            raise self.TypeWarn
+            raise self.TypeWarn(value)
 
     @abstractmethod
     def __truediv__(self, other):
@@ -778,7 +779,7 @@ class KspNumeric(KspVar):
         '''returns other, expanded via val property is is
         instance of KspVar'''
         if isinstance(other, self.warning_types):
-            raise self.TypeWarn
+            raise self.TypeWarn(other)
         if not isinstance(other, self.ref_type):
             raise TypeError(f'has to be one of {self.ref_type}')
         if isinstance(other, (int, str, float)):
@@ -1062,7 +1063,7 @@ class KspArray(KspVar):
     def __init__(self, name, name_prefix='', name_postfix='',
                  preserve_name=False, has_init=True,
                  is_local=False, ref_type=None, item_type=None,
-                 size=None, seq=None, persist=False):
+                 size=None, seq=None, persist=False, def_val=None):
         super().__init__(name, name_prefix=name_prefix,
                          ref_type=ref_type,
                          name_postfix=name_postfix,
@@ -1101,6 +1102,11 @@ class KspArray(KspVar):
         if seq is not None:
             self._seq = self._init_seq(seq)
             self.__init_seq = seq.copy()
+        self.__default = def_val
+
+    @property
+    def default(self):
+        return self.__default
 
     def _init_seq(self, seq):
         '''makes self._cashed and returns seq
@@ -1217,18 +1223,22 @@ class KspArray(KspVar):
         if not isinstance(val, self.ref_type):
             raise TypeError(
                 f'has to be instance of {self.ref_type}')
-        idx = self._check_idx(idx)
-        if self._size < idx:
-            self._size = idx
-        self._seq[idx] = self._get_rutime_other(val)
-        if self._check_cashed_item(idx):
+        runtime_idx = self._get_runtime_idx(idx)
+        if self._size < runtime_idx:
+            self._size = runtime_idx
+        self._seq[runtime_idx] = self._get_rutime_other(val)
+        if self._check_cashed_item(runtime_idx):
             self._getitem_full(idx)
             self._cashed[idx] <<= val
 
     def _get_runtime_idx(self, idx):
         '''get runtime value from KspIntVar, or return int index'''
+        if isinstance(idx, int) and idx < 0:
+            idx = self.__len__() + idx
         if isinstance(idx, KspIntVar):
             return idx._get_runtime()
+        if isinstance(idx, AstBase):
+            return idx.get_value()
         return idx
 
     def _check_idx(self, idx):
@@ -1236,10 +1246,14 @@ class KspArray(KspVar):
         KspIntVar object
 
         raises TypeError on incorrect index type'''
-        if not isinstance(idx, (KspIntVar, int)):
-            raise TypeError('has to be int or KspIntVar')
+        if not isinstance(idx, (KspIntVar, int, AstOperator)):
+            raise TypeError('has to be int or KspIntVar or AstOperator')
+        if isinstance(idx, int) and idx < 0:
+            idx = self._size + idx
         if isinstance(idx, KspIntVar):
             idx = idx.val
+        if isinstance(idx, AstBase):
+            idx = idx.expand()
         return idx
 
     def _check_cashed_item(self, idx):
@@ -1248,7 +1262,8 @@ class KspArray(KspVar):
             return False
         val = self._seq[idx]
         if val is None:
-            raise IndexError('item is None')
+            self._seq[idx] = self.__default
+            val = self._seq[idx]
         if not isinstance(val, self.ref_type):
             raise TypeError(
                 f'items has to be of type {self.ref_type}; ' +
@@ -1313,3 +1328,45 @@ class KspArray(KspVar):
 
     def _generate_executable(self):
         raise NotImplementedError
+
+
+def get_val(*args):
+    out = list()
+    for arg in args:
+        if isinstance(arg, KspVar):
+            out.append(arg.val)
+            continue
+        out.apend(arg)
+    if len(args) == 1:
+        return out[0]
+    return out
+
+
+def get_string_repr(*args):
+    out = list()
+    for arg in args:
+        if isinstance(arg, str):
+            out.append(arg)
+        if isinstance(arg, KspVar):
+            out.append(arg._get_compiled())
+            continue
+        if isinstance(arg, AstBase):
+            out.append(arg.expand())
+        out.append(f'{arg}')
+    if len(args) == 1:
+        return out[0]
+    return out
+
+
+def get_runtime(*args):
+    out = list()
+    for arg in args:
+        if isinstance(arg, KspVar):
+            out.append(arg._get_runtime())
+            continue
+        if isinstance(arg, AstBase):
+            out.append(arg.get_value())
+        out.append(arg)
+    if len(args) == 1:
+        return out[0]
+    return out

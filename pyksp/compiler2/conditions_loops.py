@@ -1,9 +1,13 @@
 # from base_types import KspVar
 from base_types import AstOperator
 from base_types import KspIntVar
+from base_types import KspArray
+from base_types import get_runtime, get_val, get_string_repr
+
 from abstract import Output
 from abstract import KSP
 from abstract import SingletonMeta
+
 from native_types import kInt
 from native_types import kArrInt
 
@@ -195,6 +199,7 @@ class Else(KSP):
         """Checks the condition and puts 'else' to Output()"""
         if not self.is_compiled():
             if self.__if_result:
+                # If.__condition = False
                 check(False)
                 return
             return True
@@ -205,7 +210,7 @@ class Else(KSP):
         puts to Output() else and if(condition) lines"""
         cond = self.__condition
         if not self.is_compiled() and not cond:
-            # If._condition = False
+            # If.__condition = False
             check(False)
             return
         result = list()
@@ -229,7 +234,7 @@ class Else(KSP):
                 return
         self.__build_end_code(value)
         if self.__func is self.__is_elif:
-            Output().callable_on_put(If.refresh)
+            Output().callable_on_put = If.refresh
         if isinstance(value, KspCondBrake):
             return
         return True
@@ -358,27 +363,241 @@ class Case(KSP):
         return True
 
 
-class ForLoops(metaclass=SingletonMeta):
-    '''Handles names and indexes of ForEach and ForRange loops.
-    Singleton.
+for_wrong_syntax_msg = '''Wrong syntax.
+Syntax for for-each loops
+-------------------------
+with For(arr: KspNativeArray=[seq]) as name:
+    for val in name:
+        # code
 
-    maxlen can be assigned at the initialization (max amount of
-    simultaneously running for-loops. default=20)
-    '''
+Syntax for range loops
+----------------------
+with For(start: int, [stop: int, [step: int]]) as name:
+    for val in name:
+        # code
+'''
+for_wrong_arg_msg = 'Wrong syntax. See how range() func works'
+for_type_err_msg = 'arg {name} is {arg_typ}. \
+has to be one of {classes}'
 
-    def __init__(self, maxlen=20):
-        self.idx = kInt(-1, '_for_loop_idx_curr')
-        self.arr = kArrInt(name='_for_loop_idx', size=maxlen,
-                           sequence=[0] * maxlen)
-        # self.maxlen = maxlen
 
-    def get_idx(self):
-        '''puts in output inc of idx-var, returns string within
-        idx-array[idx-var]
-        Under tests returns int index var'''
-        self.idx.inc()
-        return self.arr[self.idx]
+class For(KSP):
+    """For loop can be translated to KSP.
+    works as python foreach: 'for val in Iterable' as well as
+    range: 'for val in range(start, [stop, [step]])'
 
-    def end(self):
-        '''puts in output dec(idx-var) line'''
-        self.idx.dec()
+    As While, If, Else, Select and Case, it's context manager.
+
+    Returns
+    -------
+    iteration generator
+
+    Raises
+    ------
+    KspCondError
+
+    ForRange syntax
+    ---------------
+    with For(start: int[, stop: int[, step: int]]) as seq:
+        for val in seq:
+            # code
+
+    ForEach syntax
+    --------------
+    with For(arr: KspNativeArray=array) as seq:
+        for val in seq:
+            # code
+
+    See Also
+    --------
+    Break()
+    """
+
+    __maxlen = 20
+    idx = kInt(-1, '_for_loop_curr_idx')
+    arr = kArrInt(name='_for_loop_idx', size=__maxlen)
+
+    def maxlen(self, val):
+        For.__maxlen = val
+
+    def __init__(self, start: int=None, stop: int=None,
+                 step: int=None, arr: KspArray=None):
+        # if For.idx is None:
+        #     For.idx = 
+        #     For.arr = 
+        For.idx.inc()
+        self.__idx = For.arr[For.idx]
+        if self.__is_foreach(arr, start, stop, step):
+            # self.enumerate = enumerate
+            return
+        # if enumerate:
+        #     raise AttributeError(
+        #         'enumerate par accesible only in for_each loop')
+        self.__duck_typing(start, stop, step)
+        self.__func = self.__range_handler
+        args = list()
+        args.append(start)
+        if stop:
+            args.append(stop)
+        if step:
+            args.append(step)
+        self.__args = self.__parse_args(*args)
+        self.__start, self.__stop, self.__step = self.__args
+
+    def __is_foreach(self, arr, start, stop, step):
+        '''Returns True if arr is only argument'''
+        if not arr:
+            return False
+        if start or stop or step:
+            raise KspCondError(for_wrong_syntax_msg)
+        if not isinstance(arr, KspArray):
+            raise KspCondError(
+                'For loop accepts only KSP arrays.' +
+                f' Pasted {type(arr)}')
+        self.__func = self.__foreach_handler
+        self.__seq = arr
+        return True
+
+    def __check_duck_arg(self, arg, arg_name: str,
+                         requirement: int):
+        if not arg:
+            return
+        if not requirement:
+            raise KspCondError(for_wrong_arg_msg)
+        if not isinstance(arg, (int, KspIntVar)):
+            raise KspCondError(for_type_err_msg.format(
+                name=arg_name,
+                arg_typ=type(arg),
+                classes=(int, 'KSP int variable(%s)' % kInt)))
+
+    def __duck_typing(self, start, stop, step):
+        '''Checks types or range arguments.
+        Raises exception on non-int args'''
+        if not start:
+            raise KspCondError(
+                f'''has to be at least one arg:
+                start: [{int}, {kInt}] or arr: [{KspArray}]''')
+        self.__check_duck_arg(start, 'start', start)
+        self.__check_duck_arg(stop, 'stop', start)
+        self.__check_duck_arg(step, 'step', stop)
+
+    def __enter__(self):
+        '''Returns generator, depends on loop-type'''
+        return self.__func()
+
+    def __exit__(self, exc, value, trace):
+        '''Supresses Brake exceptions and generates
+        postfix (end) code'''
+        if exc is not None and exc is not KspCondBrake:
+            return
+        if isinstance(value, KspCondBrake):
+            self.__idx <<= len(self.__seq)
+            Output().put(f'{value}')
+        self.__generate_exit_code()
+        return True
+
+    def __generate_exit_code(self):
+        '''inc(self.__idx) if for, step line if range'''
+        if self.is_compiled():
+            if self.__func == self.__foreach_handler:
+                self.__idx.inc()
+            if self.__func == self.__range_handler:
+                self.__idx += self.__step
+            Output().put('end while')
+        For.idx.dec()
+
+    def __foreach_handler(self):
+        '''Uder tests returns iterator over self.__seq,
+        under compilation idx assignement and while cond lines'''
+        if not self.is_compiled():
+
+            for item in self.__seq.iter_runtime():
+                yield item
+            return
+
+        self.__idx <<= 0
+        Output().put(f'while({self.__idx.val} < {len(self.__seq)})')
+        out = self.__seq[self.__idx]
+        yield out
+
+        return True
+
+    def __parse_args(self, *args):
+        '''Prepares arguments for range() function'''
+        if len(args) == 1:
+            return (0, args[0], 1)
+        if len(args) == 2:
+            return (args[0], args[1], 1)
+        return args
+
+    def __range_handler(self):
+        '''Under tests returns generator over range(args) function
+        Under compilation idx assignement and while cond lines'''
+        if not self.is_compiled():
+            for i in range(*get_runtime(*self.__args)):
+                yield i
+            return
+        Output().put(f'{self.__idx.val} := {self.__start}')
+        Output().put(f'while({self.__idx.val} < {self.__stop})')
+        yield self.__idx
+        return
+
+
+class While(KSP):
+    """While loop can be translated to KSP.
+    Instead of For() can not handle Break() function yet.
+
+    As For(), If(), Else(), Select() and Case() is context
+    manager.
+
+    Returns
+    -------
+    self
+
+    Raises
+    ------
+    KspCondError
+
+    Example
+    -------
+    with While() as w:
+    ....while w(lambda x=x, y=y: x != y):
+    ........with If(y != 10):
+    ............check()
+    ............y(10)
+    ........x += 1
+    """
+
+    def __init__(self):
+        self.__count = 0
+
+    def __call__(self, condition: bool):
+        if callable(condition):
+            condition = condition()
+        self.__condition = condition
+        if not self.is_compiled():
+            if self.__condition:
+                return True
+            raise KspCondBrake()
+        if self.__count == 0:
+            self.set_bool(True)
+            Output().put(f'while({self.__condition.expand()})')
+            self.set_bool(False)
+            self.__count += 1
+            return True
+        raise KspCondBrake()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc, value, trace):
+        if exc is not None:
+            if exc is not KspCondBrake:
+                return
+        if self.is_compiled():
+            if isinstance(value, KspCondBrake):
+                if str(value) != '':
+                    raise KspCondError(
+                        'While loop can not be breaked')
+            Output().put('end while')
+        return True

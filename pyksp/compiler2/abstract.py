@@ -38,11 +38,27 @@ class KSP(metaclass=ABCMeta):
     __is_compiled = False
     __is_bool = False
     __in_init = True
+    __callback = None
 
     @staticmethod
     def is_compiled():
         '''check state (changes returns of KSP objects)'''
         return KSP.__is_compiled
+
+    @staticmethod
+    def set_callback(obj):
+        '''set callback to be counted by built-ins'''
+        if obj is None:
+            KSP.__callback = obj
+            return
+        if KSP.__callback is not None:
+            raise RuntimeError(f'callback {KSP.__callback} is oened yet')
+        KSP.__callback = obj
+
+    @staticmethod
+    def callback():
+        '''retrieve current callback'''
+        return KSP.__callback
 
     @staticmethod
     def set_compiled(val):
@@ -131,6 +147,7 @@ class IName(INameLocal):
     def __init__(self, name, prefix='', postfix='',
                  preserve=False):
         self._preserve = preserve
+        self._full = name
         if not preserve and self.is_compact() is True:
             name = self.get_compact_name(name)
         else:
@@ -149,6 +166,10 @@ class IName(INameLocal):
         compact = ''.join((symbols[ch & 0x1F] for ch
                            in hash.digest()[:5]))
         return compact
+
+    @property
+    def full(self):
+        return self._full
 
     @staticmethod
     def refresh():
@@ -178,6 +199,10 @@ class KspObject(KSP):
     def has_executable(self):
         '''True if has to return executable block'''
         return self._has_executable
+
+    @staticmethod
+    def _instances():
+        return KspObject.__instances
 
     @abstractmethod
     def __init__(self, name, name_prefix='', name_postfix='',

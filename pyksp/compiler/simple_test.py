@@ -29,7 +29,9 @@ class Handle:
     def __call__(self, **kwargs):
         Stack.put(self)
         Stack.append(self.stack)
+
         out = self.func(**kwargs)
+
         if self in self.stack:
             raise Exception(f'recursive call of {self} detected')
         Stack.pop()

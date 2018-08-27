@@ -46,6 +46,7 @@ from base_types import AstOperator
 from base_types import AstAddString
 
 from abstract import Output
+from abstract import SingletonMeta
 
 
 class kInt(KspIntVar):
@@ -200,19 +201,25 @@ class kArrInt(KspArray):
                  name=None,
                  size=None,
                  preserve=False,
-                 persist=False):
+                 persist=False,
+                 is_local=False):
+        if is_local:
+            has_init = False
+        else:
+            has_init = True
         if not name:
             name = f'kArrInt{kArrInt.names_count}'
             kArrInt.names_count += 1
         super().__init__(name, name_prefix='%',
                          name_postfix='',
                          preserve_name=preserve,
-                         has_init=True,
-                         is_local=False,
+                         has_init=has_init,
+                         is_local=is_local,
                          ref_type=(int, KspIntVar, AstOperator),
                          item_type=kInt,
                          size=size,
-                         seq=sequence)
+                         seq=sequence,
+                         def_val=0)
 
     def _get_compiled(self):
         return self.name()
@@ -235,19 +242,25 @@ class kArrReal(KspArray):
                  name=None,
                  size=None,
                  preserve=False,
-                 persist=False):
+                 persist=False,
+                 is_local=False):
+        if is_local:
+            has_init = False
+        else:
+            has_init = True
         if not name:
             name = f'kArrReal{kArrReal.names_count}'
             kArrReal.names_count += 1
         super().__init__(name, name_prefix='?',
                          name_postfix='',
                          preserve_name=preserve,
-                         has_init=True,
-                         is_local=False,
+                         has_init=has_init,
+                         is_local=is_local,
                          ref_type=(float, KspRealVar, AstOperator),
                          item_type=kReal,
                          size=size,
-                         seq=sequence)
+                         seq=sequence,
+                         def_val=0.0)
 
     def _get_compiled(self):
         return self.name()
@@ -270,19 +283,25 @@ class kArrStr(KspArray):
                  name=None,
                  size=None,
                  preserve=False,
-                 persist=False):
+                 persist=False,
+                 is_local=False):
+        if is_local:
+            has_init = False
+        else:
+            has_init = True
         if not name:
             name = f'kArrStr{kArrStr.names_count}'
             kArrStr.names_count += 1
         super().__init__(name, name_prefix='!',
                          name_postfix='',
                          preserve_name=preserve,
-                         has_init=True,
-                         is_local=False,
+                         has_init=has_init,
+                         is_local=is_local,
                          ref_type=(str, KspStrVar, AstOperator),
                          item_type=kStr,
                          size=size,
-                         seq=sequence)
+                         seq=sequence,
+                         def_val='')
 
     def _get_compiled(self):
         return self.name()
@@ -295,6 +314,15 @@ class kArrStr(KspArray):
         if self._persistent or self._read:
             out.append(f'make_persistent({self.name()})')
         return out
+
+
+def refresh_names_count():
+    kInt.names_count = 0
+    kStr.names_count = 0
+    kReal.names_count = 0
+    kArrInt.names_count = 0
+    kArrStr.names_count = 0
+    kArrReal.names_count = 0
 
 
 class kVar:
@@ -385,3 +413,81 @@ class kVar:
                                 size=self.size)
         raise TypeError('can be initialized only with:%s' %
                         (int, str, float, kInt, kStr, kReal, list))
+
+
+class kNone(kInt):
+
+    def __init__(self):
+        super().__init__(value=-1, name='None',
+                         preserve=False, is_local=True)
+
+    def _get_compiled(self):
+        return self._value
+
+    def _get_runtime(self):
+        return self._value
+
+    def _set_runtime(self, other):
+        raise NotImplementedError
+
+    def _set_compiled(self, other):
+        raise NotImplementedError
+
+    def inc(self):
+        raise NotImplementedError
+
+    def dec(self):
+        raise NotImplementedError
+
+
+class kFalse(kInt):
+
+    def __init__(self):
+        super().__init__(value=0, name='None',
+                         preserve=False, is_local=True)
+
+    def _get_compiled(self):
+        return self._value
+
+    def _get_runtime(self):
+        return self._value
+
+    def _set_runtime(self, other):
+        raise NotImplementedError
+
+    def _set_compiled(self, other):
+        raise NotImplementedError
+
+    def inc(self):
+        raise NotImplementedError
+
+    def dec(self):
+        raise NotImplementedError
+
+
+class kTrue(kInt):
+
+    def __init__(self):
+        super().__init__(value=1, name='None',
+                         preserve=False, is_local=True)
+
+    def _get_compiled(self):
+        return self._value
+
+    def _get_runtime(self):
+        return self._value
+
+    def _set_runtime(self, other):
+        raise NotImplementedError
+
+    def _set_compiled(self, other):
+        raise NotImplementedError
+
+    def inc(self):
+        raise NotImplementedError
+
+    def dec(self):
+        raise NotImplementedError
+
+    def __eq__(self, other):
+        return 0 < other
