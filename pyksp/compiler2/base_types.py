@@ -551,7 +551,7 @@ class KspVar(KspObject):
         '''
         if not isinstance(val, self.ref_type):
             raise TypeError(f'has to be one of: {self.ref_type}.' +
-                            f'val is of type({type(val)})')
+                            f'val ({val}) is of type({type(val)})')
         if isinstance(val, KspVar):
             val = val.val
         return val
@@ -588,9 +588,9 @@ class KspVar(KspObject):
         if not isinstance(other, self.ref_type):
             raise TypeError(f'has to be one of: {self.ref_type}.' +
                             f'other is of type({type(other)})')
-        if isinstance(other, AstBase):
+        if hasattr(other, 'get_value'):
             return other.get_value()
-        if isinstance(other, KspVar):
+        if hasattr(other, '_get_runtime'):
             return other._get_runtime()
         return other
 
@@ -740,7 +740,7 @@ class KspNumeric(KspVar):
         for item in cls.warning_types:
             if not isinstance(item, type):
                 raise TypeError(cls._warning_types_exc_str)
-        obj = super(KspNumeric, cls).__new__(cls)
+        obj = super().__new__(cls)
         # obj.__init__(*args, **kwargs)
         return obj
 
@@ -776,7 +776,7 @@ class KspNumeric(KspVar):
         raise ArithmeticError('use regular / instead')
 
     def _expand_other(self, other):
-        '''returns other, expanded via val property is is
+        '''returns other, expanded via val property if is
         instance of KspVar'''
         if isinstance(other, self.warning_types):
             raise self.TypeWarn(other)
@@ -947,27 +947,37 @@ class KspNumeric(KspVar):
         other = self._expand_other(other)
         return self.val >= other
 
+    # def __bool__(self):
+    #     if self.is_compiled():
+    #         return AstGt(self, 0)
+    #     if self._get_runtime() == 0:
+    #         return False
+    #     return True
+
 
 class KspIntVar(KspNumeric):
 
     def __truediv__(self, other):
+        self._warn_other(other)
         if self.is_compiled():
             return AstDiv(self, other)
-        other = self._expand_other(other)
-        return self.val / other
+        other = self._get_rutime_other(other)
+        return self._get_runtime() // other
 
     def __rtruediv__(self, other):
+        self._warn_other(other)
         if self.is_compiled():
             return AstDiv(other, self)
-        other = self._expand_other(other)
-        return self.val / other
+        other = self._get_rutime_other(other)
+        return self._get_runtime() // other
 
     def __itruediv__(self, other):
+        self._warn_other(other)
         if self.is_compiled():
             self._set_compiled(AstDiv(self, other))
             return self
-        other = self._expand_other(other)
-        self._set_runtime(self.val / other)
+        other = self._get_rutime_other(other)
+        self._set_runtime(self._get_runtime() // other)
         return self
 
     def __floordiv__(self, other):
@@ -1119,7 +1129,7 @@ class KspArray(KspVar):
         else:
             self._size = len(seq)
             self._cashed = [None] * len(seq)
-        return seq
+        return seq.copy()
 
     def _generate_init(self):
         '''returns declaration line and optional addition assignement
@@ -1329,6 +1339,17 @@ class KspArray(KspVar):
     def _generate_executable(self):
         raise NotImplementedError
 
+    def _sort(self, direction):
+        for idx in range(len(self._cashed)):
+            self._cashed[idx] = None
+        self._seq.sort()
+        if direction == 0:
+            return
+        new = list()
+        for idx in range(len(self._seq)):
+            new.append(self._seq.pop())
+        self._seq = new
+
 
 def get_val(*args):
     out = list()
@@ -1370,3 +1391,6 @@ def get_runtime(*args):
     if len(args) == 1:
         return out[0]
     return out
+
+
+print(issubclass(KspVar, KspObject))

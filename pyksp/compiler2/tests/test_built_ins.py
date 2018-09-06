@@ -17,11 +17,16 @@ from dev_tools import unpack_lines
 
 from callbacks import *
 from k_built_ins import *
+from bi_engine_par import *
+from bi_load_save import *
+from bi_midi import *
+from bi_misc import *
+from bi_notes_events import *
 
 from native_types import kInt
 from native_types import kArrInt
 
-from ui_system import kWidget
+from collections import OrderedDict
 
 my_cb_body = \
     '''on cb
@@ -44,12 +49,14 @@ control_2_line
 end on'''
 
 
+@t.skip
 class TestCallback(DevTest):
 
     def test_mycb(self):
-        my_cb = Callback('cb')
+        my_cb = Callback('cb', -1, ())
         my_cb.open()
         Output().put('body')
+        self.assertEqual(NI_CALLBACK_TYPE, -1)
         my_cb.close()
         my_cb.open()
         Output().put('body 2')
@@ -65,9 +72,12 @@ class TestCallback(DevTest):
 
         FunctionCallback.open()
         Output().put('function1 line')
-
+        self.assertEqual(NI_CALLBACK_TYPE,
+                         NI_CB_TYPE_RELEASE)
         FunctionCallback.open()
         Output().put('function2 line')
+        self.assertEqual(NI_CALLBACK_TYPE,
+                         NI_CB_TYPE_RELEASE)
         FunctionCallback.close()
 
         Output().put('function1 line')
@@ -75,6 +85,8 @@ class TestCallback(DevTest):
 
         Output().put('release close')
         ReleaseCallback.close()
+        self.assertEqual(NI_CALLBACK_TYPE,
+                         NI_CB_TYPE_INIT)
         self.assertEqual(Output().get(), ['function1 line',
                                           'function2 line',
                                           'function1 line'])
@@ -105,6 +117,11 @@ bar_line
 cb body is 4
 end on'''
 
+release_lines = \
+    '''on release
+release
+end on'''
+
 
 class TestWrapers(DevTest):
 
@@ -114,6 +131,7 @@ class TestWrapers(DevTest):
 
     def cb(self):
         Output().put(f'cb body is {self.var}')
+        self.var += 1
 
     def runTest(self):
 
@@ -126,173 +144,213 @@ class TestWrapers(DevTest):
             Output().put('bar_line')
 
         init(self.cb)
-
+        self.assertEqual(self.var, 4)
         self.assertEqual(
             unpack_lines(InitCallback.generate_body()), init_lines)
+        self.assertEqual(self.var, 5)
 
-
-class TestBuiltInID(DevTest):
-
-    class SomeId(BuiltInID):
-        pass
-
-    def runTest(self):
-        a = object()
-        a_id = BuiltInID('a_obj', a)
-        self.assertEqual(a_id._get_runtime(), 0)
-        self.assertEqual(a_id._get_compiled(), '$a_obj')
-        self.assertEqual(a_id.obj, a)
-        self.assertEqual(BuiltInID.get_by_id(a_id), a)
-        b = object()
-        b_id = self.SomeId('b_obj', b)
-        self.assertEqual(b_id._get_runtime(), 0)
-        self.assertEqual(b_id._get_compiled(), '$b_obj')
-        self.assertEqual(b_id.obj, b)
-        self.assertEqual(self.SomeId.get_by_id(b_id), b)
-        c = object()
-        c_id = BuiltInID('c_obj', c)
-        self.assertEqual(c_id._get_runtime(), 1)
-        BuiltInID.refresh()
-        with self.assertRaises(IndexError):
-            self.SomeId.get_by_id(b_id)
-        with self.assertRaises(IndexError):
-            BuiltInID.get_by_id(a_id)
-
-
-class TestBuiltIn(DevTest):
-
-    def test_init(self):
-        my_var = BuiltIn('my_var')
-        self.assertEqual(my_var._get_runtime(), 0)
-        self.assertEqual(my_var._get_compiled(), '$my_var')
-        self.assertEqual(BuiltInID.get_by_id(
-            my_var._get_runtime()), my_var)
-
-        my_var_int = BuiltIn('my_var_int', ret_type=kInt, ret_value=3)
-        self.assertEqual(my_var_int._get_runtime(), 3)
-        self.assertEqual(my_var_int._get_compiled(), '$my_var_int')
-
-        my_var_arr = BuiltIn('my_var_arr', ret_type=kArrInt,
-                             ret_value=[3, 3])
-        self.assertEqual(my_var_arr._get_runtime(), [3, 3])
-        self.assertEqual(my_var_arr._get_compiled(), '%my_var_arr')
-
-        self.assertEqual(KspObject.generate_all_inits(), [])
-
-    def test_calls(self):
-        all_cb = BuiltIn('all_cb')
-        only_init = BuiltIn('only_init', callbacks=(InitCallback,))
-        only_async = BuiltIn('only_async',
-                             callbacks=(AsyncCompleteCallback,))
-        init_async = BuiltIn('only_async',
-                             callbacks=(AsyncCompleteCallback,
-                                        InitCallback))
-
-        InitCallback.open()
-        only_init.val
-        all_cb.val
-        init_async.val
-        InitCallback.close()
-        only_init.val
-        all_cb.val
-        KSP.in_init(False)
-        with self.assertRaises(RuntimeError):
-            only_init.val
-
-        with self.assertRaises(RuntimeError):
-            only_async.val
-        with self.assertRaises(RuntimeError):
-            init_async.val
-        AsyncCompleteCallback.open()
-        only_async.val
-        init_async.val
-
-
-class TestControlPar(DevTest):
-
-    def runTest(self):
-        cpar = ControlPar('POS_X', 'x')
-        self.assertEqual(cpar._get_compiled(), '$CONTROL_PAR_POS_X')
-
-
-my_control_init = '''declare ui_my_control $x
-%_MyControl_ids[0] := get_ui_id($x)'''
-
-generated_null_control =\
-    '''declare %_MyControl_ids[3]
-declare ui_my_control $x
-%_MyControl_ids[0] := get_ui_id($x)
-declare ui_my_control $y
-%_MyControl_ids[1] := get_ui_id($y)
-declare ui_my_control $z
-%_MyControl_ids[2] := get_ui_id($z)
-declare %_MyControl_x[3] := (5, -1, 3)
-inc($_for_loop_curr_idx)
-%_for_loop_idx[$_for_loop_curr_idx] := 0
-while(%_for_loop_idx[$_for_loop_curr_idx] < 3)
-if(-1 # %_MyControl_x[%_for_loop_idx[$_for_loop_curr_idx]])
-set_control_par(%_MyControl_ids[%_for_loop_idx[$_for_loop_curr_idx]],\
- $CONTROL_PAR_POS_X, %_MyControl_x[%_for_loop_idx[$_for_loop_curr_idx]])
-end if
-%_for_loop_idx[$_for_loop_curr_idx] := %_for_loop_idx[\
-$_for_loop_curr_idx] + 1
-end while
-dec($_for_loop_curr_idx)'''
-
-# @t.skip
-
-
-class TestNativeControl(DevTest):
-
-    def setUp(self):
-        super().setUp()
-        # kNativeControl.refresh()
-
-    class MyControl(kNativeControl):
-        def _get_init_line(self):
-            return f'declare ui_my_control {self._get_compiled()}'
-
-    def test_null(self):
-        KSP.set_compiled(True)
-        x = self.MyControl(kInt(name='x', is_local=True))
-        self.assertEqual(x.id._get_runtime(), 0)
-        self.assertEqual(x.id._get_compiled(), '%_MyControl_ids[0]')
-        self.assertEqual(x.get_by_id(0), x)
-        self.assertEqual(x._get_runtime(), 0)
-        self.assertEqual(x._get_compiled(), '$x')
-        self.assertEqual(Output().get(), [])
-        # self.assertEqual(unpack_lines(
-        #     KspObject.generate_all_inits()), generated_null_control)
-
-        self.assertEqual(Output().get(), [])
-        x.x = 5
-        self.assertEqual(Output().get(), [])
-        # kNativeControl._init_is_generated = False
-        self.MyControl(kInt(name='y', is_local=True))
-        z = self.MyControl(kInt(name='z', is_local=True))
-        # y.x = 3
-        z.x = 3
-        self.maxDiff = None
-        self.assertEqual(unpack_lines(
-            KspObject.generate_all_inits()), generated_null_control)
-        self.assertEqual(Output().get(), [])
-        with self.assertRaises(NameError):
-            self.MyControl(kInt(name='x', is_local=True))
-
-    def test_widget(self):
-        KSP.set_compiled(True)
-        w = kWidget(x=10, y=20, width=90, height=80)
-        c = self.MyControl(kInt(name='c', is_local=True), parent=w, x=1)
-        # c.x = 2
-        # c.x = 5
-        c.pack(sticky='senw')
+        @release
+        def rls():
+            Output().put('release')
         self.assertEqual(
-            Output().get()[-1],
-            'set_control_par(%_MyControl_ids[4], $CONTROL_PAR_POS_X, 10)')
-        self.assertEqual(c.x._get_runtime(), 10)
-        self.assertEqual(c.y._get_runtime(), 20)
-        self.assertEqual(c.width._get_runtime(), 90)
-        self.assertEqual(c.height._get_runtime(), 80)
+            unpack_lines(ReleaseCallback.generate_body()), release_lines)
+        rls()
+        self.assertEqual(Output().pop(), 'release')
+
+
+class TestBuiltInClasses(DevTest):
+
+    def test_vars(self):
+        x = BuiltInIntVar('x', def_val=7)
+        self.assertEqual(x._get_runtime(), 7)
+        self.assertEqual(x._get_compiled(), '$x')
+        self.assertEqual(x.id, 0)
+        self.assertEqual(x.val, 7)
+        with self.assertRaises(NotImplementedError):
+            x <<= 4
+        var = kInt(x)
+        self.assertEqual(var.val, 7)
+
+        y = BuiltInRealVar('y', def_val=3.0,
+                           callbacks=(InitCallback, ReleaseCallback))
+        self.assertEqual(y._get_runtime(), 3.0)
+        self.assertEqual(y._get_compiled(), '~y')
+        self.assertEqual(y.id, 1)
+
+        y.set_value(2.1)
+        self.assertEqual(y.val, 2.1)
+
+        arr = BuiltInArrayInt('arr', size=4)
+        with self.assertRaises(NotImplementedError):
+            arr[2] = 3
+        self.assertEqual(arr.id, 2)
+        arr.set_value(2, 3)
+        self.assertEqual(arr[2], 3)
+        self.assertEqual(arr[2]._get_compiled(), '%arr[2]')
+
+        self.assertEqual(CURRENT_SCRIPT_SLOT._get_compiled(),
+                         '$CURRENT_SCRIPT_SLOT')
+
+    class MyFunc(BuiltInFunc):
+        def __init__(self, name: str, callbacks=all_callbacks,
+                     args: OrderedDict=None):
+            super().__init__(name, callbacks, args)
+            self._var = kInt(name=name)
+
+        def calculate(self, arg1, arg2):
+            if hasattr(arg1, '_get_runtime'):
+                arg1 = arg1._get_runtime()
+            if hasattr(arg2, '_get_runtime'):
+                arg2 = arg2._get_runtime()
+            return arg1 + arg2
+
+    class MyFuncInt(BuiltInFuncInt):
+        def __init__(self, name: str, callbacks=all_callbacks,
+                     args: OrderedDict=None):
+            super().__init__(name, callbacks, args)
+
+        def calculate(self, arg1, arg2):
+            if hasattr(arg1, '_get_runtime'):
+                arg1 = arg1._get_runtime()
+            if hasattr(arg2, '_get_runtime'):
+                arg2 = arg2._get_runtime()
+            return arg1 + arg2
+
+    def test_func(self):
+        x = self.MyFunc('my_func',
+                        args=OrderedDict(arg1=int, arg2=BuiltInIntVar))
+        self.assertEqual(x.id, 0)
+        bi = BuiltInIntVar('BI', def_val=1)
+
+        val = x(2, bi)
+        self.assertEqual(val._get_compiled(), 'my_func(2, $BI)')
+        self.assertEqual(val._get_runtime(), 3)
+        val = x(val, bi)
+        self.assertEqual(val._get_compiled(),
+                         'my_func(my_func(2, $BI), $BI)')
+        self.assertEqual(val._get_runtime(), 4)
+        y = self.MyFuncInt('y_func',
+                           args=OrderedDict(arg1=int, arg2=BuiltInIntVar))
+        self.assertEqual(y.id, 2)
+        val = y(x(1, bi), bi)
+        self.assertEqual(val._get_compiled(),
+                         'y_func(my_func(1, $BI), $BI)')
+        self.assertEqual(val._get_runtime(), 3)
+        KSP.set_compiled(True)
+        self.assertEqual((y(1, bi) + x(2, bi)).expand(),
+                         'y_func(1, $BI) + my_func(2, $BI)')
+
+        Output().refresh()
+        y(1, bi)
+        self.assertEqual(Output().get()[-1], 'y_func(1, $BI)')
+        Output().refresh()
+        y(x(1, bi), bi)
+        self.assertEqual(unpack_lines(Output().get()),
+                         'y_func(my_func(1, $BI), $BI)')
+
+    def test_message(self):
+        KSP.set_compiled(True)
+        message(3)
+        self.assertEqual(Output().pop(), 'message(3)')
+        message(2, 'string')
+        self.assertEqual(Output().pop(), 'message(2 & ", " & "string")')
+        message(2, 'string', sep=':')
+        with self.assertRaises(AttributeError):
+            message(2, 'string', sep='\n')
+        self.assertEqual(Output().pop(), 'message(2 & ":" & "string")')
+        set_controller(1, 5)
+        self.assertEqual(Output().pop(), 'set_controller(1, 5)')
+        self.assertEqual(CC[1]._get_runtime(), 5)
+
+        arr = kArrInt(sequence=list(range(11)))
+        self.assertEqual(arr._get_runtime(),
+                         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+        get_event_ids(arr)
+        self.assertEqual(arr._get_runtime(),
+                         [0, 1, 2, 3, 4, 5, 6, 0, 0, 0, 0])
+
+        Output().refresh()
+        seq = [1, 2, 3, 4]
+        arr1, arr2, arr3 = kArrInt(seq), kArrInt(seq), \
+            kArrInt([2, 3, 4, 5])
+        self.assertTrue(array_equal(arr1, arr2))
+        self.assertEqual(Output().pop(),
+                         'array_equal(%kArrInt1, %kArrInt2)')
+        self.assertFalse(array_equal(arr1, arr3)._get_runtime())
+        self.assertEqual(Output().pop(),
+                         'array_equal(%kArrInt1, %kArrInt3)')
+        self.assertEqual(num_elements(arr1)._get_runtime(), 4)
+        self.assertEqual(num_elements(arr1)._get_compiled(),
+                         'num_elements(%kArrInt1)')
+        self.assertEqual(search(arr3, 4)._get_runtime(), 2)
+        self.assertEqual(search(arr3, 4)._get_compiled(),
+                         'search(%kArrInt3, 4)')
+        x = kInt(4, 'x')
+        self.assertEqual(search(arr3, x)._get_compiled(),
+                         'search(%kArrInt3, $x)')
+        self.assertEqual(search(arr3, x)._get_runtime(), 2)
+        arr2[1]._set_runtime(5)
+        self.assertEqual(arr2._get_runtime(), [1, 5, 3, 4])
+        sort(arr2, 0)
+        self.assertEqual(arr2._get_runtime(), [1, 3, 4, 5])
+        sort(arr2, 3)
+        self.assertEqual(arr2._get_runtime(), [5, 4, 3, 1])
+
+        KSP.set_compiled(False)
+        self.assertTrue(get_key_color(0) == KEY_COLOR_NONE.id)
+        set_key_color(0, KEY_COLOR_BLUE)
+        self.assertFalse(get_key_color(0) == KEY_COLOR_NONE.id)
+        self.assertTrue(get_key_color(0) == KEY_COLOR_BLUE.id)
+        set_key_type(3, NI_KEY_TYPE_DEFAULT)
+        self.assertEqual(get_key_type(3), NI_KEY_TYPE_DEFAULT.id)
+        KSP.set_compiled(True)
+
+        self.assertEqual(get_key_name(2)._get_runtime(), '')
+        set_key_name(2, 'named')
+        self.assertEqual(get_key_name(2)._get_runtime(), 'named')
+        with self.assertRaises(RuntimeError):
+            set_key_pressed(1, 1)
+        set_key_pressed_support(1)
+        set_key_pressed(1, 1)
+        self.assertEqual(get_key_triggerstate(1)._get_runtime(), 1)
+        self.assertEqual(get_key_triggerstate(1).val,
+                         'get_key_triggerstate(1)')
+
+        self.assertEqual(get_engine_par(
+            ENGINE_PAR_RELEASE_TRIGGER, 1, 1, -1)._get_runtime(),
+            1)
+        self.assertEqual(get_engine_par_disp(
+            ENGINE_PAR_RELEASE_TRIGGER, 1, 1, -1)._get_runtime(),
+            'display')
+        set_engine_par(ENGINE_PAR_RELEASE_TRIGGER, 50, 1, 1, -1)
+        self.assertEqual(get_engine_par(
+            ENGINE_PAR_RELEASE_TRIGGER, 1, 1, -1)._get_runtime(),
+            50)
+        self.assertEqual(get_engine_par_disp(
+            ENGINE_PAR_RELEASE_TRIGGER, 1, 1, -1)._get_runtime(),
+            '50')
+        SET_CONDITION(NO_SYS_SCRIPT_RLS_TRIG)
+        self.assertEqual(Output().pop(),
+                         'SET_CONDITION(NO_SYS_SCRIPT_RLS_TRIG)')
+
+        pgs_create_key('key', 2)
+        self.assertEqual(Output().pop(),
+                         'pgs_create_key(key, 2)')
+        pgs_create_str_key('key', 2)
+        self.assertEqual(Output().pop(),
+                         'pgs_create_str_key(key, 2)')
+        self.assertEqual(pgs_key_exists('key')._get_runtime(), int(1))
+        self.assertEqual(pgs_str_key_exists('key')._get_runtime(), int(1))
+        with self.assertRaises(IndexError):
+            pgs_set_key_val('key', 2, 1)
+        pgs_set_key_val('key', 1, 1)
+        self.assertEqual(Output().pop(), 'pgs_set_key_val(key, 1, 1)')
+        self.assertEqual(pgs_get_key_val('key', 1)._get_runtime(), 1)
+        pgs_set_str_key_val('key', 1, 'string')
+        self.assertEqual(Output().pop(),
+                         'pgs_set_str_key_val(key, 1, "string")')
+        self.assertEqual(pgs_get_str_key_val('key', 1)._get_runtime(),
+                         'string')
 
 
 if __name__ == '__main__':

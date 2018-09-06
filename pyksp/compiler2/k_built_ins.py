@@ -1,12 +1,24 @@
-from abc import abstractmethod
-from functools import wraps
+# from abc import abstractmethod
+# from functools import wraps
+from functools import partialmethod
+import functools
+from inspect import signature
+from collections import OrderedDict
+# import re
 
-from abstract import KspObject
+from typing import Tuple
+
+
+# from abstract import KspObject
 from abstract import Output
 from abstract import KSP
+# from abstract import SingletonMeta
 
 from base_types import KspVar
 from base_types import KspArray
+from base_types import KspIntVar
+from base_types import KspStrVar
+from base_types import KspRealVar
 
 from native_types import kInt
 from native_types import kArrInt
@@ -15,13 +27,16 @@ from native_types import kReal
 from native_types import kArrReal
 from native_types import kNone
 
-from conditions_loops import For
-from conditions_loops import If
-from conditions_loops import check
-
-from ui_system import kWidget
 
 all_callbacks = object()
+
+
+def get_runtime_val(val):
+    if hasattr(val, '_get_runtime'):
+        return val._get_runtime()
+    if hasattr(val, 'get_value'):
+        return val.get_value()
+    return val
 
 
 def _all_subclasses(cls):
@@ -34,26 +49,60 @@ class Callback(KSP):
 
     __callbacks = list()
     __current = None
+    __id = int()
 
-    def __init__(self, header: str):
+    def __init__(self, header: str, cb_type: 'bCallbackVar',
+                 built_in_vars: Tuple[str]):
         Callback.__callbacks.append(self)
         self._header = header
         self.__lines = list()
+        self._type = cb_type
+        self.__functions = list()
+        self.__bvars = dict()
+        for var in built_in_vars:
+            self.__bvars[var] = -1
+
+    def add_function(self, function):
+        self.__functions.append(function)
 
     def open(self):
+        Callback.__id += 1
+        NI_CALLBACK_ID.set_value(Callback.__id)
+        NI_CALLBACK_TYPE.set_value(self._type)
         Output().set(self.__lines)
         self.set_callback(self)
 
-    def close(self):
+    def close(self, keep_type=None):
+        if keep_type:
+            NI_CALLBACK_TYPE.set_value(NI_CB_TYPE_INIT)
         Output().release()
         self.set_callback(None)
 
     def generate_body(self):
-        if not self.__lines:
+        if not self.__functions:
             return []
         out = list()
         out.append(f'on {self._header}')
+        # out.extend(self.__lines)
+        self.__lines.clear()
+        self.open()
+        for func in self.__functions:
+            sig = signature(func)
+            if not sig.parameters:
+                func()
+            else:
+                try:
+                    obj = sig.parameters['self']
+                    func(obj)
+                except AttributeError as e:
+                    raise RuntimeError(
+                        'probably, used as decorator of class method.' +
+                        ' Invoke as function with method name as' +
+                        ' argument. Example: init(self.method)' +
+                        'or use as decorator with no arguments passed\n' +
+                        f'original exception: {e}')
         out.extend(self.__lines)
+        self.close()
         out.append(f'end on')
         return out
 
@@ -93,8 +142,8 @@ class Control(KSP):
 
 class UiControlCallbackCl(Callback):
 
-    def __init__(self):
-        super().__init__('ui_control')
+    def __init__(self, cb_type):
+        super().__init__('ui_control', cb_type, ('control',))
         self.__controls = dict()
 
     def open(self, control: KspVar):
@@ -120,7 +169,7 @@ class UiControlCallbackCl(Callback):
 class FunctionCallbackCl(Callback):
 
     def __init__(self):
-        super().__init__('function')
+        super().__init__('function', -1, tuple())
         self.__root = None
         self.__levels = 0
 
@@ -132,7 +181,7 @@ class FunctionCallbackCl(Callback):
             self.__levels += 1
             return
         self.__root = self.callback()
-        self.__root.close()
+        self.__root.close(keep_type=True)
         self.set_callback(self)
 
     def close(self):
@@ -150,96 +199,29 @@ class FunctionCallbackCl(Callback):
         return []
 
 
-AsyncCompleteCallback = Callback('async_comlete')
-ControllerCallback = Callback('controller')
-InitCallback = Callback('init')
-ListenerCallback = Callback('listener')
-NoteCallback = Callback('note')
-PersistenceCallback = Callback('persistence_changed')
-PgsCallback = Callback('pgs_changed')
-PolyAtCallback = Callback('poly_at')
-ReleaseCallback = Callback('release')
-RpnCallback = Callback('rpn/nrpn')
-UiUpdateCallback = Callback('ui_update')
-UiControlCallback = UiControlCallbackCl()
-FunctionCallback = FunctionCallbackCl()
+class BuiltIn(KSP):
 
+    _id_count = int()
+    _instances = list()
 
-class BuiltInID(kInt):
-
-    def __init__(self, name: str, obj: object):
-        cls = type(self)
-        if '_instances' not in cls.__dict__:
-            setattr(cls, '_instances', list())
-        if '_count' not in cls.__dict__:
-            setattr(cls, '_count', int())
-
-        cls._instances.append(self)
-        self._obj = obj
-        super().__init__(value=self._count,
-                         name=name,
-                         preserve=False,
-                         is_local=True,
-                         persist=False)
-        cls._count += 1
-
-    @classmethod
-    def get_by_id(cls, idx):
-        if hasattr(idx, '_get_runtime'):
-            idx = idx._get_runtime()
-        return cls._instances[idx]._obj
+    def __init__(self, callbacks=all_callbacks):
+        self._id = BuiltIn._id_count
+        BuiltIn._instances.append(self)
+        BuiltIn._id_count += 1
+        self._callbacks = callbacks
+        # self.__def_val = def_val
 
     @property
-    def obj(self):
-        return self._obj
+    def id(self):
+        # if self.is_compiled():
+        #     return self.name()
+        return self._id
 
     @staticmethod
-    def refresh():
-        cls = BuiltInID
-        cls._instances = list()
-        cls._count = int()
-        subclasses = _all_subclasses(cls)
-        for _class in subclasses:
-            _class._instances = list()
-            _class._count = int()
-
-
-class BuiltIn(KspVar):
-
-    def __init__(self, name: str, callbacks=all_callbacks,
-                 ret_type: type=BuiltInID, ret_value: object=None):
-        self.name = name
-        ref_type, value = self._get_return_value(ret_type, ret_value)
-        name = value.name()
-        super().__init__(name,
-                         value=None,
-                         ref_type=ref_type,
-                         name_prefix='',
-                         name_postfix='',
-                         preserve_name=False,
-                         has_init=False,
-                         is_local=True,
-                         persist=False)
-        self._value_holder = value
-        self._callbacks = callbacks
-
-    def _get_return_value(self, ret_type, ret_value):
-        if ret_type is BuiltInID:
-            if ret_value:
-                raise TypeError(
-                    'is not alllowed to use ret_value within BuiltInID')
-            _id = BuiltInID(self.name, self)
-            return _id.ref_type, _id
-        if not ret_value:
-            val = ret_type(name=self.name)
-            return val.ref_type, val
-        if issubclass(ret_type, KspArray):
-            val = ret_type(name=self.name, sequence=ret_value,
-                           is_local=True)
-        else:
-            val = ret_type(name=self.name, value=ret_value,
-                           is_local=True)
-        return val.ref_type, val
+    def get_by_id(idx):
+        if hasattr(idx, '_get_runtime'):
+            idx = idx._get_runtime()
+        return BuiltIn._instances[idx]._obj
 
     def __rshift__(self, other):
         raise NotImplementedError('builtin object can not be assigned')
@@ -249,14 +231,6 @@ class BuiltIn(KspVar):
 
     def _generate_init(self):
         raise NotImplementedError
-
-    def _get_compiled(self):
-        self._check_callback()
-        return self._value_holder._get_compiled()
-
-    def _get_runtime(self):
-        self._check_callback()
-        return self._value_holder._get_runtime()
 
     def _set_runtime(self, val):
         raise NotImplementedError
@@ -270,274 +244,402 @@ class BuiltIn(KspVar):
             raise RuntimeError(
                 f'can be used only in {self._callbacks} callbacks')
 
-
-class NativeControlPar(KSP):
-
-    def __init__(self, fget, fset, arr_type, arr_name, control_par):
-        self._getter = fget
-        self._setter = fset
-        self.arr_type = arr_type
-        self.inits = dict()
-        self.arr_name = arr_name
-        self._control_par = control_par
-        self._assigned = False
-
-    @property
-    def control_par(self):
-        return self._control_par
-
-    def none_to_dict(self, obj):
-        self.inits[repr(obj)] = None
-
-    def init_array(self):
-        # print([val for key, val in self.inits.items()])
-        seq = list()
-        for key, val in self.inits.items():
-            if val is None:
-                seq.append(kNone())
-                continue
-            seq.append(val)
-        return self.arr_type(seq, name=self.arr_name)
-
-    def __get__(self, obj, cls):
-        if obj is None:
-            return self
-        return self._getter(obj)
-
-    def __set__(self, obj, val):
-        self._assigned = True
-        # print(f'set {val}')
-        if self.inits[repr(obj)] is None:
-            # print(f'self.inits[{repr(obj)}]')
-            self.inits[repr(obj)] = val
-        else:
-            self._control_par.set(obj.id, val)
-        self._setter(obj, val)
-
-    def set_raw(self, obj, val):
-        self._assigned = True
-        self._setter(obj, val)
-
-    @property
-    def assigned(self):
-        return self._assigned
-
-
-class kNativeControl(kWidget, KspVar):
-
-    _controls = list()
-    _ids_count = 0
-    _init_is_generated = False
-
     @staticmethod
     def refresh():
-        kNativeControl._controls = list()
-        kNativeControl._ids_count = 0
-        kNativeControl._init_is_generated = False
-        subclasses = _all_subclasses(kNativeControl)
-        for cls in subclasses:
-            if hasattr(cls, '_types_controls'):
-                cls._types_controls = list()
-            if hasattr(cls, '_ids'):
-                cls._ids = kArrInt(name=f'_{cls.__name__}_ids')
-        # NativeControlPar.refresh()
+        BuiltIn._id_count = int()
+        BuiltIn._instances = list()
 
-    def __init__(self, var, parent: object=None,
-                 x: int=None, y: int=None,
-                 width: int=None, height: int=None):
-        self._var = var
-        cls = self.__class__
 
-        kNativeControl._controls.append(self)
-        if not hasattr(cls, '_types_controls'):
-            cls._types_controls = list()
-        cls._types_controls.append(self)
-        cls_name = cls.__name__
-        if not hasattr(cls, '_ids'):
-            cls._ids = kArrInt(name=f'_{cls_name}_ids')
-        ids = cls._ids
+class BuilInVar(BuiltIn):
 
-        blocked = False
-        if not Output().blocked:
-            blocked = True
-            Output().blocked = True
-        ids.append(kNativeControl._ids_count)
-        if blocked:
-            Output().blocked = False
-        self._id = ids[-1]
-        # if 'x' not in cls.__dict__:
-        KspVar.__init__(self, var.name(),
-                        value=None,
-                        ref_type=var.ref_type,
-                        name_prefix='',
-                        name_postfix='',
-                        preserve_name=False,
-                        has_init=True,
-                        is_local=False,
-                        persist=False)
-        super().__init__(parent=parent,
-                         x=x,
-                         y=y,
-                         width=width,
-                         height=height)
+    def set_value(self, val):
+        self._value = val
 
-        if cls.x == kNativeControl.x:
-            cls.x = NativeControlPar(cls._get_x, cls._set_x,
-                                     kArrInt, f'_{cls_name}_x',
-                                     CONTROL_PAR_POS_X)
-        cls.x.none_to_dict(self)
-        if x:
-            self.x = x
-        if cls.y == kNativeControl.y:
-            cls.y = NativeControlPar(cls._get_y, cls._set_y,
-                                     kArrInt, f'_{cls_name}_y',
-                                     CONTROL_PAR_POS_X)
-        cls.y.none_to_dict(self)
-        if y:
-            self.y = y
-        if cls.width == kNativeControl.width:
-            cls.width = NativeControlPar(cls._get_width, cls._set_width,
-                                         kArrInt, f'_{cls_name}_width',
-                                         CONTROL_PAR_POS_X)
-        cls.width.none_to_dict(self)
-        if width:
-            self.width = width
-        if cls.height == kNativeControl.height:
-            cls.height = NativeControlPar(cls._get_height, cls._set_height,
-                                          kArrInt, f'_{cls_name}_height',
-                                          CONTROL_PAR_POS_X)
-        cls.height.none_to_dict(self)
-        if height:
-            self.height = height
 
-    def _get_x(self):
-        return self._x
+class BuiltInIntVar(BuilInVar, kInt):
+    ''''''
 
-    def _set_x(self, val):
-        self._x = val
+    def __init__(self, name: str, callbacks=all_callbacks,
+                 def_val: int=0):
+        BuiltIn.__init__(self, callbacks=callbacks)
+        kInt.__init__(self, value=def_val, name=name, preserve=False,
+                      is_local=True, persist=False)
 
-    def _get_y(self):
-        return self._y
 
-    def _set_y(self, val):
-        self._y = val
+class BuiltInRealVar(BuilInVar, kReal):
+    ''''''
 
-    def _get_width(self):
-        return self._width
+    def __init__(self, name: str, callbacks=all_callbacks,
+                 def_val: float=0.0):
+        BuiltIn.__init__(self, callbacks=callbacks)
+        kReal.__init__(self, value=def_val, name=name, preserve=False,
+                       is_local=True, persist=False)
 
-    def _set_width(self, val):
-        self._width = val
 
-    def _get_height(self):
-        return self._height
+class BuiltInArray(BuiltIn, KspArray):
 
-    def _set_height(self, val):
-        self._height = val
+    def __init__(self, callbacks=all_callbacks):
+        BuiltIn.__init__(self, callbacks=callbacks)
 
-    @staticmethod
-    def get_by_id(_id):
-        if isinstance(_id, kInt):
-            _id = _id._get_runtime()
-        return kNativeControl._controls[_id]
-
-    @property
-    def id(self):
-        return self._id
-
-    def _generate_executable(self):
+    def __setitem__(self, idx, val):
         raise NotImplementedError
 
+    def set_value(self, idx, value):
+        runtime_idx = idx
+        if hasattr(idx, '_get_runtime'):
+            runtime_idx = idx._get_runtime()
+        self._item_set_runtime(self, runtime_idx, value)
+        self._item_name(self, idx)
+
+    def append(self, val):
+        raise NotImplementedError
+
+    def extend(self, val):
+        raise NotImplementedError
+
+
+class BuiltInArrayInt(BuiltInArray, kArrInt):
+
+    def __init__(self, name, size, callbacks=all_callbacks):
+        BuiltInArray.__init__(self, callbacks=callbacks)
+        kArrInt.__init__(self, sequence=[0] * size,
+                         name=name, size=size,
+                         preserve=False, persist=False,
+                         is_local=True)
+
+
+class BuiltInArrayReal(BuiltInArray, kArrReal):
+
+    def __init__(self, name, size, callbacks=all_callbacks):
+        BuiltInArray.__init__(self, callbacks=callbacks)
+        kArrReal.__init__(self, sequence=[0.0] * size,
+                          name=name, size=size,
+                          preserve=False, persist=False,
+                          is_local=True)
+
+
+class BuiltInFunc(BuiltIn):
+
+    def __init__(self, name: str, callbacks=all_callbacks,
+                 args: OrderedDict=None, def_ret=None,
+                 no_parentesis=False):
+        self._name = name
+        self._args = args
+        self._def_ret = def_ret
+        self._no_parentesis = no_parentesis
+        super().__init__(callbacks=callbacks)
+        partialmethod(self.__init__, self._args)
+        functools.partial
+
+    def _check_arg(self, key, val):
+        native_val = val
+        arg = self._args[key]
+        if hasattr(val, 'get_value'):
+            val = val.get_value()
+        if arg is int:
+            ref = (int, KspIntVar)
+        elif arg is str:
+            ref = (str, KspStrVar)
+        elif arg is float:
+            ref = (float, KspRealVar)
+        else:
+            ref = arg
+        if not isinstance(val, ref):
+            raise TypeError(f'arg "{key}" has to be of type {ref}. ' +
+                            f'pasted {type(val)}')
+        return native_val
+
+    def __call__(self, *args):
+        if not self._args:
+            return self._build()
+        passed = list()
+        for arg, key in zip(args, self._args.keys()):
+            passed.append(self._check_arg(key, arg))
+        line = self._name + '('
+        for idx, arg in enumerate(passed):
+            if idx != 0:
+                line += ', '
+            if isinstance(arg, str):
+                arg = f'"{arg}"'
+            if hasattr(arg, '_get_compiled'):
+                arg = arg._get_compiled()
+            line += f'{arg}'
+        line += ')'
+
+        return self._build(line, passed)
+
     @staticmethod
-    def _generate_init():
-        # print('_generate_init')
-        if kNativeControl._init_is_generated:
-            return []
-        kNativeControl._init_is_generated = True
-        out = list()
-        for inst in kNativeControl._controls:
-            out.extend([inst._get_init_line(),
-                        f'{inst._id._get_compiled()} := get_ui_id' +
-                        f'({inst._var._get_compiled()})'])
-        subclasses = [kNativeControl]
-        subclasses.extend(_all_subclasses(kNativeControl))
+    def _remove_line(self, line):
+        if not self.is_compiled():
+            return line
+        line_l = Output().pop()
+        if line_l == line:
+            return line
+        Output().put(line_l)
+        return line
 
-        for cls in subclasses:
-            if not hasattr(cls, '_ids'):
-                continue
-            # print(f'generating params for {cls}')
-            arrays = dict()
-            params = dict()
-            # print('items in dict:')
-            for key, val in cls.__dict__.items():
-                # print(f'key={key}, val={val}')
-                if isinstance(val, NativeControlPar) and \
-                        val.assigned:
-                    arrays[key] = val.init_array()
-                    params[key] = val.control_par
-            Output().set(out)
-            for arr in arrays.values():
-                for line in arr._generate_init():
-                    Output().put(line)
-                arr._generate_init = lambda: []
-            with For(len(cls._ids)) as seq:
-                for idx in seq:
-                    for par, arr in arrays.items():
-                        arr_val = arr[idx]
-                        with If(arr_val != kNone()):
-                            check()
-                            params[par].set(cls._ids[idx], arr_val)
-            Output().release()
-        return out
+    def _build(self, line=None, args=None):
+        if not self._def_ret:
+            val = self.calculate(*args)
+        else:
+            val = self.calculate()
+        self._var._set_runtime(val)
+        if not line:
+            line = f'{self._name}()'
+        self._var._get_compiled = lambda line=line, self=self:\
+            BuiltInFunc._remove_line(self, line)
+        self._var.name = self._var._get_compiled
+        if self.is_compiled():
+            Output().put(line)
+        return self._var
 
-    @abstractmethod
-    def _get_init_line(self):
-        pass
-
-    def _get_compiled(self):
-        return self._var._get_compiled()
-
-    def _set_compiled(self, value):
-        return self._var._set_compiled(value)
-
-    def name(self):
-        return self._var.name()
-
-    def _get_runtime(self):
-        return self._var._get_runtime()
-
-    def _set_runtime(self, value):
-        return self._var._set_runtime(value)
-
-    def __getitem__(self, idx):
-        return self._var.__getitem__(idx)
-
-    def __setitem__(self, idx, value):
-        return self._var.__setitem__(idx, value)
-
-    def iter_runtime(self):
-        return self._var.iter_runtime()
-
-    def iter_runtime_fast(self):
-        return self._var.iter_runtime_fast()
+    # @abstractmethod
+    def calculate(self):
+        return self._def_ret
 
 
-class ControlPar(BuiltIn):
+class BuiltInFuncInt(BuiltInFunc):
 
-    def __init__(self, par_name: str, control_attr_name: str):
-        self._attr_name = control_attr_name
-        super().__init__(f'CONTROL_PAR_{par_name}')
-
-    def set(self, control_id: int, value: int):
-        control = kNativeControl.get_by_id(control_id)
-        cls = control.__class__
-        attr = getattr(cls, self._attr_name)
-        attr.set_raw(control, value)
-        # setattr(control, self._attr_name, value)
-        if hasattr(value, '_get_compiled'):
-            value = value._get_compiled()
-        Output().put(
-            f'set_control_par({control_id._get_compiled()}, ' +
-            f'{self._get_compiled()}, {value})')
+    def __init__(self, name: str, callbacks=all_callbacks,
+                 args: OrderedDict=None, def_ret=None,
+                 no_parentesis=False):
+        BuiltInFunc.__init__(self, name=name,
+                             callbacks=callbacks,
+                             args=args,
+                             no_parentesis=no_parentesis,
+                             def_ret=def_ret)
+        self._var = kInt(name=name,
+                         preserve=False, is_local=True,
+                         persist=False)
 
 
-CONTROL_PAR_POS_X = ControlPar('POS_X', 'x')
+class BuiltInFuncStr(BuiltInFunc):
+
+    def __init__(self, name: str, callbacks=all_callbacks,
+                 args: OrderedDict=None, def_ret=None,
+                 no_parentesis=False):
+        BuiltInFunc.__init__(self, name=name,
+                             callbacks=callbacks,
+                             args=args,
+                             no_parentesis=no_parentesis,
+                             def_ret=def_ret)
+        self._var = kStr(name=name,
+                         preserve=False, is_local=True,
+                         persist=False)
+
+
+class BuiltInFuncReal(BuiltInFunc):
+
+    def __init__(self, name: str, callbacks=all_callbacks,
+                 args: OrderedDict=None, def_ret=None,
+                 no_parentesis=False):
+        BuiltInFunc.__init__(self, name=name,
+                             callbacks=callbacks,
+                             args=args,
+                             no_parentesis=no_parentesis,
+                             def_ret=def_ret)
+        self._var = kReal(name=name,
+                          preserve=False, is_local=True,
+                          persist=False)
+
+
+exit = BuiltInFuncInt('exit', no_parentesis=True,
+                      def_ret=kNone())
+reset_ksp_timer = BuiltInFuncInt('reset_ksp_timer', no_parentesis=True,
+                                 def_ret=kNone())
+ignore_controller = BuiltInFuncInt('ignore_controller',
+                                   no_parentesis=True, def_ret=kNone())
+
+
+class MessageFunc(BuiltInFuncInt):
+
+    def __init__(self, *args):
+        super().__init__('message', callbacks=all_callbacks,
+                         def_ret=kNone())
+        # self._old_call = BuiltInFuncInt.__call__
+
+    def __call__(self, *args, sep: str=', '):
+        self._check_sep(sep)
+        line = 'message('
+        for idx, arg in enumerate(args):
+            if idx != 0:
+                line += f' & "{sep}" & '
+            if isinstance(arg, str):
+                arg = f'"{arg}"'
+            if hasattr(arg, '_get_compiled'):
+                arg = arg._get_compiled()
+            if hasattr(arg, 'expand'):
+                arg = arg.expand()
+            line += f'{arg}'
+        line += ')'
+        return self._build(line=line, args=None)
+
+    def _check_sep(self, sep):
+        for char in sep:
+            if char in ('\n', '\r', '\t', '\v'):
+                raise AttributeError(
+                    f'symbol {repr(char)} is not allowed')
+
+
+message = MessageFunc()
+
+
+class bCallbackVar(BuiltInIntVar):
+    pass
+
+
+NI_CALLBACK_ID = bCallbackVar('NI_CALLBACK_ID')
+NI_CALLBACK_TYPE = bCallbackVar('NI_CALLBACK_TYPE')
+NI_CB_TYPE_ASYNC_OUT = bCallbackVar('NI_CB_TYPE_ASYNC_OUT')
+NI_CB_TYPE_CONTROLLER = bCallbackVar('NI_CB_TYPE_CONTROLLER')
+NI_CB_TYPE_INIT = bCallbackVar('NI_CB_TYPE_INIT')
+NI_CB_TYPE_LISTENER = bCallbackVar('NI_CB_TYPE_LISTENER')
+NI_CB_TYPE_NOTE = bCallbackVar('NI_CB_TYPE_NOTE')
+NI_CB_TYPE_PERSISTENCE_CHANGED = \
+    bCallbackVar('NI_CB_TYPE_PERSISTENCE_CHANGED')
+NI_CB_TYPE_PGS = bCallbackVar('NI_CB_TYPE_PGS')
+NI_CB_TYPE_POLY_AT = bCallbackVar('NI_CB_TYPE_POLY_AT')
+NI_CB_TYPE_RELEASE = bCallbackVar('NI_CB_TYPE_RELEASE')
+NI_CB_TYPE_RPN = bCallbackVar('NI_CB_TYPE_RPN')
+NI_CB_TYPE_NRPN = bCallbackVar('NI_CB_TYPE_NRPN')
+NI_CB_TYPE_UI_CONTROL = bCallbackVar('NI_CB_TYPE_UI_CONTROL')
+NI_CB_TYPE_UI_UPDATE = bCallbackVar('NI_CB_TYPE_UI_UPDATE')
+NI_CB_TYPE_MIDI_IN = bCallbackVar('NI_CB_TYPE_MIDI_IN')
+
+AsyncCompleteCallback = Callback('async_comlete',
+                                 NI_CB_TYPE_ASYNC_OUT,
+                                 ('NI_ASYNC_EXIT_STATUS', 'NI_ASYNC_ID'))
+ControllerCallback = Callback('controller',
+                              NI_CB_TYPE_CONTROLLER,
+                              ('CC_NUM',))
+InitCallback = Callback('init',
+                        NI_CB_TYPE_INIT,
+                        tuple())
+ListenerCallback = Callback('listener',
+                            NI_CB_TYPE_LISTENER,
+                            ('NI_SIGNAL_TYPE',))
+NoteCallback = Callback('note',
+                        NI_CB_TYPE_NOTE,
+                        ('EVENT_NOTE', 'EVENT_VELOCITY',
+                         'EVENT_ID'))
+PersistenceCallback = Callback('persistence_changed',
+                               NI_CB_TYPE_PERSISTENCE_CHANGED,
+                               tuple())
+PgsCallback = Callback('pgs_changed',
+                       NI_CB_TYPE_PGS, tuple())
+PolyAtCallback = Callback('poly_at',
+                          NI_CB_TYPE_POLY_AT,
+                          ('POLY_AT_NUM',))
+ReleaseCallback = Callback('release',
+                           NI_CB_TYPE_RELEASE,
+                           ('EVENT_NOTE', 'EVENT_VELOCITY',
+                            'EVENT_ID'))
+MidiCallback = Callback('midi_in',
+                        NI_CB_TYPE_MIDI_IN,
+                        ('MIDI_COMMAND', 'MIDI_CHANNEL',
+                            'MIDI_BYTE_1', 'MIDI_BYTE_2'))
+RpnCallback = Callback('rpn',
+                       NI_CB_TYPE_RPN,
+                       ('RPN_ADDRESS', 'RPN_VALUE'))
+NrpnCallback = Callback('nrpn',
+                        NI_CB_TYPE_NRPN,
+                        ('RPN_ADDRESS', 'RPN_VALUE'))
+UiUpdateCallback = Callback('ui_update',
+                            NI_CB_TYPE_UI_UPDATE,
+                            tuple())
+UiControlCallback = UiControlCallbackCl(
+    NI_CB_TYPE_UI_CONTROL)
+FunctionCallback = FunctionCallbackCl()
+
+
+CURRENT_SCRIPT_SLOT = BuiltInIntVar('CURRENT_SCRIPT_SLOT')
+GROUPS_SELECTED = BuiltInArrayInt('GROUPS_SELECTED', 700)
+NI_ASYNC_EXIT_STATUS = BuiltInIntVar('NI_ASYNC_EXIT_STATUS',
+                                     callbacks=(AsyncCompleteCallback,))
+NI_ASYNC_ID = BuiltInIntVar('NI_ASYNC_ID',
+                            callbacks=(AsyncCompleteCallback,))
+NI_BUS_OFFSET = BuiltInIntVar('NI_BUS_OFFSET')
+NUM_GROUPS = BuiltInIntVar('NUM_GROUPS')
+NUM_OUTPUT_CHANNELS = BuiltInIntVar('NUM_OUTPUT_CHANNELS')
+NUM_ZONES = BuiltInIntVar('NUM_ZONES')
+PLAYED_VOICES_INST = BuiltInIntVar('PLAYED_VOICES_INST')
+PLAYED_VOICES_TOTAL = BuiltInIntVar('PLAYED_VOICES_TOTAL')
+
+
+class bPathVar(BuiltInIntVar):
+    pass
+
+
+GET_FOLDER_LIBRARY_DIR = bPathVar('GET_FOLDER_LIBRARY_DIR')
+GET_FOLDER_FACTORY_DIR = bPathVar('GET_FOLDER_FACTORY_DIR')
+GET_FOLDER_PATCH_DIR = bPathVar('GET_FOLDER_PATCH_DIR')
+
+
+class bTmProVar(BuiltInIntVar):
+    pass
+
+
+NI_VL_TMPRO_STANDARD = bTmProVar('NI_VL_TMPRO_STANDARD')
+NI_VL_TMRPO_HQ = bTmProVar('NI_VL_TMRPO_HQ')
+REF_GROUP_IDX = BuiltInIntVar('REF_GROUP_IDX')
+ALL_GROUPS = BuiltInIntVar('ALL_GROUPS')
+ALL_EVENTS = BuiltInIntVar('ALL_EVENTS')
+
+
+KEY_DOWN = BuiltInArrayInt('KEY_DOWN', 128)
+KEY_DOWN_OCT = BuiltInArrayInt('KEY_DOWN_OCT', 12)
+DISTANCE_BAR_START = BuiltInIntVar('DISTANCE_BAR_START',
+                                   callbacks=(NoteCallback,))
+DURATION_BAR = BuiltInIntVar('DURATION_BAR')
+DURATION_QUARTER = BuiltInIntVar('DURATION_QUARTER')
+DURATION_EIGHTH = BuiltInIntVar('DURATION_EIGHTH')
+DURATION_SIXTEENTH = BuiltInIntVar('DURATION_SIXTEENTH')
+DURATION_QUARTER_TRIPLET = BuiltInIntVar('DURATION_QUARTER_TRIPLET')
+DURATION_EIGHTH_TRIPLET = BuiltInIntVar('DURATION_EIGHTH_TRIPLET')
+DURATION_SIXTEENTH_TRIPLET = BuiltInIntVar('DURATION_SIXTEENTH_TRIPLET')
+ENGINE_UPTIME = BuiltInIntVar('ENGINE_UPTIME')
+KSP_TIMER = BuiltInIntVar('KSP_TIMER')
+NI_SONG_POSITION = BuiltInIntVar('NI_SONG_POSITION')
+NI_TRANSPORT_RUNNING = BuiltInIntVar('NI_TRANSPORT_RUNNING')
+SIGNATURE_NUM = BuiltInIntVar('SIGNATURE_NUM')
+SIGNATURE_DENOM = BuiltInIntVar('SIGNATURE_DENOM')
+
+
+class bTempoUnitVar(BuiltInIntVar):
+    pass
+
+
+NI_SYNC_UNIT_ABS = bTempoUnitVar('NI_SYNC_UNIT_ABS')
+NI_SYNC_UNIT_WHOLE = bTempoUnitVar('NI_SYNC_UNIT_WHOLE')
+NI_SYNC_UNIT_WHOLE_TRIPLET = bTempoUnitVar('NI_SYNC_UNIT_WHOLE_TRIPLET')
+NI_SYNC_UNIT_HALF = bTempoUnitVar('NI_SYNC_UNIT_HALF')
+NI_SYNC_UNIT_HALF_TRIPLET = bTempoUnitVar('NI_SYNC_UNIT_HALF_TRIPLET')
+NI_SYNC_UNIT_QUARTER = bTempoUnitVar('NI_SYNC_UNIT_QUARTER')
+NI_SYNC_UNIT_QUARTER_TRIPLET = bTempoUnitVar(
+    'NI_SYNC_UNIT_QUARTER_TRIPLET')
+NI_SYNC_UNIT_8TH = bTempoUnitVar('NI_SYNC_UNIT_8TH')
+NI_SYNC_UNIT_8TH_TRIPLET = bTempoUnitVar('NI_SYNC_UNIT_8TH_TRIPLET')
+NI_SYNC_UNIT_16TH = bTempoUnitVar('NI_SYNC_UNIT_16TH')
+NI_SYNC_UNIT_16TH_TRIPLET = bTempoUnitVar('NI_SYNC_UNIT_16TH_TRIPLET')
+NI_SYNC_UNIT_32ND = bTempoUnitVar('NI_SYNC_UNIT_32ND')
+NI_SYNC_UNIT_32ND_TRIPLET = bTempoUnitVar('NI_SYNC_UNIT_32ND_TRIPLET')
+NI_SYNC_UNIT_64TH = bTempoUnitVar('NI_SYNC_UNIT_64TH')
+NI_SYNC_UNIT_64TH_TRIPLET = bTempoUnitVar('NI_SYNC_UNIT_64TH_TRIPLET')
+NI_SYNC_UNIT_256TH = bTempoUnitVar('NI_SYNC_UNIT_256TH')
+NI_SYNC_UNIT_ZONE = bTempoUnitVar('NI_SYNC_UNIT_ZONE')
+NOTE_DURATION = BuiltInArrayInt('NOTE_DURATION', 128)
+
+
+class bListenerConst(BuiltInIntVar):
+    pass
+
+
+NI_SIGNAL_TRANSP_STOP = bListenerConst('NI_SIGNAL_TRANSP_STOP')
+NI_SIGNAL_TRANSP_START = bListenerConst('NI_SIGNAL_TRANSP_START')
+NI_SIGNAL_TIMER_MS = bListenerConst('NI_SIGNAL_TIMER_MS')
+NI_SIGNAL_TIMER_BEAT = bListenerConst('NI_SIGNAL_TIMER_BEAT')
+NI_SIGNAL_TYPE = bListenerConst('NI_SIGNAL_TYPE',
+                                callbacks=(ListenerCallback,))
+
+NI_MATH_PI = BuiltInRealVar('NI_MATH_PI')
+NI_MATH_E = BuiltInRealVar('NI_MATH_E')

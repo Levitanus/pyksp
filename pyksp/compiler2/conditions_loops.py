@@ -11,6 +11,8 @@ from abstract import SingletonMeta
 from native_types import kInt
 from native_types import kArrInt
 
+from dev_tools import unpack_lines
+
 
 class KspCondError(Exception):
     """Exception tells user he's doing wrong"""
@@ -166,6 +168,7 @@ class Else(KSP):
     def __init__(self, condition=None):
 
         Output().callable_on_put = None
+        # Output().put('Else Init')
         self.__if_count = 0
         self.__condition = condition
         self.__if_result = self.is_after_if()
@@ -176,6 +179,7 @@ class Else(KSP):
         return
 
     def __enter__(self):
+        # Output().put('else enter')
         return self.__func()
 
     def is_after_if(self):
@@ -187,7 +191,7 @@ class Else(KSP):
             raise KspCondError('has to be right after If()')
         for item in if_result:
             self.__if_count += 1
-            if self.is_compiled():
+            if self.is_compiled() and Output().blocked is not True:
                 if Output().pop() != 'end if':
                     raise\
                         KspCondError(
@@ -197,6 +201,7 @@ class Else(KSP):
 
     def __is_else(self):
         """Checks the condition and puts 'else' to Output()"""
+        # self.__if_result = self.is_after_if()
         if not self.is_compiled():
             if self.__if_result:
                 # If.__condition = False
@@ -414,17 +419,18 @@ class For(KSP):
     """
 
     __maxlen = 20
-    idx = kInt(-1, '_for_loop_curr_idx')
-    arr = kArrInt(name='_for_loop_idx', size=__maxlen)
+    idx = None
+    arr = None
 
     def maxlen(self, val):
         For.__maxlen = val
 
     def __init__(self, start: int=None, stop: int=None,
                  step: int=None, arr: KspArray=None):
-        # if For.idx is None:
-        #     For.idx = 
-        #     For.arr = 
+        if For.idx is None:
+            For.idx = kInt(-1, '_for_loop_curr_idx')
+            For.arr = kArrInt(name='_for_loop_idx', size=For.__maxlen)
+        self._out_touched = False
         For.idx.inc()
         self.__idx = For.arr[For.idx]
         if self.__is_foreach(arr, start, stop, step):
@@ -488,6 +494,9 @@ class For(KSP):
     def __exit__(self, exc, value, trace):
         '''Supresses Brake exceptions and generates
         postfix (end) code'''
+        if self._out_touched:
+            Output().blocked = False
+            self._out_touched = False
         if exc is not None and exc is not KspCondBrake:
             return
         if isinstance(value, KspCondBrake):
@@ -509,16 +518,21 @@ class For(KSP):
     def __foreach_handler(self):
         '''Uder tests returns iterator over self.__seq,
         under compilation idx assignement and while cond lines'''
-        if not self.is_compiled():
-
-            for item in self.__seq.iter_runtime():
-                yield item
-            return
-
         self.__idx <<= 0
-        Output().put(f'while({self.__idx.val} < {len(self.__seq)})')
-        out = self.__seq[self.__idx]
-        yield out
+        if self.is_compiled():
+            Output().put(f'while({self.__idx.val} < {len(self.__seq)})')
+        for idx in range(len(self.__seq)):
+            if idx > 0 and self.is_compiled():
+                self._out_touched = True
+                Output().blocked = True
+            self.__idx._set_runtime(idx)
+            item = self.__seq[self.__idx]
+            yield item
+        if self._out_touched:
+            Output().blocked = False
+            self._out_touched = False
+        return
+        # yield out
 
         return True
 
@@ -533,14 +547,22 @@ class For(KSP):
     def __range_handler(self):
         '''Under tests returns generator over range(args) function
         Under compilation idx assignement and while cond lines'''
-        if not self.is_compiled():
-            for i in range(*get_runtime(*self.__args)):
-                yield i
-            return
-        Output().put(f'{self.__idx.val} := {self.__start}')
-        Output().put(f'while({self.__idx.val} < {self.__stop})')
-        yield self.__idx
+        self.__idx <<= self.__start
+        if self.is_compiled():
+            # Output().put(f'{self.__idx.val} := {self.__start}')
+            Output().put(f'while({self.__idx.val} < {self.__stop})')
+        for i in range(*get_runtime(*self.__args)):
+            self.__idx._set_runtime(i)
+            if i > get_runtime(self.__start) and self.is_compiled():
+                self._out_touched = True
+                Output().blocked = True
+            yield self.__idx
+        if self._out_touched:
+            self._out_touched = False
+            Output().blocked = False
         return
+        # yield self.__idx
+        # return
 
 
 class While(KSP):
@@ -570,8 +592,12 @@ class While(KSP):
 
     def __init__(self):
         self.__count = 0
+        self._blocked = False
 
     def __call__(self, condition: bool):
+        if self.__count and not Output().blocked:
+            self._blocked = True
+            Output().blocked = True
         if callable(condition):
             condition = condition()
         self.__condition = condition
@@ -579,18 +605,24 @@ class While(KSP):
             if self.__condition:
                 return True
             raise KspCondBrake()
-        if self.__count == 0:
+        if self.__condition.get_value():
             self.set_bool(True)
             Output().put(f'while({self.__condition.expand()})')
             self.set_bool(False)
             self.__count += 1
             return True
+        if self._blocked:
+            self._blocked = False
+            Output().blocked = False
         raise KspCondBrake()
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc, value, trace):
+        if self._blocked:
+            self._blocked = False
+            Output().blocked = False
         if exc is not None:
             if exc is not KspCondBrake:
                 return

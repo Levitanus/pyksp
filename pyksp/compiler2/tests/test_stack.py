@@ -105,7 +105,7 @@ class TestStackFrameArray(DevTest):
         self.assertEqual(f_arr[idx]._get_runtime(), 3)
 
         with For(arr=f_arr) as s:
-            for i in s:
+            for idx, i in enumerate(s):
                 self.assertEqual(
                     i.val,
                     '%kArrInt0[%_for_loop_idx[$_for_loop_curr_idx] + 2]')
@@ -135,7 +135,7 @@ class TestStack(DevTest):
             '%_stack_test_arr[$kInt0 + 0 + ' +
             '%_stack_test_idx[$_stack_test_pointer]]')
         with self.assertRaises(IndexError):
-            print(returned[idx + 1].val)
+            returned[idx + 1].val
         stack.pop()
 
         returned = stack.push(kLoc(int, 5))[0]
@@ -149,7 +149,7 @@ class TestStack(DevTest):
                          '%_stack_test_arr[$kInt1 + 0 + ' +
                          '%_stack_test_idx[$_stack_test_pointer]]')
         with self.assertRaises(IndexError):
-            print(returned[idx + 1].val)
+            returned[idx + 1].val
 
     # @t.skip
     def test_push(self):
@@ -177,7 +177,7 @@ class TestStack(DevTest):
                 self.assertEqual(
                     var._get_compiled(),
                     '%_stack_test_arr[%_for_loop_idx[' +
-                    f'$_for_loop_curr_idx] + {2+idx} + ' +
+                    f'$_for_loop_curr_idx] + 2 + ' +
                     '%_stack_test_idx[$_stack_test_pointer]]')
                 self.assertEqual(var._get_runtime(),
                                  arr[idx]._get_runtime())
@@ -187,6 +187,7 @@ class TestStack(DevTest):
         stack.push(kLoc(int), kLoc(int, 3), kLoc(int))
         self.assertEqual(unpack_lines(Output().get()), push_lvl2_output)
 
+    # @t.skip
     def test_pop(self):
         KSP.set_compiled(True)
         stack = Stack('test',
@@ -198,6 +199,7 @@ class TestStack(DevTest):
         stack.pop()
         self.assertEqual(Output().pop(), 'dec($_stack_test_pointer)')
 
+    # @t.skip
     def test_empty(self):
         stack = Stack('test',
                       kArrInt,
@@ -228,7 +230,7 @@ end while
 dec($_for_loop_curr_idx)'''
 
 
-@t.skip
+# @t.skip
 class TestMultiStack(DevTest):
 
     def runTest(self):
@@ -266,11 +268,11 @@ class TestMultiStack(DevTest):
                          '%_stack_test_int_idx[$_stack_test_int_pointer]]')
         self.assertEqual(_int2._get_runtime(), 2)
         self.assertEqual(_int_arr[0].val,
-                         '%_stack_test_int_arr[2 + ' +
+                         '%_stack_test_int_arr[0 + 2 + ' +
                          '%_stack_test_int_idx[$_stack_test_int_pointer]]')
         self.assertEqual(_int_arr[0]._get_runtime(), 3)
         self.assertEqual(_int_arr[1].val,
-                         '%_stack_test_int_arr[3 + ' +
+                         '%_stack_test_int_arr[1 + 2 + ' +
                          '%_stack_test_int_idx[$_stack_test_int_pointer]]')
         self.assertEqual(_int_arr[1]._get_runtime(), 4)
 
@@ -283,11 +285,11 @@ class TestMultiStack(DevTest):
                          '%_stack_test_str_idx[$_stack_test_str_pointer]]')
         self.assertEqual(_str2._get_runtime(), '2')
         self.assertEqual(_str_arr[0].val,
-                         '!_stack_test_str_arr[2 + ' +
+                         '!_stack_test_str_arr[0 + 2 + ' +
                          '%_stack_test_str_idx[$_stack_test_str_pointer]]')
         self.assertEqual(_str_arr[0]._get_runtime(), '3')
         self.assertEqual(_str_arr[1].val,
-                         '!_stack_test_str_arr[3 + ' +
+                         '!_stack_test_str_arr[1 + 2 + ' +
                          '%_stack_test_str_idx[$_stack_test_str_pointer]]')
         self.assertEqual(_str_arr[1]._get_runtime(), '4')
 
@@ -303,12 +305,12 @@ class TestMultiStack(DevTest):
         self.assertEqual(_real2._get_runtime(), 2.0)
         self.assertEqual(
             _real_arr[0].val,
-            '?_stack_test_real_arr[2 + ' +
+            '?_stack_test_real_arr[0 + 2 + ' +
             '%_stack_test_real_idx[$_stack_test_real_pointer]]')
         self.assertEqual(_real_arr[0]._get_runtime(), 3.0)
         self.assertEqual(
             _real_arr[1].val,
-            '?_stack_test_real_arr[3 + ' +
+            '?_stack_test_real_arr[1 + 2 + ' +
             '%_stack_test_real_idx[$_stack_test_real_pointer]]')
         self.assertEqual(_real_arr[1]._get_runtime(), 4.0)
 

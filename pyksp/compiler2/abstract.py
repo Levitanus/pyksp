@@ -3,7 +3,7 @@ from abc import abstractmethod
 import hashlib
 
 
-class SingletonMeta(type):
+class SingletonMeta(ABCMeta):
     '''Singleton metaclass'''
     def __init__(cls, *args, **kw):
         cls.instance = None
@@ -183,7 +183,7 @@ class KspObject(KSP):
     translated to code'''
 
     comments = KspBoolProp()
-    __instances = list()
+    _instances = list()
 
     @property
     def has_init(self):
@@ -201,8 +201,8 @@ class KspObject(KSP):
         return self._has_executable
 
     @staticmethod
-    def _instances():
-        return KspObject.__instances
+    def instances():
+        return KspObject._instances
 
     @abstractmethod
     def __init__(self, name, name_prefix='', name_postfix='',
@@ -221,9 +221,12 @@ class KspObject(KSP):
         else:
             self.name = IName(name, name_prefix, name_postfix,
                               preserve_name)
-        self.__has_init = has_init
-        self.__has_executable = has_executable
-        KspObject.__instances.append(self)
+        if has_init:
+            print(f'new object {self} with name "{name}" pasted')
+        self._has_init = has_init
+        # print(f'has init = {has_init}')
+        self._has_executable = has_executable
+        KspObject._instances.append(self)
 
     @abstractmethod
     def _generate_init(self):
@@ -237,10 +240,13 @@ class KspObject(KSP):
     def generate_all_inits():
         '''return init lines for every instance marked to
         generate init block'''
+        print('GENERATE_ALL_INITS:')
+        print('instances:', KspObject.instances())
         out = list()
-        for inst in KspObject.__instances:
-            if not inst.__has_init:
+        for inst in KspObject.instances():
+            if not inst._has_init:
                 continue
+            print(f'instance {inst.name()} has init')
             inst_init = inst._generate_init()
             if inst_init is None:
                 continue
@@ -254,8 +260,8 @@ class KspObject(KSP):
         '''return init lines for every instance marked to
         generate executable block'''
         out = list()
-        for inst in KspObject.__instances:
-            if not inst.__has_executable:
+        for inst in KspObject.instances():
+            if not inst._has_executable:
                 continue
             inst_exec = inst._generate_executable()
             if inst_exec is None:
@@ -268,7 +274,8 @@ class KspObject(KSP):
     @staticmethod
     def refresh():
         '''clear all instances'''
-        KspObject.__instances = list()
+        print('refreshed')
+        KspObject._instances = list()
 
 
 class Output(metaclass=SingletonMeta):

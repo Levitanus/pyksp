@@ -132,10 +132,6 @@ class StackFrame(KSP):
                     with For(var._size) as seq:
                         for val in seq:
                             arr[val + idx + start_idx] <<= arr.default
-                    if self.is_compiled():
-                        for var_idx in range(var._size):
-                            arr[var_idx + idx + start_idx]._set_runtime(
-                                arr.default)
                         idx += var._size
                 else:
                     arr[idx + start_idx] <<= arr.default
@@ -150,11 +146,6 @@ class StackFrame(KSP):
                 with For(arr=var) as seq:
                     for val in seq:
                         arr[idx + start_idx] <<= val
-                        if not self.is_compiled():
-                            idx += 1
-                if self.is_compiled():
-                    for item in var.iter_runtime():
-                        arr[idx + start_idx]._set_runtime(item)
                         idx += 1
                 continue
             arr[idx + start_idx] <<= var

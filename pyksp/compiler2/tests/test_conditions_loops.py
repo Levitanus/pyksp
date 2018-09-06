@@ -44,6 +44,8 @@ case(3)
 end select
 end select'''
 
+# @t.skip
+
 
 class TestIf(DevTest):
 
@@ -85,6 +87,8 @@ class TestIf(DevTest):
             out.append('True')
 
         self.assertEqual(out.pop(), 'True')
+
+# @t.skip
 
 
 class TestSelect(DevTest):
@@ -209,8 +213,9 @@ class TestForEach(DevTest, t.TestCase):
                             check()
                             y <<= val2
                             with self.subTest():
-                                self.assertEqual(
-                                    idx2, break_indicies[idx])
+                                if not KSP.is_compiled():
+                                    self.assertEqual(
+                                        idx2, break_indicies[idx])
                         with Else():
                             check()
                             Break()
@@ -283,10 +288,12 @@ class TestForRange(DevTest, t.TestCase):
         self.assertTrue(For(x))
         self.assertTrue(For(arrX[0]))
 
+    # @t.skip
     def test_start_out(self):
         KSP.set_compiled(False)
         self.start()
 
+    # @t.skip
     def test_start_return(self):
         KSP.set_compiled(True)
         self.start()
@@ -305,10 +312,12 @@ class TestForRange(DevTest, t.TestCase):
             out = unpack_lines(self.code)
             self.assertEqual(out, start_string)
 
+    # @t.skip
     def test_stop_out(self):
         KSP.set_compiled(False)
         self.stop()
 
+    # @t.skip
     def test_stop_return(self):
         KSP.set_compiled(True)
         self.stop()
@@ -327,10 +336,12 @@ class TestForRange(DevTest, t.TestCase):
             out = unpack_lines(self.code)
             self.assertEqual(out, stop_string)
 
+    # @t.skip
     def test_step_out(self):
         KSP.set_compiled(False)
         self.step()
 
+    # @t.skip
     def test_step_return(self):
         KSP.set_compiled(True)
         self.step()
@@ -358,6 +369,7 @@ $x := $x + 1
 end while'''
 
 
+# @t.skip
 class TestWhile(DevTest, t.TestCase):
 
     def setUp(self):
@@ -388,9 +400,8 @@ class TestWhile(DevTest, t.TestCase):
                     check()
                     self.y <<= 10
                 self.x += 1
-        if not KSP.is_compiled():
-            self.assertEqual(self.x.val, self.y.val)
-        else:
+        self.assertEqual(self.x._get_runtime(), self.y._get_runtime())
+        if KSP.is_compiled():
             out = unpack_lines(self.code)
             self.assertEqual(out, while_string)
 

@@ -15,7 +15,8 @@ from abstract import KspObject
 
 from dev_tools import unpack_lines
 
-from ui_system import *
+from pyksp.compiler2.bi_ui_controls import *
+# from pyksp.compiler2.bi_ui_controls import CONTROL_PAR_POS_X
 
 null_lines = \
     '''set_control_par($INST_ICON_ID,$CONTROL_PAR_HIDE,\
@@ -48,6 +49,7 @@ class TestMainWindow(DevTest):
             kMainWindow(width=630)
 
 
+# @t.skip
 class TestWidgetGrid(DevTest):
 
     def runTest(self):
@@ -82,6 +84,7 @@ class TestWidgetGrid(DevTest):
         self.assertEqual(ceil_1_1[3], 90 / 3 * 2 + 5)
 
 
+# @t.skip
 class TestWidget(DevTest):
 
     def setUp(self):
@@ -91,27 +94,31 @@ class TestWidget(DevTest):
         self.root = kWidget(mw, mw.x, mw.y, mw.width, mw.height)
         self.root.add_grid(2, 3, 5, 5, 5, 5)
 
-    def runTest(self):
+    def test_widgets(self):
         w = kWidget()
-        with self.assertRaises(AttributeError):
-            w.x
-        with self.assertRaises(AttributeError):
-            w.y
-        with self.assertRaises(AttributeError):
-            w.width
-        with self.assertRaises(AttributeError):
-            w.height
+        with self.assertRaises(kParVarGetError):
+            w.x.val
+        with self.assertRaises(kParVarGetError):
+            w.y.val
+        with self.assertRaises(kParVarGetError):
+            w.width.val
+        with self.assertRaises(kParVarGetError):
+            w.height.val
         with self.assertRaises(RuntimeError):
             w.pack()
         with self.assertRaises(RuntimeError):
             w.grid(0, 0)
         with self.assertRaises(RuntimeError):
             w.place()
-        with self.assertRaises(AttributeError):
+        with self.assertRaises(kParVarGetError):
             w.add_grid()
 
         y_sh = 5
-        w.x, w.y, w.width, w.height = 0, y_sh, 100, 100
+        w.x <<= 0
+        w.y <<= y_sh
+        w.width <<= 100
+        w.height <<= 100
+
         w.add_grid(10, y_sh)
 
         ch_packed = kWidget(w)
@@ -179,6 +186,13 @@ class TestWidget(DevTest):
         self.assertEqual(ch_placed.y, 20 + y_sh)
         self.assertEqual(ch_placed.width, 100)
         self.assertEqual(ch_placed.height, 50)
+
+        button = kButton(parent=ch_placed)
+        button.pack(sticky='ns')
+        self.assertEqual(button.x.val, 12)
+        self.assertEqual(button.y.val, 25)
+        self.assertEqual(button.width.val, 85)
+        self.assertEqual(button.height.val, 50)
 
 
 if __name__ == '__main__':

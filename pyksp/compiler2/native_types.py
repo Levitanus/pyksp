@@ -63,7 +63,6 @@ class kInt(KspIntVar):
         if not name:
             name = f'kInt{kInt.names_count}'
             kInt.names_count += 1
-
         super().__init__(name, value=value,
                          ref_type=(int, KspIntVar, AstOperator),
                          name_prefix='$', name_postfix='',
@@ -415,7 +414,7 @@ class kVar:
                         (int, str, float, kInt, kStr, kReal, list))
 
 
-class kNone(kInt):
+class kNone(kInt, metaclass=SingletonMeta):
 
     def __init__(self):
         super().__init__(value=-1, name='None',

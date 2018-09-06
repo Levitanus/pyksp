@@ -12,8 +12,9 @@ from abstract import KSP
 
 from native_types import refresh_names_count
 from k_built_ins import Callback
-from k_built_ins import BuiltInID
+from k_built_ins import BuiltIn
 # from functions import Function
+from pyksp.compiler2.bi_ui_controls import refresh as gui_refresh
 
 
 class DevTest(t.TestCase):
@@ -21,19 +22,21 @@ class DevTest(t.TestCase):
     def setUp(self):
         KspObject.refresh()
         Output().refresh()
-        IName.refresh()
         Callback.refresh()
         # Function.refresh()
-        BuiltInID.refresh()
+        BuiltIn.refresh()
         refresh_names_count()
+        IName.refresh()
+        gui_refresh()
         KSP.refresh()
 
     def tearDown(self):
         KspObject.refresh()
         Output().refresh()
-        IName.refresh()
         Callback.refresh()
         # Function.refresh()
-        BuiltInID.refresh()
+        BuiltIn.refresh()
         refresh_names_count()
+        IName.refresh()
+        gui_refresh()
         KSP.refresh()
