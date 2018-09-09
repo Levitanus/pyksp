@@ -1,0 +1,392 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>GUI system &mdash; pyksp 0.0.8 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Compilation and logging" href="logging_compilation.html" />
+    <link rel="prev" title="KSP built-ins" href="built_ins.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> pyksp
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="features_table.html">Features (or SKSP vs pyksp)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datatypes.html">Datatypes and “syntax”</a></li>
+<li class="toctree-l1"><a class="reference internal" href="callbacks_functions.html">callbacks and functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="condition_loops.html">Conditions adn Loops</a></li>
+<li class="toctree-l1"><a class="reference internal" href="built_ins.html">KSP built-ins</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">GUI system</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#kwidget">kWidget</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#add-grid">add_grid()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pack">pack()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#grid">grid()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#place">place()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#place-pct">place_pct()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#childs">childs</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#native-controls">Native controls</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#subclassing-widgets">Subclassing Widgets</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="logging_compilation.html">Compilation and logging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deprecated.html">They killed …. You, bastards! (deprecated concepts)</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pyksp</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>GUI system</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/gui_system.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="gui-system">
+<h1>GUI system<a class="headerlink" href="#gui-system" title="Permalink to this headline">¶</a></h1>
+<blockquote class="epigraph">
+<div><em>“It’s personal painful corn. So GUI has been done at the first quele.”</em></div></blockquote>
+<p>The folowing widgets can be used as simple old ui_controls:</p>
+<ul class="simple">
+<li>kButton</li>
+<li>kSlider(min: int, max: int)</li>
+<li>kSwitch</li>
+<li>kKnob(min: int, max: int, display_ratio)</li>
+<li>kMenu</li>
+<li>kLabel</li>
+<li>kLevelMeter</li>
+<li>kTable(size: int, val_range: int)</li>
+<li>kValueEdit(min_val: int, max_val: int, display_ratio: int)</li>
+<li>kTextEdit</li>
+<li>kWaveForm</li>
+<li>kXy(size: int)</li>
+<li>kFileSelector</li>
+</ul>
+<p>But much more fun can be taken, within using of <code class="docutils literal notranslate"><span class="pre">kWidget</span></code> class.</p>
+<div class="section" id="kwidget">
+<h2>kWidget<a class="headerlink" href="#kwidget" title="Permalink to this headline">¶</a></h2>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">native controls are subclasses of kWidget, so they has the same methods</p>
+</div>
+<p>Is a base class for all controls, as native, as well as future complex <code class="docutils literal notranslate"><span class="pre">preprocessor</span></code> controls.</p>
+<p>It’s pretty like tkInter Frame or qt QWidget.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">kWidget</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">WidgetMeta</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;base class for all KSP widgets, including built-ins like</span>
+<span class="sd">    kButton or kLabel (ui_button &amp; ui_label). Behaves like tkinter Frame.</span>
+<span class="sd">    Can be parented by kMainWindow or another kWidget instances&#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">:</span> <span class="nb">object</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="bp">None</span><span class="p">:</span>
+</pre></div>
+</div>
+<div class="section" id="add-grid">
+<h3>add_grid()<a class="headerlink" href="#add-grid" title="Permalink to this headline">¶</a></h3>
+<p>makes ‘ceils’ in borders of widget. Childs can be placed inside them.
+offsets mean pixels from <strong>widget’s</strong> sides to the sides of the grid</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">add_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">columns</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">rows</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+             <span class="n">top_offset</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">bottom_offset</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+             <span class="n">left_offset</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">right_offset</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+</pre></div>
+</div>
+<p><strong>Within parent specified, several methods becomes available:</strong></p>
+</div>
+<div class="section" id="pack">
+<h3>pack()<a class="headerlink" href="#pack" title="Permalink to this headline">¶</a></h3>
+<p>puts widget in the borders of parent. Sticky can cosists of ‘nswe’.</p>
+<ul class="simple">
+<li>with one side selected places border of widget to the side.</li>
+<li>with ‘ne’, ‘nw’, ‘se’, ‘sw’ places widget to the corner</li>
+<li>with ‘ns’, ‘we’, ‘nswe’, and similar combinations stretches widget to borders of parent</li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">pack</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sticky</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="grid">
+<h3>grid()<a class="headerlink" href="#grid" title="Permalink to this headline">¶</a></h3>
+<p>places object to the grid ceil (zerobased) or ceils if columnspan or rowspan are used.
+offsets are pixels from the <strong>ceil</strong> sides to the control sides.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">grid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">column</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">row</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+         <span class="n">columnspan</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">rowspan</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+         <span class="n">top_offset</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">bottom_offset</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+         <span class="n">left_offset</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">right_offset</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="place">
+<h3>place()<a class="headerlink" href="#place" title="Permalink to this headline">¶</a></h3>
+<p>place widget depends on parent position.</p>
+<ul class="simple">
+<li>x, y, width, height are counted in pixels</li>
+<li>x_pct, y_pct, width_pct, height_pct – in percents</li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">place</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+          <span class="n">width</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+          <span class="n">x_pct</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">y_pct</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+          <span class="n">width_pct</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+          <span class="n">height_pct</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="place-pct">
+<h3>place_pct()<a class="headerlink" href="#place-pct" title="Permalink to this headline">¶</a></h3>
+<p>the same as <code class="docutils literal notranslate"><span class="pre">place()</span></code>, but all arguments are in percents</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">place_pct</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+              <span class="n">width</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="childs">
+<h3>childs<a class="headerlink" href="#childs" title="Permalink to this headline">¶</a></h3>
+<p>universal property, returns list of all childs objects <em>(!not ids)</em> (including preprocessor widgets)</p>
+</div>
+</div>
+<div class="section" id="native-controls">
+<h2>Native controls<a class="headerlink" href="#native-controls" title="Permalink to this headline">¶</a></h2>
+<p>Some changes has been made to native controls:</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">look carefully at the code below:</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">button</span> <span class="o">=</span> <span class="n">kButton</span><span class="p">()</span> <span class="c1"># != declare ui_button $button</span>
+<span class="n">x</span> <span class="o">&lt;&lt;=</span> <span class="n">button</span> <span class="c1"># Error!</span>
+<span class="n">x</span> <span class="o">&lt;&lt;=</span> <span class="n">button</span><span class="o">.</span><span class="n">var</span> <span class="c1"># ok!</span>
+<span class="n">x</span> <span class="o">&lt;&lt;=</span> <span class="n">button</span><span class="o">.</span><span class="n">value</span> <span class="c1"># ok!</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>Opposite to KSP, returned object is not an valuable variable, it’s KspNativeControl instance. So if You need to access the variable, represents ui_control, use control.var attribute.</li>
+<li>But there is no situation, var is really needed, because all native functions, that accept control variables now are methods of specific control object. For example,  there is no built_in function <code class="docutils literal notranslate"><span class="pre">add_menu_item(menu,</span> <span class="pre">string,</span> <span class="pre">value)</span></code>, there is method <code class="docutils literal notranslate"><span class="pre">menu.add_item(string,</span> <span class="pre">value)</span></code>.</li>
+<li>Also, control par value is bounded to the control var.</li>
+<li>Id of control can be retrieved within control.id attribute. Id is the same variable object as other KSP variables, so if You want to print it’s value, use control.id.val</li>
+<li>Also, id is item of array %_all_ui_ids, which is made automatically.</li>
+<li>Also, every subclass of KspNativeControl has it’s own array of ids, can be retrieved by cls.ids. It can be useful to subclass desired control for not using additional array for getting id’s of particular controls group.</li>
+<li>Also in testing purpose (do not use it in production) <code class="docutils literal notranslate"><span class="pre">compiler.bi_ui_controls.ControlId</span></code> class can be imported. it has static method to retrieve control object from it’s id.</li>
+<li>parameters x, y, width, height can be assigned as constant for a first time in the init callback. Even with assigning within KSP variable, they will be applied without additional lines, in global for-loop, sets all them to controls. If the first assignment is done by set_control_par() func, line will be added.</li>
+</ul>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">if control par has not been set, spetial error will be raised. Even at compilation (shoudnt it?)</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">x, y, width and height parameters are unique, because they are assigned almost everytime. If other params (especcially strings) are made this way, there will not be economy. I’m still thinking if can be done something better, than invocation os set_control_par() in For loop on the cls.ids array.</p>
+</div>
+<div class="admonition tip">
+<p class="first admonition-title">Tip</p>
+<p class="last">functions set_control_par, get_control_par etc. can accept shorhand of CONTROL_PAR, placed as <code class="docutils literal notranslate"><span class="pre">'string'</span></code>. For example: <code class="docutils literal notranslate"><span class="pre">set_control_par(control.id,</span> <span class="pre">'text',</span> <span class="pre">'my</span> <span class="pre">control')</span></code>.</p>
+</div>
+<div class="admonition caution">
+<p class="first admonition-title">Caution</p>
+<p class="last">there is no syntax, shorter the listed above for assigning parameter to id (like it is in SublimeKSP: id -&gt; param)</p>
+</div>
+<p>default (see special at the top of page) arguments per native control object initialisation:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+             <span class="n">persist</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">preserve</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+             <span class="n">parent</span><span class="p">:</span> <span class="nb">object</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+             <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="subclassing-widgets">
+<h2>Subclassing Widgets<a class="headerlink" href="#subclassing-widgets" title="Permalink to this headline">¶</a></h2>
+<p>I reccomended this approach, but it hasn’t been tested at all yet.</p>
+<p>The problems appears in the fact of contructing controls via metaclasses (also within <code class="docutils literal notranslate"><span class="pre">__call__</span></code> method). So, something can be unavalable imside the __init__ of control. The best way – is to subclass the both: metaclass of particular control class, and the class itself. But it’s…. <em>durty</em>.</p>
+<p>So, till this section is not changed my recomendation for subclassing is just subclassing, withoud doing anything in init, or, at least without changing the __init__ signature. And via calling the super().__init__() of course.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">about the signature: it definitely can be longer than original, but not shorter %)</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="logging_compilation.html" class="btn btn-neutral float-right" title="Compilation and logging" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="built_ins.html" class="btn btn-neutral" title="KSP built-ins" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Levitanus.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.0.8',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

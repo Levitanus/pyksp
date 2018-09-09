@@ -1,125 +1,211 @@
-import os.path
-import sys
-import re
 import time
+import os
+import sys
+import textwrap
+import codecs
+import pyperclip
 
-import callbacks_generated as on
-import callbacks as cb
 from abstract import KspObject
-from interfaces import IOutput
+from abstract import Output
+from abstract import IName
+from abstract import KSP
 
-sys.path.append(os.path.dirname(__file__))
-sys.path.append(os.path.join(os.path.dirname(__file__), 'ksp_compiler3'))
-from ksp_compiler3 import ksp_compiler
+from native_types import refresh_names_count
+from k_built_ins import Callback
+from k_built_ins import InitCallback
+from callbacks import persistence_changed
+from k_built_ins import BuiltIn
+# from functions import Function
+from bi_ui_controls import refresh as gui_refresh
+from conditions_loops import For
+from functions import Function
+from functions import FuncStack
+from bi_ui_controls import KspNativeControlMeta
+from bi_misc import kLog
 
 
-class Script:
+def refresh_all():
+    '''clears the Output()
+    calls refresh methods of:
+    BuiltIn
+    IName
+    For
+    KSP
+    calls native_types.refresh_names_count()
+    and bi_ui_controls.refresh()
     '''
-    Main class providing compilation.
-    Has to be unique per main module
+    KspObject.refresh()
+    # Callback.refresh()
+    # Function.refresh()
+    BuiltIn.refresh()
+    refresh_names_count()
+    IName.refresh()
+    gui_refresh()
+    For.refresh()
+    Output().refresh()
+    KSP.refresh()
+    # FuncStack().refr()
 
-    Usage:
-        script = Script(file-name, [name=None, width=None, height=None,
-             skin_offset=None, use_nils=True])
-        script.compile([insert_comments])
+
+class kScript:
+    '''Is used for generating code of all API calls used in project.
+    All KSP objects, attempted to appear in code has to be placed inside
+    script main method.
+
+    args:
+    - out_file can be as str filename with .txt ending as well as
+        Kscript.clipboard
+    if filename is not full path, the __main__.__file__ path will be used.
+    if out_file is Kscript.clipboard, compiled code will be copied to the
+        exchange buffer
+
+    - title is script title to be set via set_script_title() func
+
+    -if compact is True, all variable names will be hashed
+
+    - with max_line_length being not None, lines with
+        length > max_line_length will be wrapped to fit it.
+        currently, lines with "quoted strings" are not wrapped
+
+    - indents and docstrings are out of work
+
+    Example:
+    script = kScript(r'C:/file.txt',
+                         'myscript', max_line_length=70, compact=True)
+    def foo():
+        mw = kMainWindow()
+        buttons_area = kWidget(parent=mw)
+        buttons_area.place_pct(20, 10, 50, 80)
+        ba_bg = kLabel(parent=buttons_area)
+        ba_bg.pack(sticky='nswe')
+        ba_bg.text <<= ''
+    script.main = foo
+    script.compile()
     '''
+    clipboard = object()
 
-    def __init__(self, file_name, name=None, width=None, height=None,
-                 skin_offset=None, use_nils=True):
-        self.file = file_name
-        self.name = name
-        self.width = width
-        use_width = True
-        if width is None:
-            self.width = 633
-            use_width = False
-        assert(self.width >= 633), 'width can not be less than 633px'
-        self.height = height
-        use_height = True
-        if height is None:
-            use_height = False
-            assert(int(skin_offset) == skin_offset),\
-                'skin_offset has to be int'
-            assert(skin_offset >= 0), 'skin_offset can not be less than 0'
-        self.skin_offset = skin_offset
-        self.use_nils = use_nils
-
-        self.init_lines = self._initialize(use_width, use_height)
-
-    def _initialize(self, use_width, use_height):
-        code = list()
-        if self.name is not None:
-            code.append('set_script_title("%s")' % self.name)
-        if use_width is True:
-            code.append('set_ui_width_px(%s)' % self.width)
-        if use_height is True:
-            code.append('set_ui_height_px(%s)' % self.height)
-        if self.skin_offset is not None:
-            code.append('set_skin_offset(%s)' % self.skin_offset)
-
-        return code
-
-    def compile(self, insert_comments=False):
-        KspObject.comments = insert_comments
-
-        code = list()
-        code.append('on init')
-        code.extend(KspObject.generate_init())
-        code.extend(on.init.generate_code())
-        code.extend(self.init_lines)
-        code.append('end on')
-        code.extend(cb.Callbacks.generate_code())
-        code.extend(KspObject.generate_executable())
-
-        code = self._prepare_code(code)
-
-        if self.use_nils is True:
-            code = self._get_nils_code(code)
+    def __init__(self, out_file: str, title: str=None,
+                 compact=False, max_line_length=79,
+                 indents=False,
+                 docstrings=False) -> None:
+        if out_file is self.clipboard:
+            self._file = out_file
         else:
-            localtime = time.asctime(time.localtime(time.time()))
-            code = "{ Compiled on " + localtime + " }\n" \
-                + code
-        if not os.path.isabs(self.file):
-            self.file = os.path.join(
-                os.path.dirname(__file__), self.file)
-        if not re.search(r'\.txt$', self.file):
-            self.file += '.txt'
+            self._file = os.path.normpath(out_file)
+        self._compact = compact
+        self._title = title
+        self._line_length = max_line_length
 
-        f = open(self.file, 'w')
-        f.writelines(code)
-        f.close()
-        self.compiled_code = code
+    def _generate_code(self):
+        print('generating code')
+        refresh_all()
+        KSP.set_compiled(True)
+        KSP.in_init(True)
+        if self._compact:
+            IName.set_compact(True)
+        try:
+            self.main()
+        except AttributeError:
+            raise RuntimeError(
+                '''all KSP objects attemped to appear in the code
+                has to be placed inside function, which is assigned
+                to script main attribute''')
+        try:
+            kLog()
+            if kLog()._path:
+                KSP.in_init(False)
+                persistence_changed(kLog()._log_arr_pers)
+                KSP.in_init(True)
+        except TypeError as e:
+            if str(e).startswith('__init__()'):
+                pass
+            else:
+                raise e
+        print('getting lines of regular operations')
+        regular = Output().get()
+        print('getting inits of declared objects')
+        obj_init = KspObject.generate_all_inits()
+        print('getting inits of NativeControls params')
+        ctrls = KspNativeControlMeta.generate_init_code()
+        print('getting lines of init callback, pasted as decorated funcs')
+        init_cb = InitCallback.generate_body()[1:-1]
+        KSP.in_init(False)
+        print('generating other callbacks')
+        cbs = Callback.get_all_bodies()
+        print('generating functions bodies')
+        for f in Function._functions.values():
+            funcs = f._generate_executable()
+            break
+        # funcs = KspObject.generate_all_executables()
+        out = list()
+        print('joining the code')
+        localtime = time.asctime(time.localtime(time.time()))
+        out.append('{ Compiled on %s }' % localtime)
+        out.append('on init')
+        if self._title:
+            out.append(f'set_script_title("{self._title}")')
+        out.extend(FuncStack()._init_lines)
+        out.extend(obj_init)
+        out.extend(ctrls)
+        out.extend(regular)
+        out.extend(init_cb)
+        out.append('end on')
 
-    def _get_nils_code(self, code):
+        out.extend(funcs)
+        out.extend(cbs)
+        print('wrapping long lines')
+        out = self._check_length(out)
 
-        compiler = \
-            ksp_compiler.KSPCompiler(code,
-                                     optimize=True,
-                                     extra_syntax_checks=True,
-                                     check_empty_compound_statements=True)
-        compiler.compile()
-        code = compiler.compiled_code
-        # print(code)
-        # assert (compiler.output_file), 'there is no code'
-        return code
+        KSP.set_compiled(False)
+        print('sucsessfully generated')
+        return out
 
-    def _prepare_code(self, code):
+    def _check_length(self, lines):
+        if self._line_length is False:
+            return lines
+        new_lines = list()
+        for line in lines:
+            line = line.strip()
+            if len(line) <= self._line_length:
+                new_lines.append(line)
+                continue
+            if line.find('"') > -1:
+                new_lines.append(line)
+                continue
+            new_lines.extend(self.wrap(line, self._line_length))
+        return new_lines
+
+    def wrap(self, s, w):
+        new = textwrap.wrap(s, w, break_long_words=False,
+                            subsequent_indent='    ')
+        for idx in range(len(new) - 1):
+            new[idx] += '...'
+        new[-1]
+        return new
+
+    def compile(self):
+        print(f'compiling the script {self}')
+        code = self._generate_code()
         newcode = ''
         for line in code:
-            if line[-1] != '\n':
-                line += '\n'
-            newcode += line
-        return newcode
+            newcode += line + '\n'
+        if self._file is self.clipboard:
+            print(f'saved compiled script {self} to clipboard')
+            pyperclip.copy(newcode)
+            return
 
+        def main_is_frozen():
+            return (hasattr(sys, "frozen") or  # new py2exe
+                    hasattr(sys, "importers"))
 
-if __name__ == '__main__':
-    script = Script('myscript', name='MyScriptTitle',
-                    width=800, height=150,
-                    skin_offset=20, use_nils=False)
+        def get_main_dir():
+            if main_is_frozen():
+                return os.path.dirname(sys.executable)
+            return os.path.dirname(sys.argv[0])
 
-    @on.init
-    def foo():
-        IOutput.put('message("Hello World!")')
-
-    script.compile()
-    print(script.compiled_code)
+        if not os.path.isabs(self._file):
+            self._file = os.path.join(get_main_dir(), self._file)
+        with codecs.open(self._file, 'w', encoding='latin-1') as output:
+            if output:
+                output.write(newcode)
+        print(f'saved compiled script {self} to {self._file}')

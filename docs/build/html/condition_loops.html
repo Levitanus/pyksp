@@ -1,0 +1,349 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Conditions adn Loops &mdash; pyksp 0.0.8 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="KSP built-ins" href="built_ins.html" />
+    <link rel="prev" title="callbacks and functions" href="callbacks_functions.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> pyksp
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="features_table.html">Features (or SKSP vs pyksp)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datatypes.html">Datatypes and “syntax”</a></li>
+<li class="toctree-l1"><a class="reference internal" href="callbacks_functions.html">callbacks and functions</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Conditions adn Loops</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#if-else">If() -&gt; Else()</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#select-case">Select() -&gt; Case()</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#for">For()</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#while">While()</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#break-condfalse-and-check">Break(), CondFalse() and check()</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#break">Break()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#condfalse">CondFalse</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#check">check()</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="built_ins.html">KSP built-ins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gui_system.html">GUI system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="logging_compilation.html">Compilation and logging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deprecated.html">They killed …. You, bastards! (deprecated concepts)</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pyksp</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Conditions adn Loops</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/condition_loops.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="conditions-adn-loops">
+<h1>Conditions adn Loops<a class="headerlink" href="#conditions-adn-loops" title="Permalink to this headline">¶</a></h1>
+<p>When using conditions or loops take in account what do You expect:</p>
+<ul class="simple">
+<li>if it is <strong>preprocessor</strong> logic (e.g. <code class="docutils literal notranslate"><span class="pre">if</span> <span class="pre">(&lt;condition&gt;)</span></code> : <strong>use</strong> some code); <em>regular</em> for, while and if has to be used</li>
+<li>if it is <strong>runtime</strong> logic (e.g. <code class="docutils literal notranslate"><span class="pre">with</span> <span class="pre">If</span> <span class="pre">(&lt;value</span> <span class="pre">of</span> <span class="pre">var</span> <span class="pre">==</span> <span class="pre">1&gt;)</span></code> : <strong>run</strong> some code); <em>special</em> classes has to be used</li>
+</ul>
+<p>all special classes are context-managers e.g. they are used within folowing syntax:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">If</span><span class="p">(</span><span class="o">&lt;</span><span class="n">some</span> <span class="n">condition</span><span class="o">&gt;</span><span class="p">):</span>
+    <span class="n">do</span> <span class="n">some</span> <span class="n">code</span>
+</pre></div>
+</div>
+<div class="section" id="if-else">
+<h2>If() -&gt; Else()<a class="headerlink" href="#if-else" title="Permalink to this headline">¶</a></h2>
+<p>Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">If</span><span class="p">((</span><span class="n">x</span> <span class="o">==</span> <span class="n">y</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">x</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">)):</span>
+    <span class="n">check</span><span class="p">()</span>
+    <span class="n">x</span> <span class="o">+=</span> <span class="mi">1</span>
+<span class="k">with</span> <span class="n">If</span><span class="p">(</span><span class="n">y</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+    <span class="n">check</span><span class="p">()</span>
+    <span class="n">x</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">with</span> <span class="n">If</span><span class="p">(</span><span class="n">y</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">):</span>
+        <span class="n">check</span><span class="p">()</span>
+        <span class="n">x</span> <span class="o">+=</span> <span class="mi">1</span>
+<span class="k">with</span> <span class="n">Else</span><span class="p">((</span><span class="n">x</span> <span class="o">!=</span> <span class="n">y</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)):</span>
+    <span class="n">check</span><span class="p">()</span>
+    <span class="n">x</span> <span class="o">+=</span> <span class="mi">1</span>
+<span class="k">with</span> <span class="n">Else</span><span class="p">():</span>
+    <span class="n">check</span><span class="p">()</span>
+    <span class="n">y</span> <span class="o">+=</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>The first line inside the context block has to contain <code class="docutils literal notranslate"><span class="pre">check()</span></code> function for proper execution under tests.</li>
+<li>Under tests works as normal if-else(elif) condition. if Else has bool argument it evaluates as elif.</li>
+<li>every single bool expression has to be placed inside <code class="docutils literal notranslate"><span class="pre">(round</span> <span class="pre">brackets)</span></code></li>
+<li>instead of using <code class="docutils literal notranslate"><span class="pre">and</span></code> and <code class="docutils literal notranslate"><span class="pre">or</span></code> keywords, use bitwise <code class="docutils literal notranslate"><span class="pre">&amp;</span></code> and <code class="docutils literal notranslate"><span class="pre">|</span></code></li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">outside the If-Else and While <code class="docutils literal notranslate"><span class="pre">&amp;</span></code> and <code class="docutils literal notranslate"><span class="pre">|</span></code> are just bitwise <code class="docutils literal notranslate"><span class="pre">.and.</span></code> and <code class="docutils literal notranslate"><span class="pre">.or.</span></code></p>
+</div>
+</div>
+<div class="section" id="select-case">
+<h2>Select() -&gt; Case()<a class="headerlink" href="#select-case" title="Permalink to this headline">¶</a></h2>
+<p>Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">Select</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">Case</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">check</span><span class="p">()</span>
+        <span class="n">y</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">with</span> <span class="n">Case</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+        <span class="n">check</span><span class="p">()</span>
+        <span class="n">y</span> <span class="o">+=</span> <span class="mi">2</span>
+        <span class="k">with</span> <span class="n">Select</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
+            <span class="k">with</span> <span class="n">Case</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+                <span class="n">check</span><span class="p">()</span>
+                <span class="n">y</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">with</span> <span class="n">Case</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                <span class="n">check</span><span class="p">()</span>
+                <span class="n">CondFalse</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="for">
+<h2>For()<a class="headerlink" href="#for" title="Permalink to this headline">¶</a></h2>
+<p>Works as python foreach: <code class="docutils literal notranslate"><span class="pre">for</span> <span class="pre">val</span> <span class="pre">in</span> <span class="pre">Iterable</span></code> as well as for-range: <code class="docutils literal notranslate"><span class="pre">for</span> <span class="pre">val</span> <span class="pre">in</span> <span class="pre">range(start,</span> <span class="pre">[stop,</span> <span class="pre">[step]])</span></code></p>
+<p>ForEach Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">For</span><span class="p">(</span><span class="n">arr</span><span class="p">:</span> <span class="n">KspNativeArray</span><span class="o">=</span><span class="n">array</span><span class="p">)</span> <span class="k">as</span> <span class="n">seq</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">seq</span><span class="p">:</span>
+        <span class="c1"># code</span>
+</pre></div>
+</div>
+<p>ForRange Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">For</span><span class="p">(</span><span class="n">start</span><span class="p">:</span> <span class="nb">int</span><span class="p">[,</span> <span class="n">stop</span><span class="p">:</span> <span class="nb">int</span><span class="p">[,</span> <span class="n">step</span><span class="p">:</span> <span class="nb">int</span><span class="p">]])</span> <span class="k">as</span> <span class="n">seq</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">seq</span><span class="p">:</span>
+        <span class="c1"># code</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">do not use enumerate and zip not inside, not outside the loop. Inside You’ll get constant values as idx or second array; outside You’ll probably get an Error.</p>
+</div>
+</div>
+<div class="section" id="while">
+<h2>While()<a class="headerlink" href="#while" title="Permalink to this headline">¶</a></h2>
+<p>Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">While</span><span class="p">()</span> <span class="k">as</span> <span class="n">w</span><span class="p">:</span>
+    <span class="k">while</span> <span class="n">w</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">:</span> <span class="n">x</span> <span class="o">!=</span> <span class="n">y</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">If</span><span class="p">(</span><span class="n">y</span> <span class="o">!=</span> <span class="mi">10</span><span class="p">):</span>
+            <span class="n">check</span><span class="p">()</span>
+            <span class="n">y</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">x</span> <span class="o">+=</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>Yep, a little bit tricky) But while is much rarely used than for :)</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Do not use CondFalse() and Brake() inside while. They’ll works in tests, but will not be counted at compilation.</p>
+</div>
+</div>
+<div class="section" id="break-condfalse-and-check">
+<h2>Break(), CondFalse() and check()<a class="headerlink" href="#break-condfalse-and-check" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="break">
+<h3>Break()<a class="headerlink" href="#break" title="Permalink to this headline">¶</a></h3>
+<p>Function to break For() loop. Equal to val = len(seq)</p>
+</div>
+<div class="section" id="condfalse">
+<h3>CondFalse<a class="headerlink" href="#condfalse" title="Permalink to this headline">¶</a></h3>
+<p>Function works as operator continue in python. For testing purpose, does not translates to KSP.</p>
+</div>
+<div class="section" id="check">
+<h3>check()<a class="headerlink" href="#check" title="Permalink to this headline">¶</a></h3>
+<p>Function for proper work of conditions under tests. Has to be on the first line of every context block.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="built_ins.html" class="btn btn-neutral float-right" title="KSP built-ins" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="callbacks_functions.html" class="btn btn-neutral" title="callbacks and functions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Levitanus.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.0.8',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,4 +1,0 @@
-
-import rope.base.project
-myproject = rope.base.project.Project('E:/packages/pyksp')
-myproject.close()

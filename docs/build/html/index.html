@@ -1,0 +1,374 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Welcome to pyksp’s documentation! &mdash; pyksp 0.0.8 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Features (or SKSP vs pyksp)" href="features_table.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="#" class="icon icon-home"> pyksp
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="features_table.html">Features (or SKSP vs pyksp)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datatypes.html">Datatypes and “syntax”</a></li>
+<li class="toctree-l1"><a class="reference internal" href="callbacks_functions.html">callbacks and functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="condition_loops.html">Conditions adn Loops</a></li>
+<li class="toctree-l1"><a class="reference internal" href="built_ins.html">KSP built-ins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gui_system.html">GUI system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="logging_compilation.html">Compilation and logging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deprecated.html">They killed …. You, bastards! (deprecated concepts)</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">pyksp</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="#">Docs</a> &raquo;</li>
+        
+      <li>Welcome to pyksp’s documentation!</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="welcome-to-pyksp-s-documentation">
+<h1>Welcome to pyksp’s documentation!<a class="headerlink" href="#welcome-to-pyksp-s-documentation" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="what-is-pyksp">
+<h2>what is pyksp<a class="headerlink" href="#what-is-pyksp" title="Permalink to this headline">¶</a></h2>
+<p>It provides API for generating code from python source to NI Kontakt language: KSP.
+This version of documentation asserts users familiar with KSP and Nills SublimeKSP compiler. This new compiler is made in endevour of continuing the Nills work, so I tried to take the best from “parent”, improve it a bit, and give the freedom of architecture to the end-coder.</p>
+<p>The key features of pyksp are:</p>
+<ul class="simple">
+<li>support of unit tests</li>
+<li>support of gui tests</li>
+<li>no language restrictions and much more bad-syntax architecture safety (still SublimeKSP is parse source and interprets every line, pyksp responds only for the “real KSP” part, the rest You cad do, whatever Python allows)</li>
+<li>intelligent compilation (while SublimeKSP can expand source to 200-300K or MUCH more lines of code, before optimize it, pyksp compiles exactly what it needs)</li>
+<li>pretty amount of functions are well-documented and coder has to look into the KSP reference a little bit more rarely</li>
+<li>gui programming becomes a little bit funnier :)</li>
+</ul>
+<p>Full list of SublimeKSP vs pyksp (I like SublimeKSP) You can find in the respective section.</p>
+</div>
+<div class="section" id="installation">
+<h2>installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<p>since release version 0.1 pyksp will be available via PyPi, but till now:</p>
+<ul class="simple">
+<li>clone repository to the local folder</li>
+<li>move to it in console or terminal</li>
+<li>print <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-e</span> <span class="pre">pyksp</span></code></li>
+</ul>
+<div class="admonition hint">
+<p class="first admonition-title">Hint</p>
+<p class="last">I suppose, all we like SublimeText, so for the full experience i recommend to install <strong>Anaconda</strong> from package control. Someone can like MagicPython also.</p>
+</div>
+<div class="admonition caution">
+<p class="first admonition-title">Caution</p>
+<p class="last">do not use pyksp on big long-maintainable projects until it gets to release of version 0.1. Some syntax can be changed, some complicated bugs can ruin your work. Since 0.1 I’ll assume compiler is quite ready, and will work on other parts of package</p>
+</div>
+</div>
+<div class="section" id="a-simple-hello-world">
+<span id="helloworld"></span><h2>a simple hello world:<a class="headerlink" href="#a-simple-hello-world" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyksp.compiler</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">pyksp.compiler.classic_builtins</span> <span class="kn">import</span> <span class="o">*</span>
+
+
+<span class="nd">@on.note</span>
+<span class="k">def</span> <span class="nf">note_cb</span><span class="p">():</span>
+    <span class="n">message</span><span class="p">(</span><span class="n">EVENT_NOTE</span><span class="p">)</span>
+
+
+<span class="nd">@on.init</span>
+<span class="k">def</span> <span class="nf">null_msg</span><span class="p">():</span>
+    <span class="n">message</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+
+<span class="nd">@func</span>
+<span class="k">def</span> <span class="nf">switch</span><span class="p">(</span><span class="n">ids</span><span class="p">:</span> <span class="n">kArg</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="n">on_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">For</span><span class="p">(</span><span class="n">arr</span><span class="o">=</span><span class="n">ids</span><span class="p">)</span> <span class="k">as</span> <span class="n">seq</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">seq</span><span class="p">:</span>
+            <span class="n">logpr</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">with</span> <span class="n">If</span><span class="p">((</span><span class="n">item</span> <span class="o">!=</span> <span class="n">on_id</span><span class="p">)</span> <span class="o">&amp;</span>
+                    <span class="p">(</span><span class="n">get_control_par</span><span class="p">(</span><span class="n">on_id</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)):</span>
+                <span class="n">check</span><span class="p">()</span>
+                <span class="n">set_control_par</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">If</span><span class="p">(</span><span class="n">get_control_par</span><span class="p">(</span><span class="n">on_id</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">check</span><span class="p">()</span>
+        <span class="n">set_control_par</span><span class="p">(</span><span class="n">on_id</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span>
+
+
+<span class="n">script</span> <span class="o">=</span> <span class="n">kScript</span><span class="p">(</span><span class="n">kScript</span><span class="o">.</span><span class="n">clipboard</span><span class="p">,</span> <span class="s1">&#39;hello world&#39;</span><span class="p">,</span>
+                 <span class="n">compact</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                 <span class="n">max_line_length</span><span class="o">=</span><span class="mi">70</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">foo</span><span class="p">():</span>
+    <span class="n">kLog</span><span class="p">(</span><span class="n">kLog</span><span class="o">.</span><span class="n">array</span><span class="p">,</span>
+         <span class="n">path</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;E:\packages\pyksp\LogFileReader-master/mylog.nka&#39;</span><span class="p">)</span>
+    <span class="n">mw</span> <span class="o">=</span> <span class="n">kMainWindow</span><span class="p">()</span>
+    <span class="n">buttons_area</span> <span class="o">=</span> <span class="n">kWidget</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="n">mw</span><span class="p">)</span>
+    <span class="n">buttons_area</span><span class="o">.</span><span class="n">place_pct</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
+    <span class="n">ba_bg</span> <span class="o">=</span> <span class="n">kLabel</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="n">buttons_area</span><span class="p">)</span>
+    <span class="n">ba_bg</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">sticky</span><span class="o">=</span><span class="s1">&#39;nswe&#39;</span><span class="p">)</span>
+    <span class="n">ba_bg</span><span class="o">.</span><span class="n">text</span> <span class="o">&lt;&lt;=</span> <span class="s1">&#39;&#39;</span>
+    <span class="n">lvl</span> <span class="o">=</span> <span class="n">kLevelMeter</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="n">ba_bg</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+    <span class="n">lvl</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">sticky</span><span class="o">=</span><span class="s1">&#39;nse&#39;</span><span class="p">)</span>
+    <span class="n">buttons_area</span><span class="o">.</span><span class="n">add_grid</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+    <span class="n">buttons</span> <span class="o">=</span> <span class="p">[</span><span class="n">kButton</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="n">buttons_area</span><span class="p">)</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)]</span>
+
+    <span class="k">def</span> <span class="nf">b_callback</span><span class="p">(</span><span class="n">control</span><span class="p">):</span>
+        <span class="n">switch</span><span class="p">(</span><span class="n">kButton</span><span class="o">.</span><span class="n">ids</span><span class="p">,</span> <span class="n">control</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="n">message</span><span class="p">(</span><span class="n">control</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">buttons</span><span class="p">):</span>
+        <span class="n">b</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">idx</span> <span class="o">%</span> <span class="mi">3</span><span class="p">,</span> <span class="n">idx</span> <span class="o">//</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">b</span><span class="o">.</span><span class="n">bound_callback</span><span class="p">(</span><span class="n">b_callback</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">For</span><span class="p">(</span><span class="n">arr</span><span class="o">=</span><span class="n">kButton</span><span class="o">.</span><span class="n">ids</span><span class="p">)</span> <span class="k">as</span> <span class="n">seq</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">seq</span><span class="p">:</span>
+            <span class="n">set_control_par_str</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span> <span class="s1">&#39;mybutton&#39;</span><span class="p">)</span>
+
+
+<span class="n">script</span><span class="o">.</span><span class="n">main</span> <span class="o">=</span> <span class="n">foo</span>
+<span class="n">script</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="admonition important">
+<p class="first admonition-title">Important</p>
+<p class="last">why <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">pyksp.compiler</span></code>? – because compiller is planned as part of an bigger package</p>
+</div>
+<div class="admonition important">
+<p class="first admonition-title">Important</p>
+<p class="last">why <code class="docutils literal notranslate"><span class="pre">classic_builtins</span></code>? – because when I stop to be lazy, and type a bit, there will be categorized built-ins module. And I don’t know which You like the most</p>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="features_table.html">Features (or SKSP vs pyksp)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="features_table.html#now-the-blitz-comparisson-table">now the blitz comparisson table</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="datatypes.html">Datatypes and “syntax”</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="datatypes.html#syntax">Syntax</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="callbacks_functions.html">callbacks and functions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="callbacks_functions.html#callbacks">callbacks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="callbacks_functions.html#functions">functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="condition_loops.html">Conditions adn Loops</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="condition_loops.html#if-else">If() -&gt; Else()</a></li>
+<li class="toctree-l2"><a class="reference internal" href="condition_loops.html#select-case">Select() -&gt; Case()</a></li>
+<li class="toctree-l2"><a class="reference internal" href="condition_loops.html#for">For()</a></li>
+<li class="toctree-l2"><a class="reference internal" href="condition_loops.html#while">While()</a></li>
+<li class="toctree-l2"><a class="reference internal" href="condition_loops.html#break-condfalse-and-check">Break(), CondFalse() and check()</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="built_ins.html">KSP built-ins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gui_system.html">GUI system</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gui_system.html#kwidget">kWidget</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui_system.html#native-controls">Native controls</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gui_system.html#subclassing-widgets">Subclassing Widgets</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="logging_compilation.html">Compilation and logging</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="logging_compilation.html#logging">logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logging_compilation.html#compilation">Compilation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="deprecated.html">They killed …. You, bastards! (deprecated concepts)</a></li>
+</ul>
+</div>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
+<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
+<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
+</ul>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="features_table.html" class="btn btn-neutral float-right" title="Features (or SKSP vs pyksp)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Levitanus.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.0.8',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,8 +1,0 @@
-
-on init 
-    declare array[var1]
-
-    declare ui_button button
-    button -> x := myvar
-    button -> text := mytextvar
-end on

@@ -1,376 +1,496 @@
-import numpy as np
+'''provides classes, representing data structures of KSP
+variables – kInt, kStr, kReal
+arrays – kArrInt, kArrStr, kArrReal
 
-from kspvar import KspVarObj
-from typing import Iterable
-from interfaces import IOutput
-from abstract import KSP
+init arguments for variables:
+    (value=<default>, name=None, preserve=False,
+    is_local=False, persist=False)
 
-from pyksp_ast import *
+    value is value, stored in variable
+    name is representation in compiled code
+    if preserve is True, name will not be compacted
+    is_local has not to be used, used for handling arrays items
+    if persist is True, line "make_persistent(<name>)" will be added
+        after init declaration. The same line will be added if function
+        var.read() has been called
 
-IGNORE = 1
-ONLY_NAME = 2
-WHOLE = 3
+kVar – universal constructor for native objects. See doc for details.
+
+API syntax:
+variables:
+    var <<= value # assignement
+    value <<= var # assignes var.val to value
+    var.val #get value of var
+    var.read() # read persistent value (works only inside Kontakt)
+    kInt().inc(); kInt().dec() # API to KSP function inc and dec
+
+arrays:
+    arr <<= val # error
+    arr[idx] # returns k<Var> of arr type
+        increases size of array is it is less then idx (affects append
+        and extend methods)
+
+    arr.append(value) # if called outside of callbacks or functions
+        increases size of array and puts value into it.
+        raises IndexError is called from callback or array with fixed
+        size is full.
+    arr.extend(list(values)) # the same for list
+'''
+
+from base_types import KspIntVar
+from base_types import KspStrVar
+from base_types import KspRealVar
+from base_types import KspArray
+
+from base_types import AstOperator
+from base_types import AstAddString
+
+from abstract import Output
+from abstract import SingletonMeta
 
 
-class KspNative(KspVarObj):
-    '''Base class for native KSP objects:
-        - variables
-        - arrays
-    '''
+class kInt(KspIntVar):
+    '''See module doc'''
+    warning_types = (KspStrVar, KspRealVar, str, float)
+    names_count = 0
 
-    def __init__(self, value, name: str, prefix: str,
-                 ref_type=None,
-                 preserve_name: bool=False, persist: bool = False):
-        super().__init__(name, value, preserve_name)
-        self.init_value = self.value_get()
-        self.name.prefix = prefix
-        self.persist = persist
-        self.ref_type = ref_type
-        self.init_mode = WHOLE
-
-    def value_set(self, value):
-        if self.is_under_test():
-            if not isinstance(value, self.ref_type):
-                raise TypeError("You've tried to assign %s."
-                                "Has to be one of %s" %
-                                (type(value), self.ref_type))
-        super().value_set(value)
+    def __init__(self, value=0, name=None, preserve=False,
+                 is_local=False, persist=False):
+        if is_local:
+            has_init = False
+        else:
+            has_init = True
+        if not name:
+            name = f'kInt{kInt.names_count}'
+            kInt.names_count += 1
+        super().__init__(name, value=value,
+                         ref_type=(int, KspIntVar, AstOperator),
+                         name_prefix='$', name_postfix='',
+                         preserve_name=preserve,
+                         has_init=has_init,
+                         is_local=is_local,
+                         persist=persist)
+        self.__init_val = value
 
     def _generate_init(self):
-        if self.init_mode == IGNORE:
-            return []
-        init_lines = list()
-        decl_line = '%s' % self.name()
-        if self.init_mode != ONLY_NAME:
-            decl_line = 'declare %s' % decl_line
-        if self.init_value:
-            decl_line += ' := %s' % self.init_value
-        init_lines.append(decl_line)
-        if self.persist:
-            init_lines.append('make_persistent(%s)' % self.name())
-        return init_lines
+        out = list()
+        asgn = ''
+        if self.__init_val:
+            asgn = f' := {self.__init_val}'
+        out.append(f'declare {self.name()}{asgn}')
+        if self._persistent or self._read:
+            out.append(f'make_persistent({self.name()})')
+        return out
 
-
-class kInt(KspNative):
-    '''native integer variable ($var)'''
-
-    def __init__(self, name: str, value: int=0,
-                 preserve_name: bool=False, persist: bool = False):
-        if not isinstance(value, int):
-            raise TypeError('value has to be int')
-        super().__init__(value, name, '$', (int, kInt),
-                         preserve_name, persist)
-
-    def __index__(self):
-        return self.__call__()
-
-
-class kStr(KspNative):
-    '''native integer variable (@var)'''
-
-    def __init__(self, name: str, value: str='',
-                 preserve_name: bool=False, persist: bool = False):
-        if not isinstance(value, str):
-            raise TypeError('value has to be str')
-        super().__init__(value, name, '@', (str, kStr),
-                         preserve_name, persist)
-
-    def value_set(self, value):
-        if isinstance(value, (kInt, kReal)):
-            value = '%s' % value.value_get()
-        super().value_set(value)
-
-    def __call__(self, value=None):
-        if value:
-            value = self.convert_to_str(value)
-        super().__call__(value=value)
-
-    def convert_to_str(self, value):
-        if isinstance(value, (KspVarObj)):
-            return '%s' % value()
-        if isinstance(value, str):
-            return f'"{value}"'
-        if isinstance(value, (int, float)):
-            return f'{value}'
-        raise TypeError('String Var can accept only str, and ksp,'
-                        ' objects. You passed %s' % type(value))
-
-    def __add__(self, other):
-        other = self.convert_to_str(other)
-        if self.is_under_test():
-            return self.value_get() + other
-        return '%s & %s' % (self.name(), other)
-
-    def __radd__(self, other):
-        other = self.convert_to_str(other)
-        if self.is_under_test():
-            return other + self.value_get()
-        return '%s & %s' % (other, self.name())
-
-    def __iadd__(self, other):
-        other = self.convert_to_str(other)
-        self.value_set(self.value_get() + other)
-        if not self.is_under_test():
-            self._ast_assign('%s & %s' % (self.name(), other))
-        return self
-
-
-class kReal(KspNative):
-    '''native real variable (~var)'''
-
-    def __init__(self, name: str, value: int=0,
-                 preserve_name: bool=False, persist: bool=False):
-        super().__init__(value, name, '~', preserve_name, persist)
-
-
-class KspNativeArray(KspNative):
-    '''Base class for native KSP arrays.
-    can not be iterated.
-
-    TODO:
-        - extend and append have to return Ast methods
-        - extend and append has to raise exception inside functions
-    '''
-
-    def __init__(self, value: Iterable, name: str, prefix: str,
-                 ref_type: type=None, length: int=False,
-                 preserve_name: bool=False, persist: bool = False) -> None:
-        self.init_length = length
-        self.ref_type = ref_type
-        self.seq = list()
-        if length:
-            self.seq = np.zeros(length, ref_type[1])
-        if value:
-            for idx, val in enumerate(value):
-                if length:
-                    self.seq[idx] = val
-                continue
-            self.seq = value
-        if not isinstance(value, Iterable):
-            raise TypeError('value has to be iterable')
-        super().__init__(1, name, prefix,
-                         ref_type, preserve_name, persist)
-        self.init_value = value
-
-    def _get_ref_type(self, value):
-        if not isinstance(value, self.ref_type):
-            raise TypeError('object is %s, has to be %s' %
-                            (type(value), self.ref_type))
-        if isinstance(value, int):
-            cls = kInt
-        if isinstance(value, str):
-            cls = kStr
-        if isinstance(value, float):
-            cls = kReal
-        if isinstance(value, KspNative):
-            cls = type(value)
-            value = value.value_get()
-        return cls, value
-
-    def __getitem__(self, idx):
-        # print('native get')
-        if self.is_under_test():
-            if callable(self.seq[idx]):
-                return self.seq[idx]()
-            return self.seq[idx]
-        return AstGetItem(self, idx)
-
-    def __setitem__(self, idx, val):
-        # print('native set',
-        #       f'ref_type is {self.ref_type}')
-        if self.is_under_test():
-            # print('val type = %s, ref_type = %s' % (
-            #     type(val), self.ref_type))
-            if not isinstance(val, self.ref_type):
-                raise \
-                    TypeError(
-                        f'item at idx {idx} is {type(val)}.' +
-                        f' Has to be one of {self.ref_type}')
-            self.seq[idx] = val
-            return
-        IOutput.put(AstSetItem(self, idx, val)())
-        return
-
-    def __len__(self):
-        return len(self.seq)
-
-    class error(TypeError):
-        pass
-
-    def __iter__(self):
-        # print('native iter')
-        if not KSP.is_under_test():
-            raise self.error(
-                'for using KSP array in for loop use For() object')
-        return iter(self.seq)
-
-    def __call__(self):
-        if KSP.is_under_test():
-            return self.seq
+    def _get_compiled(self):
         return self.name()
 
-    def value_get(self):
-        return self.seq
+    def _get_runtime(self):
+        return self._value
 
-    def append(self, value):
-        if self.init_length:
-            raise self.error('can not append to fixed-sized array')
-        if not isinstance(value, self.ref_type):
-            raise TypeError(
-                'has to be one of %s, passed %s' % (
-                    self.ref_type, type(value)))
-        if not KSP.is_under_test():
-            IOutput.put(f'{self.name()}[{len(self.seq)}] := ' +
-                        f'{value}')
-        self.seq.append(value)
+    def _set_runtime(self, other):
+        self._value = other
 
-    def extend(self, sequence):
-        for val in sequence:
-            self.seq.append(val)
+    def inc(self):
+        if self.is_compiled():
+            Output().put(f'inc({self.name()})')
+        self._value += 1
+
+    def dec(self):
+        if self.is_compiled():
+            Output().put(f'dec({self.name()})')
+        self._value -= 1
+
+
+class kReal(KspRealVar):
+    '''See module doc'''
+    warning_types = (KspStrVar, KspIntVar, str, int)
+    names_count = 0
+
+    def __init__(self, value=0.0, name=None, preserve=False,
+                 is_local=False, persist=False):
+        if is_local:
+            has_init = False
+        else:
+            has_init = True
+        if not name:
+            name = f'kReal{kReal.names_count}'
+            kReal.names_count += 1
+
+        super().__init__(name, value=value,
+                         ref_type=(float, KspRealVar, AstOperator),
+                         name_prefix='~', name_postfix='',
+                         preserve_name=preserve,
+                         has_init=has_init,
+                         is_local=is_local,
+                         persist=persist)
+        self.__init_val = value
 
     def _generate_init(self):
-        init_lines = []
-        length = len(self.seq)
-        if self.init_length:
-            length = self.init_length
-        decl_line = 'declare %s[%s]' % (self.name(), length)
-        init_lines.append(decl_line)
-        if self.persist:
-            init_lines.append('make_persistent(%s)' % self.name())
-        if self.init_value:
-            multiline = False
-            out = list()
-            for idx, item in enumerate(self.init_value):
-                if multiline:
-                    multiline.append((item, idx))
-                    continue
-                if isinstance(item, KspNative):
-                    if multiline:
-                        multiline.append((item(), idx))
-                        continue
-                    multiline = [(item(), idx)]
-                    continue
-                val = ''
-                if idx != 0:
-                    val = ', '
-                val += str(item)
-                out.append(val)
-            if len(out) > 0:
-                val = ''
-                for x in out:
-                    val += x
-                decl_line += ' := (%s)' % val
-            init_lines[0] = decl_line
-            if multiline:
-                for idx, val in enumerate(multiline):
-                    multiline[idx] = '%s[%s] := %s' % (self.name(),
-                                                       val[1], val[0])
-                init_lines.extend(multiline)
-        return init_lines
+        out = list()
+        asgn = ''
+        if self.__init_val:
+            asgn = f' := {self.__init_val}'
+        out.append(f'declare {self.name()}{asgn}')
+        if self._persistent or self._read:
+            out.append(f'make_persistent({self.name()})')
+        return out
+
+    def _get_compiled(self):
+        return self.name()
+
+    def _get_runtime(self):
+        return self._value
+
+    def _set_runtime(self, other):
+        self._value = other
 
 
-class kArrInt(KspNativeArray):
-    '''native integer array (%arr[])'''
+class kStr(KspStrVar):
+    '''See module doc'''
+    warning_types = (KspIntVar, KspRealVar, int, float)
+    names_count = 0
 
-    def __init__(self, name: str, sequence: Iterable[int]=[],
-                 length=False,
-                 preserve_name: bool=False, persist: bool=False):
-        super().__init__(sequence, name, '%', (int, kInt),
-                         length, preserve_name, persist)
+    def __init__(self, value='', name=None, preserve=False,
+                 is_local=False, persist=False):
+        if is_local:
+            has_init = False
+        else:
+            has_init = True
+        if not name:
+            name = f'kStr{kStr.names_count}'
+            kStr.names_count += 1
+
+        super().__init__(name, value=value,
+                         ref_type=(str, KspStrVar, AstAddString,
+                                   KspIntVar, KspRealVar),
+                         name_prefix='@', name_postfix='',
+                         preserve_name=preserve,
+                         has_init=has_init,
+                         is_local=is_local,
+                         persist=persist)
+        self.__init_val = value
+
+    def _generate_init(self):
+        out = list()
+        out.append(f'declare {self.name()}')
+        if self.__init_val:
+            if isinstance(self.__init_val, str):
+                self.__init_val = f'"{self.__init_val}"'
+            out.append(f'{self.name()} := {self.__init_val}')
+        if self._persistent or self._read:
+            out.append(f'make_persistent({self.name()})')
+        return out
+
+    def _get_compiled(self):
+        return self.name()
+
+    def _get_runtime(self):
+        return self._value
+
+    def _set_runtime(self, other):
+        self._value = other
 
 
-class kArrStr(KspNativeArray):
-    '''native string array (!arr[])'''
+class kArrInt(KspArray):
+    '''See module doc'''
+    names_count = 0
 
-    def __init__(self, name: str, sequence: Iterable[str]=[],
-                 length=False,
-                 preserve_name: bool=False, persist: bool=False):
-        super().__init__(sequence, name, '!', (str, kStr),
-                         length, preserve_name, persist)
-        if len(sequence) == 0:
-            for idx, val in enumerate(self.seq):
-                self.seq[idx] = ''
+    def __init__(self, sequence=None,
+                 name=None,
+                 size=None,
+                 preserve=False,
+                 persist=False,
+                 is_local=False):
+        if is_local:
+            has_init = False
+        else:
+            has_init = True
+        if not name:
+            name = f'kArrInt{kArrInt.names_count}'
+            kArrInt.names_count += 1
+        super().__init__(name, name_prefix='%',
+                         name_postfix='',
+                         preserve_name=preserve,
+                         has_init=has_init,
+                         is_local=is_local,
+                         ref_type=(int, KspIntVar, AstOperator),
+                         item_type=kInt,
+                         size=size,
+                         seq=sequence,
+                         def_val=0)
 
-    def append(self, value):
-        if isinstance(value, kInt):
-            value = str(value())
-        super().append(value)
+    def _get_compiled(self):
+        return self.name()
 
-    def __getitem__(self, idx):
-        if self.is_under_test():
-            if callable(self.seq[idx]):
-                return self.seq[idx]()
-            return self.seq[idx]
-        return AstGetItemStr(self, idx)
+    def _get_runtime(self):
+        return self._seq
 
-    def __setitem__(self, idx, val):
-        if self.is_under_test():
-            if isinstance(val, (int, kInt)):
-                val = f'{val}'
-            self.seq[idx] = val
-            return
-        if isinstance(val, str):
-            val = f'"{val}"'
-        IOutput.put(AstSetItemStr(self, idx, val)())
-        return
+    def _generate_init(self):
+        out = super()._generate_init()
+        if self._persistent or self._read:
+            out.append(f'make_persistent({self.name()})')
+        return out
 
 
-class kArrReal(KspNativeArray):
-    '''native real array (?arr[])'''
+class kArrReal(KspArray):
+    '''See module doc'''
+    names_count = 0
 
-    def __init__(self, name: str, sequence: Iterable[float]=[],
-                 length=False,
-                 preserve_name: bool=False, persist: bool=False):
-        super().__init__(sequence, name, '?', (float, kReal),
-                         length, preserve_name, persist)
+    def __init__(self, sequence=None,
+                 name=None,
+                 size=None,
+                 preserve=False,
+                 persist=False,
+                 is_local=False):
+        if is_local:
+            has_init = False
+        else:
+            has_init = True
+        if not name:
+            name = f'kArrReal{kArrReal.names_count}'
+            kArrReal.names_count += 1
+        super().__init__(name, name_prefix='?',
+                         name_postfix='',
+                         preserve_name=preserve,
+                         has_init=has_init,
+                         is_local=is_local,
+                         ref_type=(float, KspRealVar, AstOperator),
+                         item_type=kReal,
+                         size=size,
+                         seq=sequence,
+                         def_val=0.0)
+
+    def _get_compiled(self):
+        return self.name()
+
+    def _get_runtime(self):
+        return self._seq
+
+    def _generate_init(self):
+        out = super()._generate_init()
+        if self._persistent or self._read:
+            out.append(f'make_persistent({self.name()})')
+        return out
+
+
+class kArrStr(KspArray):
+    '''See module doc'''
+    names_count = 0
+
+    def __init__(self, sequence=None,
+                 name=None,
+                 size=None,
+                 preserve=False,
+                 persist=False,
+                 is_local=False):
+        if is_local:
+            has_init = False
+        else:
+            has_init = True
+        if not name:
+            name = f'kArrStr{kArrStr.names_count}'
+            kArrStr.names_count += 1
+        super().__init__(name, name_prefix='!',
+                         name_postfix='',
+                         preserve_name=preserve,
+                         has_init=has_init,
+                         is_local=is_local,
+                         ref_type=(str, KspStrVar, AstOperator),
+                         item_type=kStr,
+                         size=size,
+                         seq=sequence,
+                         def_val='')
+
+    def _get_compiled(self):
+        return self.name()
+
+    def _get_runtime(self):
+        return self._seq
+
+    def _generate_init(self):
+        out = super()._generate_init()
+        if self._persistent or self._read:
+            out.append(f'make_persistent({self.name()})')
+        return out
+
+
+def refresh_names_count():
+    kInt.names_count = 0
+    kStr.names_count = 0
+    kReal.names_count = 0
+    kArrInt.names_count = 0
+    kArrStr.names_count = 0
+    kArrReal.names_count = 0
 
 
 class kVar:
+    '''returns KSP native var at construction or with assignement via
+    <<= operator.
+    arguments: (value=None, name=None, size=None,
+                preserve=False, persist=False)
+        if value, ready object is returned
+        if not, object has to be initialized via <<= operator
 
-    __count = 0
+    if init_value is:
+        int, kInt -> kInt
+        str, kStr -> kStr
+        float, kReal -> kReal
+        list -> kArr, depends on first item type
+    '''
+    names_count = 0
 
-    def __new__(cls, value, name: str=None, preserve_name: bool=False,
-                persist: bool = False, length: int=False):
-        if name is None:
-            name = f'var{kVar.__count}'
-            kVar.__count += 1
-        args = {
-            'name': name,
-            'value': value,
-            'preserve_name': preserve_name,
-            'persist': persist
-        }
-        length_err_msg = f'{type(value)} object can not have length'
-        if isinstance(value, (int, kInt)):
-            if length:
-                raise kVar.error(length_err_msg)
-            return kInt(**args)
-        if isinstance(value, (str, kStr)):
-            if length:
-                raise kVar.error(length_err_msg)
-            return kStr(**args)
-        if isinstance(value, (float, kReal)):
-            if length:
-                raise kVar.error(length_err_msg)
-            return kReal(**args)
-        try:
-            ref_type = value[0]
-        except TypeError:
-            raise kVar.error("can't resolve variable type")
-        args['length'] = length
-        del args['value']
-        args['sequence'] = value
-        for val in value:
-            if not isinstance(val, type(ref_type)):
-                raise kVar.error(
-                    "elements in sequence are of different types")
-        if isinstance(ref_type, (int, kInt)):
-            return kArrInt(**args)
-        if isinstance(ref_type, (str, kStr)):
-            return kArrStr(**args)
-        if isinstance(ref_type, (float, kReal)):
-            return kArrReal(**args)
-        raise kVar.error("can't resolve variable type")
+    def __new__(cls, value=None, name=None, size=None,
+                preserve=False, persist=False):
+        if not name:
+            name = f'kVar{kVar.names_count}'
+            kVar.names_count += 1
+        if not value:
+            obj = super(kVar, cls).__new__(cls)
+            d = obj.__dict__
+            d['name'] = name
+            d['size'] = size
+            d['preserve'] = preserve
+            d['persist'] = persist
+            return obj
+        if isinstance(value, (int, KspIntVar)):
+            return kInt(value=value, name=name,
+                        preserve=preserve, persist=persist)
+        if isinstance(value, (str, KspStrVar)):
+            return kStr(value=value, name=name,
+                        preserve=preserve, persist=persist)
+        if isinstance(value, (float, KspRealVar)):
+            return kReal(value=value, name=name,
+                         preserve=preserve, persist=persist)
+        if isinstance(value, list):
+            if isinstance(value[0], (int, KspIntVar)):
+                return kArrInt(value=value, name=name,
+                               preserve=preserve, persist=persist,
+                               size=size)
+            if isinstance(value[0], (str, KspStrVar)):
+                return kArrStr(value=value, name=name,
+                               preserve=preserve, persist=persist,
+                               size=size)
+            if isinstance(value[0], (float, KspRealVar)):
+                return kArrReal(value=value, name=name,
+                                preserve=preserve, persist=persist,
+                                size=size)
+        raise TypeError('can be initialized only with:%s' %
+                        (int, str, float, kInt, kStr, kReal, list))
 
-    class error(Exception):
-        pass
+    def __ilshift__(self, value):
+        if isinstance(value, (int, KspIntVar)):
+            if self.size:
+                raise TypeError('for arrays initialization use list')
+            return kInt(value=value, name=self.name,
+                        preserve=self.preserve, persist=self.persist)
+        if isinstance(value, (str, KspStrVar)):
+            if self.size:
+                raise TypeError('for arrays initialization use list')
+            return kStr(value=value, name=self.name,
+                        preserve=self.preserve, persist=self.persist)
+        if isinstance(value, (float, KspRealVar)):
+            if self.size:
+                raise TypeError('for arrays initialization use list')
+            return kReal(value=value, name=self.name,
+                         preserve=self.preserve, persist=self.persist)
+        if isinstance(value, list):
+            if isinstance(value[0], (int, KspIntVar)):
+                return kArrInt(sequence=value, name=self.name,
+                               preserve=self.preserve,
+                               persist=self.persist,
+                               size=self.size)
+            if isinstance(value[0], (str, KspStrVar)):
+                return kArrStr(sequence=value, name=self.name,
+                               preserve=self.preserve,
+                               persist=self.persist,
+                               size=self.size)
+            if isinstance(value[0], (float, KspRealVar)):
+                return kArrReal(sequence=value, name=self.name,
+                                preserve=self.preserve,
+                                persist=self.persist,
+                                size=self.size)
+        raise TypeError('can be initialized only with:%s' %
+                        (int, str, float, kInt, kStr, kReal, list))
+
+
+class kNone(kInt, metaclass=SingletonMeta):
+    '''used as None value for KSP objects
+    currently always returns -1, but still can be
+    used as comparisson to kNone() :)
+    '''
+
+    def __init__(self):
+        super().__init__(value=-1, name='None',
+                         preserve=False, is_local=True)
+
+    def _get_compiled(self):
+        return self._value
+
+    def _get_runtime(self):
+        return self._value
+
+    def _set_runtime(self, other):
+        raise NotImplementedError
+
+    def _set_compiled(self, other):
+        raise NotImplementedError
+
+    def inc(self):
+        raise NotImplementedError
+
+    def dec(self):
+        raise NotImplementedError
+
+
+class kFalse(kInt):
+
+    def __init__(self):
+        super().__init__(value=0, name='None',
+                         preserve=False, is_local=True)
+
+    def _get_compiled(self):
+        return self._value
+
+    def _get_runtime(self):
+        return self._value
+
+    def _set_runtime(self, other):
+        raise NotImplementedError
+
+    def _set_compiled(self, other):
+        raise NotImplementedError
+
+    def inc(self):
+        raise NotImplementedError
+
+    def dec(self):
+        raise NotImplementedError
+
+
+class kTrue(kInt):
+
+    def __init__(self):
+        super().__init__(value=1, name='None',
+                         preserve=False, is_local=True)
+
+    def _get_compiled(self):
+        return self._value
+
+    def _get_runtime(self):
+        return self._value
+
+    def _set_runtime(self, other):
+        raise NotImplementedError
+
+    def _set_compiled(self, other):
+        raise NotImplementedError
+
+    def inc(self):
+        raise NotImplementedError
+
+    def dec(self):
+        raise NotImplementedError
+
+    def __eq__(self, other):
+        return 0 < other
