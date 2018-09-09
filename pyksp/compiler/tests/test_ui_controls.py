@@ -21,7 +21,7 @@ from bi_engine_par import NI_BUS_OFFSET
 from native_types import kInt
 from native_types import kArrInt
 
-from conditions_loops import For, check
+from conditions_loops import For, check, Else
 
 
 def oget():

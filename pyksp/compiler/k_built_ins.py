@@ -8,6 +8,8 @@ from collections import OrderedDict
 
 from typing import Tuple
 
+import math
+
 
 # from abstract import KspObject
 from abstract import Output
@@ -19,6 +21,7 @@ from base_types import KspArray
 from base_types import KspIntVar
 from base_types import KspStrVar
 from base_types import KspRealVar
+from base_types import AstBase
 
 from native_types import kInt
 from native_types import kArrInt
@@ -382,9 +385,12 @@ class BuiltInFunc(BuiltIn):
 
     @staticmethod
     def _remove_line(self, line):
-        if not self.is_compiled():
+        if not self.is_compiled() or Output().blocked:
             return line
-        line_l = Output().pop()
+        try:
+            line_l = Output().pop()
+        except IndexError:
+            return line
         if line_l == line:
             return line
         Output().put(line_l)
@@ -398,7 +404,7 @@ class BuiltInFunc(BuiltIn):
         self._var._set_runtime(val)
         if not line:
             line = f'{self._name}()'
-        self._var._get_compiled = lambda line=line, self=self:\
+        self._var._get_compiled = lambda self=self:\
             BuiltInFunc._remove_line(self, line)
         self._var.name = self._var._get_compiled
         if self.is_compiled():
@@ -456,11 +462,12 @@ class BuiltInFuncReal(BuiltInFunc):
 
 
 exit = BuiltInFuncInt('exit', no_parentesis=True,
-                      def_ret=kNone())
+                      def_ret=kNone()).__call__
 reset_ksp_timer = BuiltInFuncInt('reset_ksp_timer', no_parentesis=True,
-                                 def_ret=kNone())
+                                 def_ret=kNone()).__call__
 ignore_controller = BuiltInFuncInt('ignore_controller',
-                                   no_parentesis=True, def_ret=kNone())
+                                   no_parentesis=True,
+                                   def_ret=kNone()).__call__
 
 
 class MessageFunc(BuiltInFuncInt):
@@ -471,6 +478,9 @@ class MessageFunc(BuiltInFuncInt):
         # self._old_call = BuiltInFuncInt.__call__
 
     def __call__(self, *args, sep: str=', '):
+        '''behaves like print in python. Just rints args not in stdout
+        but in the bottom line of Kontakt GUI.
+        For the logging purpose use kLog and logpr'''
         self._check_sep(sep)
         line = 'message('
         for idx, arg in enumerate(args):
@@ -493,7 +503,7 @@ class MessageFunc(BuiltInFuncInt):
                     f'symbol {repr(char)} is not allowed')
 
 
-message = MessageFunc()
+message = MessageFunc().__call__
 
 
 class bCallbackVar(BuiltInIntVar):
@@ -655,3 +665,246 @@ NI_SIGNAL_TYPE = bListenerConst('NI_SIGNAL_TYPE',
 
 NI_MATH_PI = BuiltInRealVar('NI_MATH_PI')
 NI_MATH_E = BuiltInRealVar('NI_MATH_E')
+NI_MATH_PI.set_value(math.pi)
+NI_MATH_E.set_value(math.e)
+
+
+class Exp(BuiltInFuncReal):
+
+    def __init__(self):
+        super().__init__(name='exp',
+                         args=OrderedDict(
+                             value=(KspRealVar, float, AstBase)))
+
+    def calculate(self, value):
+        return math.exp(get_runtime_val(value))
+
+    def __call__(self, value: float):
+        '''exponential function (returns the value of e^x)'''
+        return super().__call__(value)
+
+
+exp = Exp().__call__
+
+
+class Log(BuiltInFuncReal):
+
+    def __init__(self):
+        super().__init__(name='log',
+                         args=OrderedDict(
+                             value=(KspRealVar, float, AstBase)))
+
+    def calculate(self, value):
+        return math.log(get_runtime_val(value))
+
+    def __call__(self, value: float):
+        '''logarithmic function'''
+        return super().__call__(value)
+
+
+log = Log().__call__
+
+
+class Pow(BuiltInFuncReal):
+
+    def __init__(self):
+        super().__init__(name='pow',
+                         args=OrderedDict(
+                             x=(KspRealVar, float, AstBase),
+                             y=(KspRealVar, float, AstBase)))
+
+    def calculate(self, x, y):
+        x = get_runtime_val(x)
+        y = get_runtime_val(y)
+        return x ** y
+
+    def __call__(self, x: float, y: float):
+        '''power (returns the value of x^y)'''
+        return super().__call__(x, y)
+
+
+kpow = Pow().__call__
+
+
+class Sqrt(BuiltInFuncReal):
+
+    def __init__(self):
+        super().__init__(name='sqrt',
+                         args=OrderedDict(
+                             value=(KspRealVar, float, AstBase)))
+
+    def calculate(self, value):
+        return math.sqrt(get_runtime_val(value))
+
+    def __call__(self, value: float):
+        '''square root'''
+        return super().__call__(value)
+
+
+sqrt = Sqrt().__call__
+
+
+class Ceil(BuiltInFuncReal):
+
+    def __init__(self):
+        super().__init__(name='ceil',
+                         args=OrderedDict(
+                             value=(KspRealVar, float, AstBase)))
+
+    def calculate(self, value):
+        return math.ceil(get_runtime_val(value))
+
+    def __call__(self, value: float):
+        '''ceiling (round up)
+        ceil(2.3) = 3.0'''
+        return super().__call__(value)
+
+
+ceil = Ceil().__call__
+
+
+class Floor(BuiltInFuncReal):
+
+    def __init__(self):
+        super().__init__(name='floor',
+                         args=OrderedDict(
+                             value=(KspRealVar, float, AstBase)))
+
+    def calculate(self, value):
+        return math.floor(get_runtime_val(value))
+
+    def __call__(self, value: float):
+        '''floor (round down)
+        floor(2.8) = 2.0'''
+        return super().__call__(value)
+
+
+floor = Floor().__call__
+
+
+class Round(BuiltInFuncReal):
+
+    def __init__(self):
+        super().__init__(name='round',
+                         args=OrderedDict(
+                             value=(KspRealVar, float, AstBase)))
+
+    def calculate(self, value):
+        return round(get_runtime_val(value))
+
+    def __call__(self, value: float):
+        '''round (round to nearest)
+        round(2.3) = 2.0
+        round(2.8) = 3.0'''
+        return super().__call__(value)
+
+
+kround = Round().__call__
+
+
+class Cos(BuiltInFuncReal):
+
+    def __init__(self):
+        super().__init__(name='cos',
+                         args=OrderedDict(
+                             value=(KspRealVar, float, AstBase)))
+
+    def calculate(self, value):
+        return math.cos(get_runtime_val(value))
+
+    def __call__(self, value: float):
+        '''cosine function'''
+        return super().__call__(value)
+
+
+cos = Cos().__call__
+
+
+class Sin(BuiltInFuncReal):
+
+    def __init__(self):
+        super().__init__(name='sin',
+                         args=OrderedDict(
+                             value=(KspRealVar, float, AstBase)))
+
+    def calculate(self, value):
+        return math.sin(get_runtime_val(value))
+
+    def __call__(self, value: float):
+        '''sine function'''
+        return super().__call__(value)
+
+
+sin = Sin().__call__
+
+
+class Tan(BuiltInFuncReal):
+
+    def __init__(self):
+        super().__init__(name='tan',
+                         args=OrderedDict(
+                             value=(KspRealVar, float, AstBase)))
+
+    def calculate(self, value):
+        return math.tan(get_runtime_val(value))
+
+    def __call__(self, value: float):
+        '''tangent function'''
+        return super().__call__(value)
+
+
+tan = Tan().__call__
+
+
+class Acos(BuiltInFuncReal):
+
+    def __init__(self):
+        super().__init__(name='acos',
+                         args=OrderedDict(
+                             value=(KspRealVar, float, AstBase)))
+
+    def calculate(self, value):
+        return math.acos(get_runtime_val(value))
+
+    def __call__(self, value: float):
+        '''arccosine (inverse cosine function)'''
+        return super().__call__(value)
+
+
+acos = Acos().__call__
+
+
+class Asin(BuiltInFuncReal):
+
+    def __init__(self):
+        super().__init__(name='asin',
+                         args=OrderedDict(
+                             value=(KspRealVar, float, AstBase)))
+
+    def calculate(self, value):
+        return math.asin(get_runtime_val(value))
+
+    def __call__(self, value: float):
+        '''arccosine (inverse cosine function)'''
+        return super().__call__(value)
+
+
+asin = Asin().__call__
+
+
+class Atan(BuiltInFuncReal):
+
+    def __init__(self):
+        super().__init__(name='atan',
+                         args=OrderedDict(
+                             value=(KspRealVar, float, AstBase)))
+
+    def calculate(self, value):
+        return math.atan(get_runtime_val(value))
+
+    def __call__(self, value: float):
+        '''arccosine (inverse cosine function)'''
+        return super().__call__(value)
+
+
+atan = Atan().__call__

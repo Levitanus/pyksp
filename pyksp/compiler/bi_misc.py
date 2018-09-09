@@ -1,4 +1,6 @@
 from collections import OrderedDict
+import os
+import re
 
 from abstract import KSP
 from abstract import SingletonMeta
@@ -1196,6 +1198,12 @@ pgs_get_str_key_val = PgsGetStrKeyVal().__call__
 
 
 def logpr(*args, sep=' '):
+    '''behaves like print:
+    puts args to the log within separating them via sep
+    if kLog is not initialized, just does nothing
+
+    - characters '\\n', '\\r', '\\t', '\\v' can not be used
+    '''
     try:
         kLog().put(*args, sep=sep)
     except TypeError as e:
@@ -1206,15 +1214,25 @@ def logpr(*args, sep=' '):
 
 
 class kLog(metaclass=SingletonMeta):
+    '''universal log, can be used inside kontakt.
+    lines are put to log within logpr() function
+
+    -l_type can be kLog.array or kLog.pgs
+        if kLog.array is used, path can be specified,
+        lines will be placed to the string array, being
+        exported every 2 seconds to the path, or to the
+        data folder of instrument
+    -path has to be full path to the nka file or None
+    '''
 
     array = object()
-    label = object()
+    # label = object()
     pgs = object()
 
     pgs_script = \
         '''on init
       set_script_title("log_viever")
-      declare ui_label $log_label(6, 4) 
+      declare ui_label $log_label(6, 4)
       set_control_par_str(get_ui_id($log_label),$CONTROL_PAR_TEXT,...\
       "log started")
     end on
@@ -1239,6 +1257,7 @@ class kLog(metaclass=SingletonMeta):
             pgs_create_str_key('_log_msg')
             pgs_create_key('_log_flag', 1)
             pgs_set_key_val('_log_flag', 0, 2)
+            return
         if l_type is self.array:
             if not self._path:
                 self._simple_log_init()
@@ -1246,6 +1265,8 @@ class kLog(metaclass=SingletonMeta):
                 self._log_with_path_init()
             self._log_count = kInt(name='_log_count')
             self._log_prev_count = kInt(name='_log_prev_count')
+            return
+        raise TypeError('wrong log type')
 
     def _simple_log_init(self):
         self._log_arr = kArrStr(name='_log_array', size=32768)
@@ -1270,6 +1291,7 @@ class kLog(metaclass=SingletonMeta):
         path.reverse()
         self._path = ''.join(path)
         self._path += postfix
+        self._path = re.sub(r'\\', '/', os.path.normpath(self._path))
         name = ''.join(name)
         self._log_arr = kArrStr(name=name, size=32768)
 

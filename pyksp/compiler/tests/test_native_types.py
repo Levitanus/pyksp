@@ -47,6 +47,7 @@ class TestNativeVars(DevTest):
         with self.assertRaises(RuntimeError):
             read.read()
         read.in_init(True)
+        read <<= 2
 
         IName.set_compact(True)
 

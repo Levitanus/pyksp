@@ -167,11 +167,11 @@ inc($_stack_functions_int_pointer)
 := %_stack_functions_int_idx[$_stack_functions_int_pointer - 1] + 5
 %_stack_functions_int_arr[0 + %_stack_functions_int_idx[\
 $_stack_functions_int_pointer]] := %_stack_functions_int_arr\
-[%_for_loop_idx[$_for_loop_curr_idx] + 0 + %_stack_functions_int_idx\
-[$_stack_functions_int_pointer]]
+[%_for_loop_idx[$_for_loop_curr_idx] + (0 + %_stack_functions_int_idx\
+[$_stack_functions_int_pointer])]
 call {method}
-%_stack_functions_int_arr[%_for_loop_idx[$_for_loop_curr_idx] + 0 + \
-%_stack_functions_int_idx[$_stack_functions_int_pointer]] := \
+%_stack_functions_int_arr[%_for_loop_idx[$_for_loop_curr_idx] + (0 + \
+%_stack_functions_int_idx[$_stack_functions_int_pointer])] := \
 %_stack_functions_int_arr[0 + %_stack_functions_int_idx[\
 $_stack_functions_int_pointer]]
 dec($_stack_functions_int_pointer)

@@ -29,7 +29,8 @@ from k_built_ins import FunctionCallback
 
 
 class kOut(KSP):
-    '''special class designed to be function argument
+    '''special class designed to be function argument to return
+        values from it.
     will be used as local var if nothing has passed as value
     within function invocation.
     ref_type has to be one of (int, str, float)
@@ -87,7 +88,7 @@ class kOut(KSP):
 
 class kArg(KSP):
     '''Special class designed to be annotation of function argument
-    if size is specified, KspArray is expected as arg
+    if size is specified, KspArray of length of size is expected as arg
     '''
 
     def __init__(self, ref_type: (int, str, float), size: int=None):

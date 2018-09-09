@@ -336,9 +336,9 @@ class TestBuiltInClasses(DevTest):
         pgs_create_key('key', 2)
         self.assertEqual(Output().pop(),
                          'pgs_create_key(key, 2)')
-        pgs_create_str_key('key', 2)
+        pgs_create_str_key('key')
         self.assertEqual(Output().pop(),
-                         'pgs_create_str_key(key, 2)')
+                         'pgs_create_str_key(key)')
         self.assertEqual(pgs_key_exists('key')._get_runtime(), int(1))
         self.assertEqual(pgs_str_key_exists('key')._get_runtime(), int(1))
         with self.assertRaises(IndexError):
@@ -346,10 +346,10 @@ class TestBuiltInClasses(DevTest):
         pgs_set_key_val('key', 1, 1)
         self.assertEqual(Output().pop(), 'pgs_set_key_val(key, 1, 1)')
         self.assertEqual(pgs_get_key_val('key', 1)._get_runtime(), 1)
-        pgs_set_str_key_val('key', 1, 'string')
+        pgs_set_str_key_val('key', 'string')
         self.assertEqual(Output().pop(),
-                         'pgs_set_str_key_val(key, 1, "string")')
-        self.assertEqual(pgs_get_str_key_val('key', 1)._get_runtime(),
+                         'pgs_set_str_key_val(key, "string")')
+        self.assertEqual(pgs_get_str_key_val('key')._get_runtime(),
                          'string')
 
 

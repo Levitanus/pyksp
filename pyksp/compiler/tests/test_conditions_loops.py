@@ -19,12 +19,12 @@ from native_types import kInt
 from dev_tools import unpack_lines
 
 if_lines = \
-    '''if($x < $y or $x = 1)
+    '''if(($x < $y) or ($x = 1))
 $x := $y
 if($y = 2)
 $y := $y + 1
 else
-if($x = 1 and $y = 2)
+if(($x = 1) and ($y = 2))
 $y := $y + 1
 else
 $x := $x - 1

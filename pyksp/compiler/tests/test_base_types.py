@@ -170,6 +170,7 @@ class TestAstAssign(DevTest):
 class TestAstOperator(DevTest):
 
     class Operator(AstOperator):
+        priority = 4
 
         def __init__(self, arg=1):
             super().__init__(arg)
@@ -216,8 +217,8 @@ class TestAstOperator(DevTest):
         self.assertEqual(self.op.bracket_unary('+', 1), '+(1)')
         self.assertEqual(self.op.bracket_unary('+', 'e'), '+(e)')
 
-        self.assertEqual(self.op.standart('+', 1, 2), '1 + 2')
-        self.assertEqual(self.op.standart('+', 1, 'e'), '1 + e')
+        # self.assertEqual(self.op.standart('+', 1, 2), '1 + 2')
+        # self.assertEqual(self.op.standart('+', 1, 'e'), '1 + e')
 
         self.assertEqual(self.op.bracket_double('+', 1, 2), '+(1, 2)')
         self.assertEqual(self.op.bracket_double('+', 1, 'e'),
@@ -241,31 +242,31 @@ class TestAstOperator(DevTest):
         self.assertEqual((self.op + 1).expand(), 'expanded + 1')
         self.assertEqual((self.op + 1 + 1 + 1).expand(),
                          'expanded + 1 + 1 + 1')
-        self.assertEqual((1 + self.op).expand(), '1 + expanded')
+        self.assertEqual((1 + self.op).expand(), '1 + (expanded)')
         self.assertEqual((1 + self.op).get_value(), 1 + 1)
         with self.assertRaises(NotImplementedError):
             self.op += 1
 
         self.assertEqual((self.op - 1).expand(), 'expanded - 1')
-        self.assertEqual((1 - self.op).expand(), '1 - expanded')
+        self.assertEqual((1 - self.op).expand(), '1 - (expanded)')
         self.assertEqual((1 - self.op).get_value(), 1 - 1)
         with self.assertRaises(NotImplementedError):
             self.op -= 1
 
-        self.assertEqual((self.op * 1).expand(), 'expanded * 1')
-        self.assertEqual((1 * self.op).expand(), '1 * expanded')
+        self.assertEqual((self.op * 1).expand(), '(expanded) * 1')
+        self.assertEqual((1 * self.op).expand(), '1 * (expanded)')
         self.assertEqual((1 * self.op).get_value(), 1 * 1)
         with self.assertRaises(NotImplementedError):
             self.op *= 1
 
-        self.assertEqual((self.op / 1).expand(), 'expanded / 1')
-        self.assertEqual((1 / self.op).expand(), '1 / expanded')
+        self.assertEqual((self.op / 1).expand(), '(expanded) / 1')
+        self.assertEqual((1 / self.op).expand(), '1 / (expanded)')
         self.assertEqual((1 / self.op).get_value(), 1 / 1)
         with self.assertRaises(NotImplementedError):
             self.op /= 1
 
-        self.assertEqual((self.op % 1).expand(), 'expanded mod 1')
-        self.assertEqual((1 % self.op).expand(), '1 mod expanded')
+        self.assertEqual((self.op % 1).expand(), '(expanded) mod 1')
+        self.assertEqual((1 % self.op).expand(), '1 mod (expanded)')
         self.assertEqual((4 % self.op).get_value(), 4 % 1)
         with self.assertRaises(NotImplementedError):
             self.op %= 1
@@ -306,7 +307,11 @@ class TestAstOperator(DevTest):
         self.assertEqual((1 & self.op).expand(), '1 and expanded')
         self.assertEqual((self.op & 1).expand(), 'expanded and 1')
 
+# I don't know why they don't have self._get_runtime_other
+# kInt, kReal have
 
+
+# @t.skip
 class TestKspVar(DevTest):
 
     class BadKspVar(KspVar):
@@ -659,8 +664,24 @@ class TestKspVar(DevTest):
         self.assertEqual((x & 2).expand(), 'x and 2')
         self.assertEqual((2 & x).expand(), '2 and x')
 
-    class TestRealVar(KspRealVar, GoodKspVar):
+    class TestRealVar(KspRealVar):
         warning_types = (int,)
+
+        def __init__(self, name):
+            super().__init__(name,
+                             ref_type=(float, KspRealVar, AstOperator))
+
+        def _generate_init(self):
+            return []
+
+        def _get_compiled(self):
+            return self.name()
+
+        def _get_runtime(self):
+            return self._value
+
+        def _set_runtime(self, val):
+            self._value = val
 
     def test_real(self):
         x = self.TestRealVar('x')
@@ -694,7 +715,7 @@ class TestKspVar(DevTest):
             'x := x + 1.0')
 
         x.set_compiled(False)
-        x <<= 3
+        x <<= 3.0
         self.assertEqual(x - 1.0, 2)
         self.assertEqual(1.0 - x, 2)
         x -= 1.0
@@ -736,7 +757,7 @@ class TestKspVar(DevTest):
             'x := x * 2.0')
 
         x.set_compiled(False)
-        x <<= 4
+        x <<= 4.0
         self.assertEqual(x / 2.0, 2)
         self.assertEqual(2.0 / x, 2)
         x /= 2.0
@@ -748,13 +769,13 @@ class TestKspVar(DevTest):
         with self.assertRaises(x.TypeWarn):
             x /= 2
         x.set_compiled(True)
-        self.assertEqual((x / 2).expand(), 'x / 2')
-        self.assertEqual((2 / x).expand(), '2 / x')
-        x /= 2
+        self.assertEqual((x / 2.0).expand(), 'x / 2.0')
+        self.assertEqual((2.0 / x).expand(), '2.0 / x')
+        x /= 2.0
         self.assertEqual(x.val, 'x')
         self.assertEqual(
             Output().get()[-1],
-            'x := x / 2')
+            'x := x / 2.0')
 
         x.set_compiled(False)
         x <<= 1.0

@@ -130,7 +130,10 @@ class AstOperator(AstBase):
         returns tuple of args or only arg, if it was alone
         '''
         new = list()
-        for arg in args:
+        # wrap = False
+        for idx, arg in enumerate(args):
+            # if idx > 0:
+            #     wrap = True
             if isinstance(arg, KspVar):
                 arg = arg.val
             if isinstance(arg, AstBase):
@@ -153,7 +156,18 @@ class AstOperator(AstBase):
                  val1: Union[int, str, float, KspObject],
                  val2: Union[int, str, float, KspObject]):
         '''returns f"{val1} {string} {val2}"'''
+        pr = list()
+        for arg in self._args:
+            if isinstance(arg, AstBase):
+                pr.append(arg.priority)
+                continue
+            pr.append(0)
         val1, val2 = self.unpack_args(val1, val2)
+        if self.priority <= pr[1]:
+            val2 = f'({val2})'
+        if self.priority < pr[0]:
+            val1 = f'({val1})'
+        # if pr[0]
         return f'{val1} {string} {val2}'
 
     def bracket_unary(self, string: str,
@@ -302,6 +316,7 @@ class AstOperator(AstBase):
 
 
 class AstNeg(AstOperator):
+    priority = 2
 
     def expand(self):
         val = self.unpack_args(*self._args)
@@ -312,6 +327,8 @@ class AstNeg(AstOperator):
 
 
 class AstNot(AstOperator):
+    priority = 2
+
     def expand(self):
         val = self.unpack_args(*self._args)
         return self.unary('.not.', val)
@@ -321,6 +338,7 @@ class AstNot(AstOperator):
 
 
 class AstAdd(AstOperator):
+    priority = 4
 
     def expand(self):
         val1, val2 = self.unpack_args(*self._args)
@@ -331,6 +349,7 @@ class AstAdd(AstOperator):
 
 
 class AstSub(AstOperator):
+    priority = 4
 
     def expand(self):
         val1, val2 = self.unpack_args(*self._args)
@@ -341,6 +360,7 @@ class AstSub(AstOperator):
 
 
 class AstMul(AstOperator):
+    priority = 3
 
     def expand(self):
         val1, val2 = self.unpack_args(*self._args)
@@ -351,6 +371,7 @@ class AstMul(AstOperator):
 
 
 class AstDiv(AstOperator):
+    priority = 3
 
     def expand(self):
         val1, val2 = self.unpack_args(*self._args)
@@ -361,6 +382,7 @@ class AstDiv(AstOperator):
 
 
 class AstMod(AstOperator):
+    priority = 3
 
     def expand(self):
         val1, val2 = self.unpack_args(*self._args)
@@ -371,6 +393,7 @@ class AstMod(AstOperator):
 
 
 class AstPow(AstOperator):
+    priority = 1
 
     def expand(self):
         val1, val2 = self.unpack_args(*self._args)
@@ -381,6 +404,7 @@ class AstPow(AstOperator):
 
 
 class AstLogAnd(AstOperator):
+    priority = 8
 
     def expand(self):
         val1, val2 = self.unpack_args(*self._args)
@@ -391,6 +415,7 @@ class AstLogAnd(AstOperator):
 
 
 class AstBinAnd(AstOperator):
+    priority = 6
 
     def expand(self):
         val1, val2 = self.unpack_args(*self._args)
@@ -403,6 +428,7 @@ class AstBinAnd(AstOperator):
 
 
 class AstLogOr(AstOperator):
+    priority = 8
 
     def expand(self):
         val1, val2 = self.unpack_args(*self._args)
@@ -413,6 +439,7 @@ class AstLogOr(AstOperator):
 
 
 class AstBinOr(AstOperator):
+    priority = 6
 
     def expand(self):
         val1, val2 = self.unpack_args(*self._args)
@@ -425,6 +452,7 @@ class AstBinOr(AstOperator):
 
 
 class AstEq(AstOperator):
+    priority = 7
 
     def expand(self):
         val1, val2 = self.unpack_args(*self._args)
@@ -435,6 +463,7 @@ class AstEq(AstOperator):
 
 
 class AstNe(AstOperator):
+    priority = 7
 
     def expand(self):
         val1, val2 = self.unpack_args(*self._args)
@@ -445,6 +474,7 @@ class AstNe(AstOperator):
 
 
 class AstLt(AstOperator):
+    priority = 7
 
     def expand(self):
         val1, val2 = self.unpack_args(*self._args)
@@ -455,6 +485,7 @@ class AstLt(AstOperator):
 
 
 class AstGt(AstOperator):
+    priority = 7
 
     def expand(self):
         val1, val2 = self.unpack_args(*self._args)
@@ -465,6 +496,7 @@ class AstGt(AstOperator):
 
 
 class AstLe(AstOperator):
+    priority = 7
 
     def expand(self):
         val1, val2 = self.unpack_args(*self._args)
@@ -475,6 +507,7 @@ class AstLe(AstOperator):
 
 
 class AstGe(AstOperator):
+    priority = 7
 
     def expand(self):
         val1, val2 = self.unpack_args(*self._args)
@@ -733,18 +766,18 @@ class KspNumeric(KspVar):
                 f'Value {val} (type{type(val)}) ' +
                 'has to be converted within built-in func')
 
-    def __new__(cls, *args, **kwargs):
-        '''checks correct assignement of cls.warning_types'''
-        if cls.warning_types is None:
-            raise TypeError(cls._warning_types_exc_str)
-        if not isinstance(cls.warning_types, tuple):
-            raise TypeError(cls._warning_types_exc_str)
-        for item in cls.warning_types:
-            if not isinstance(item, type):
-                raise TypeError(cls._warning_types_exc_str)
-        obj = super().__new__(cls)
-        # obj.__init__(*args, **kwargs)
-        return obj
+    # def __new__(cls, *args, **kwargs):
+    #     '''checks correct assignement of cls.warning_types'''
+    #     if cls.warning_types is None:
+    #         raise TypeError(cls._warning_types_exc_str)
+    #     if not isinstance(cls.warning_types, tuple):
+    #         raise TypeError(cls._warning_types_exc_str)
+    #     for item in cls.warning_types:
+    #         if not isinstance(item, type):
+    #             raise TypeError(cls._warning_types_exc_str)
+    #     obj = super().__new__(cls)
+    #     # obj.__init__(*args, **kwargs)
+    #     return obj
 
     def _generate_executable(self):
         raise NotImplementedError('has not to be called')
@@ -802,14 +835,14 @@ class KspNumeric(KspVar):
         self._warn_other(other)
         if self.is_compiled():
             return AstAdd(self, other)
-        other = self._get_runtime_other(other)
+        other = get_runtime(other)
         return self._get_runtime() + other
 
     def __radd__(self, other):
         self._warn_other(other)
         if self.is_compiled():
             return AstAdd(other, self)
-        other = self._get_runtime_other(other)
+        other = get_runtime(other)
         return self._get_runtime() + other
 
     def __iadd__(self, other):
@@ -817,7 +850,7 @@ class KspNumeric(KspVar):
         if self.is_compiled():
             self._set_compiled(AstAdd(self, other))
             return self
-        other = self._get_runtime_other(other)
+        other = get_runtime(other)
         self._set_runtime(self._get_runtime() + other)
         return self
 
@@ -825,14 +858,14 @@ class KspNumeric(KspVar):
         self._warn_other(other)
         if self.is_compiled():
             return AstSub(self, other)
-        other = self._get_runtime_other(other)
+        other = get_runtime(other)
         return self._get_runtime() - other
 
     def __rsub__(self, other):
         self._warn_other(other)
         if self.is_compiled():
             return AstSub(other, self)
-        other = self._get_runtime_other(other)
+        other = get_runtime(other)
         return self._get_runtime() - other
 
     def __isub__(self, other):
@@ -840,7 +873,7 @@ class KspNumeric(KspVar):
         if self.is_compiled():
             self._set_compiled(AstSub(self, other))
             return self
-        other = self._get_runtime_other(other)
+        other = get_runtime(other)
         self._set_runtime(self._get_runtime() - other)
         return self
 
@@ -848,14 +881,14 @@ class KspNumeric(KspVar):
         self._warn_other(other)
         if self.is_compiled():
             return AstMul(self, other)
-        other = self._get_runtime_other(other)
+        other = get_runtime(other)
         return self._get_runtime() * other
 
     def __rmul__(self, other):
         self._warn_other(other)
         if self.is_compiled():
             return AstMul(other, self)
-        other = self._get_runtime_other(other)
+        other = get_runtime(other)
         return self._get_runtime() * other
 
     def __imul__(self, other):
@@ -863,7 +896,7 @@ class KspNumeric(KspVar):
         if self.is_compiled():
             self._set_compiled(AstMul(self, other))
             return self
-        other = self._get_runtime_other(other)
+        other = get_runtime(other)
         self._set_runtime(self._get_runtime() * other)
         return self
 
@@ -872,7 +905,7 @@ class KspNumeric(KspVar):
             if self.is_bool():
                 return AstLogAnd(self, other)
             return AstBinAnd(self, other)
-        other = self._get_runtime_other(other)
+        other = get_runtime(other)
         if self.is_bool():
             return self._get_runtime() and other
         return self._get_runtime() & other
@@ -882,7 +915,7 @@ class KspNumeric(KspVar):
             if self.is_bool():
                 return AstLogAnd(other, self)
             return AstBinAnd(other, self)
-        other = self._get_runtime_other(other)
+        other = get_runtime(other)
         if self.is_bool():
             return self._get_runtime() and other
         return self._get_runtime() & other
@@ -895,7 +928,7 @@ class KspNumeric(KspVar):
             if self.is_bool():
                 return AstLogOr(self, other)
             return AstBinOr(self, other)
-        other = self._get_runtime_other(other)
+        other = get_runtime(other)
         if self.is_bool():
             return self._get_runtime() or other
         return self._get_runtime() | other
@@ -905,7 +938,7 @@ class KspNumeric(KspVar):
             if self.is_bool():
                 return AstLogOr(other, self)
             return AstBinOr(other, self)
-        other = self._get_runtime_other(other)
+        other = get_runtime(other)
         if self.is_bool():
             return self._get_runtime() or other
         return self._get_runtime() | other
@@ -916,37 +949,37 @@ class KspNumeric(KspVar):
     def __eq__(self, other):
         if self.is_compiled():
             return AstEq(self, other)
-        other = self._get_runtime_other(other)
+        other = get_runtime(other)
         return self._get_runtime() == other
 
     def __ne__(self, other):
         if self.is_compiled():
             return AstNe(self, other)
-        other = self._get_runtime_other(other)
+        other = get_runtime(other)
         return self._get_runtime() != other
 
     def __lt__(self, other):
         if self.is_compiled():
             return AstLt(self, other)
-        other = self._get_runtime_other(other)
+        other = get_runtime(other)
         return self._get_runtime() < other
 
     def __gt__(self, other):
         if self.is_compiled():
             return AstGt(self, other)
-        other = self._get_runtime_other(other)
+        other = get_runtime(other)
         return self._get_runtime() > other
 
     def __le__(self, other):
         if self.is_compiled():
             return AstLe(self, other)
-        other = self._get_runtime_other(other)
+        other = get_runtime(other)
         return self._get_runtime() <= other
 
     def __ge__(self, other):
         if self.is_compiled():
             return AstGe(self, other)
-        other = self._get_runtime_other(other)
+        other = get_runtime(other)
         return self._get_runtime() >= other
 
     # def __bool__(self):
@@ -994,22 +1027,25 @@ class KspIntVar(KspNumeric):
 
 class KspRealVar(KspNumeric):
     def __truediv__(self, other):
+        self._warn_other(other)
         if self.is_compiled():
             return AstDiv(self, other)
-        other = self._get_runtime_other(other)
+        other = get_runtime(other)
         return self._get_runtime() / other
 
     def __rtruediv__(self, other):
+        self._warn_other(other)
         if self.is_compiled():
             return AstDiv(other, self)
-        other = self._get_runtime_other(other)
+        other = get_runtime(other)
         return self._get_runtime() / other
 
     def __itruediv__(self, other):
+        self._warn_other(other)
         if self.is_compiled():
             self._set_compiled(AstDiv(self, other))
             return self
-        other = self._get_runtime_other(other)
+        other = get_runtime(other)
         self._set_runtime(self._get_runtime() / other)
         return self
 
@@ -1031,14 +1067,14 @@ class KspRealVar(KspNumeric):
     def __rpow__(self, other):
         if self.is_compiled():
             return AstPow(other, self)
-        other = self._get_runtime_other(other)
+        other = get_runtime(other)
         return self._get_runtime() ** other
 
     def __ipow__(self, other):
         if self.is_compiled():
             self._set_compiled(AstPow(self, other))
             return self
-        other = self._get_runtime_other(other)
+        other = get_runtime(other)
         self._set_runtime(self._get_runtime() ** other)
         return self
 

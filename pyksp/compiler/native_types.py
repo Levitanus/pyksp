@@ -415,6 +415,10 @@ class kVar:
 
 
 class kNone(kInt, metaclass=SingletonMeta):
+    '''used as None value for KSP objects
+    currently always returns -1, but still can be
+    used as comparisson to kNone() :)
+    '''
 
     def __init__(self):
         super().__init__(value=-1, name='None',

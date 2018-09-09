@@ -145,7 +145,7 @@ class StackFrame(KSP):
                                                    len(var)))
                 with For(len(var)) as seq:
                     for val in seq:
-                        arr[val + idx + start_idx] <<= var[val]
+                        self.__vars[-1][val] = var[val]
                         idx += 1
                 continue
             arr[idx + start_idx] <<= var

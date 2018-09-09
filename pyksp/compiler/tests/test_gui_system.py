@@ -10,8 +10,6 @@ sys.path.append(path)
 from mytests import DevTest
 
 from abstract import Output
-from abstract import KSP
-from abstract import KspObject
 
 from dev_tools import unpack_lines
 
