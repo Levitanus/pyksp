@@ -28,6 +28,3 @@ since release version 0.1 pyksp will be available via PyPi, but till now:
 
 ## feature exploration:
 https://pyksp-blog.readthedocs.io/en/latest/
-
-If this project help you reduce time to develop, you can give me a cup of coffee :)
-[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.me/levitanus?ppid=PPC000628&cnac=RU&rsta=en_RU(en_US)&cust=PWXEBUA7XFQ4A&unptid=2deb5e08-b40a-11e8-9905-5cb90192cb40&t=&cal=cf737490701db&calc=cf737490701db&calf=cf737490701db&unp_tpcid=ppme-social-user-profile-created&page=main:email&pgrp=main:email&e=op&mchn=em&s=ci&mail=sys)
