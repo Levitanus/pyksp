@@ -1,0 +1,251 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>They killed …. You, bastards! (deprecated concepts) &mdash; pyksp 0.0.8 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Compilation and logging" href="logging_compilation.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> pyksp
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="features_table.html">Features (or SKSP vs pyksp)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datatypes.html">Datatypes and “syntax”</a></li>
+<li class="toctree-l1"><a class="reference internal" href="callbacks_functions.html">callbacks and functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="condition_loops.html">Conditions adn Loops</a></li>
+<li class="toctree-l1"><a class="reference internal" href="built_ins.html">KSP built-ins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gui_system.html">GUI system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="logging_compilation.html">Compilation and logging</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">They killed …. You, bastards! (deprecated concepts)</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pyksp</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>They killed …. You, bastards! (deprecated concepts)</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/deprecated.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="they-killed-you-bastards-deprecated-concepts">
+<h1>They killed …. You, bastards! (deprecated concepts)<a class="headerlink" href="#they-killed-you-bastards-deprecated-concepts" title="Permalink to this headline">¶</a></h1>
+<blockquote>
+<div><p><strong>get_ui_id()</strong></p>
+<blockquote>
+<div>because there big amount of arrays with ids</div></blockquote>
+<p><strong>USE_CODE_IF(&lt;condition-symbol&gt;)
+…
+END_USE_CODE</strong></p>
+<p><strong>USE_CODE_IF_NOT(&lt;condition-symbol&gt;)
+…
+END_USE_CODE</strong></p>
+<blockquote>
+<div>because they are not useful within prerocessor</div></blockquote>
+<p><strong>old_type_mf_vars</strong></p>
+<blockquote>
+<div>???</div></blockquote>
+<p><strong>$CONTROL_PAR_BASEPATH,
+$CONTROL_PAR_COLUMN_WIDTH,
+$CONTROL_PAR_FILEPATH,
+$CONTROL_PAR_FILE_TYPE</strong></p>
+<blockquote>
+<div>i believe they are accessible as constants. Needs to be checked.</div></blockquote>
+<p>declare ui_label $&lt;variable-name&gt; <strong>(&lt;width&gt;,&lt;height&gt;)</strong></p>
+<blockquote>
+<div>declared within (1, 1) args</div></blockquote>
+<p>add_text_line(&lt;variable&gt;,&lt;text&gt;)
+set_text(&lt;variable&gt;,&lt;text&gt;)
+hide_part(&lt;variable&gt;,&lt;hide-mask&gt;)</p>
+<blockquote>
+<div>duplication os control_pars</div></blockquote>
+</div></blockquote>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="logging_compilation.html" class="btn btn-neutral" title="Compilation and logging" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Levitanus.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.0.8',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

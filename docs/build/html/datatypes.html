@@ -1,0 +1,422 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Datatypes and “syntax” &mdash; pyksp 0.0.8 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="callbacks and functions" href="callbacks_functions.html" />
+    <link rel="prev" title="Features (or SKSP vs pyksp)" href="features_table.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> pyksp
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="features_table.html">Features (or SKSP vs pyksp)</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Datatypes and “syntax”</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#syntax">Syntax</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="callbacks_functions.html">callbacks and functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="condition_loops.html">Conditions adn Loops</a></li>
+<li class="toctree-l1"><a class="reference internal" href="built_ins.html">KSP built-ins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gui_system.html">GUI system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="logging_compilation.html">Compilation and logging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deprecated.html">They killed …. You, bastards! (deprecated concepts)</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pyksp</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Datatypes and “syntax”</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/datatypes.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="datatypes-and-syntax">
+<h1>Datatypes and “syntax”<a class="headerlink" href="#datatypes-and-syntax" title="Permalink to this headline">¶</a></h1>
+<p>As KSP, pyksp has 6 basic datatypes:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="26%" />
+<col width="21%" />
+<col width="53%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">KSP</th>
+<th class="head">API</th>
+<th class="head">Python (reference-type)</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>int var</td>
+<td>kInt</td>
+<td>int</td>
+</tr>
+<tr class="row-odd"><td>str var</td>
+<td>kStr</td>
+<td>str</td>
+</tr>
+<tr class="row-even"><td>real var</td>
+<td>kReal</td>
+<td>float</td>
+</tr>
+<tr class="row-odd"><td>int array</td>
+<td>kArrInt</td>
+<td rowspan="3">a bit more complicated</td>
+</tr>
+<tr class="row-even"><td>str array</td>
+<td>kArrReal</td>
+</tr>
+<tr class="row-odd"><td>real array</td>
+<td>kArrStr</td>
+</tr>
+</tbody>
+</table>
+<p>Folowing init arguments are valid:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">var</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">reference_type</span><span class="o">=&lt;</span><span class="n">default</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">preserve</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+    <span class="n">is_local</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+    <span class="n">persist</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>defaults for types:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="55%" />
+<col width="45%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>int</td>
+<td>0</td>
+</tr>
+<tr class="row-even"><td>str</td>
+<td>‘’</td>
+</tr>
+<tr class="row-odd"><td>real</td>
+<td>0.0</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition danger">
+<p class="first admonition-title">Danger</p>
+<p class="last">Argument <code class="docutils literal notranslate"><span class="pre">is_local</span></code> has not to be ever used. It exsists just for internal compiler mechanics. It doesn’t mean that variable will be local, it means variable will not be declared at all.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">for arrays <code class="docutils literal notranslate"><span class="pre">value</span></code> argument replaced by <code class="docutils literal notranslate"><span class="pre">sequence</span></code> argument (if they are used as positional there is no difference). It accepts only lists, and (for the purpose of speed) checks the type of first element in it. So be careful with multi-typed lists, exception can be raised faar away.</p>
+</div>
+<div class="admonition hint">
+<p class="first admonition-title">Hint</p>
+<p class="last">You can start within empty arguments, and add them at architecture and testing needs. For example, if no name is specified, variables are named automatically as kInt0, kInt1 etc.</p>
+</div>
+<p>But the most cases You don’t need to use thees types, just preprocess values You need and paste them (or simple type the directly) to the <code class="docutils literal notranslate"><span class="pre">kVar</span></code> constructor:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">kVar</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+    <span class="n">size</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+    <span class="n">preserve</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+    <span class="n">persist</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">kVar</span></code> can be initialized by <code class="docutils literal notranslate"><span class="pre">None</span></code> arguments, or by <code class="docutils literal notranslate"><span class="pre">None</span></code> value, and it will return valid object at the first value assignement</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="48%" />
+<col width="52%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>pasted value</td>
+<td>resulted object</td>
+</tr>
+<tr class="row-even"><td>int, kInt</td>
+<td>kInt</td>
+</tr>
+<tr class="row-odd"><td>str, kStr</td>
+<td>kStr</td>
+</tr>
+<tr class="row-even"><td>float, kReal</td>
+<td>kReal</td>
+</tr>
+<tr class="row-odd"><td>list of ints</td>
+<td>kArrInt</td>
+</tr>
+<tr class="row-even"><td>list of strs</td>
+<td>kArrStr</td>
+</tr>
+<tr class="row-odd"><td>list of floats</td>
+<td>kArrReal</td>
+</tr>
+</tbody>
+</table>
+<p><code class="docutils literal notranslate"><span class="pre">kNone()</span></code> is spetial singleton subclass of kInt. Still is doing nothing more, but returns <code class="docutils literal notranslate"><span class="pre">-1</span></code>. But can be used in expressions like <code class="docutils literal notranslate"><span class="pre">var</span> <span class="pre">is</span> <span class="pre">kNone()</span></code></p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">functionality of <code class="docutils literal notranslate"><span class="pre">kNone()</span></code> will be extended to pass and react of built-in function properly. Also may be included additional mechanics of initializing variables within kNone(). Also kBool is expected to appear.</p>
+</div>
+<div class="section" id="syntax">
+<h2>Syntax<a class="headerlink" href="#syntax" title="Permalink to this headline">¶</a></h2>
+<p>still <code class="docutils literal notranslate"><span class="pre">=</span></code> symbol is not an oerator in Python, but, let’s say, keyword of assigning object to name, it is bad idea to use it on the pyksp objects.
+as assignement operator i’ve chosen <code class="docutils literal notranslate"><span class="pre">&lt;&lt;=</span></code>, which works quite fine.
+In case of other operators – all <strong>arithmetic</strong>, <strong>comparisson</strong> and <strong>logical</strong> operators works fine. If You are doing something wrong I hope You’ll recieve understandable excetion.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="41%" />
+<col width="59%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">variables methods</th>
+<th class="head">resulted action</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">var</span> <span class="pre">&lt;&lt;=</span> <span class="pre">value</span></code></td>
+<td>assign value to var</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">value</span> <span class="pre">&lt;&lt;=</span> <span class="pre">var</span></code></td>
+<td>assign var.val to value</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">var.val</span></code></td>
+<td>get value of var</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">var.read()</span></code></td>
+<td>place <code class="docutils literal notranslate"><span class="pre">read_persisten_var(var)</span></code> line[1]</td>
+</tr>
+<tr class="row-even"><td><strong>kInt additional methods</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">invar.inc()</span></code></td>
+<td>call native KSP <code class="docutils literal notranslate"><span class="pre">inc(var)</span></code> funciton</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">invar.dec()</span></code></td>
+<td>call native KSP <code class="docutils literal notranslate"><span class="pre">dec(var)</span></code> funciton</td>
+</tr>
+<tr class="row-odd"><td><strong>arrays methods</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">arr</span> <span class="pre">&lt;&lt;=</span> <span class="pre">val</span></code></td>
+<td>error</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">arr[idx]</span></code></td>
+<td>get variable at array index[2]</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">arr.append(value)</span></code></td>
+<td>append value to the end of array[3]</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">arr.extend(list[values])</span></code></td>
+<td>the same, but for sequences</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">len(arr)</span></code></td>
+<td>constant current size of an array</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id1" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[1]</td><td>if not <code class="docutils literal notranslate"><span class="pre">persisten</span></code> argument passed on construction, it will be added near the declaration line</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id2" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[2]</td><td>if idx &gt; current length, and size is not specified, and is still init callback (basically, not a function or another callback) – size will be increased to the idx value, and future append methods will increase it on</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id3" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[3]</td><td>if called outside of callbacks or functions increases size of array and puts value into it. raises IndexError is called from callback or array with fixed size is full.</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="callbacks_functions.html" class="btn btn-neutral float-right" title="callbacks and functions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="features_table.html" class="btn btn-neutral" title="Features (or SKSP vs pyksp)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Levitanus.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.0.8',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

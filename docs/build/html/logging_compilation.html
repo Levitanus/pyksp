@@ -1,0 +1,333 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Compilation and logging &mdash; pyksp 0.0.8 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="They killed …. You, bastards! (deprecated concepts)" href="deprecated.html" />
+    <link rel="prev" title="GUI system" href="gui_system.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> pyksp
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="features_table.html">Features (or SKSP vs pyksp)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datatypes.html">Datatypes and “syntax”</a></li>
+<li class="toctree-l1"><a class="reference internal" href="callbacks_functions.html">callbacks and functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="condition_loops.html">Conditions adn Loops</a></li>
+<li class="toctree-l1"><a class="reference internal" href="built_ins.html">KSP built-ins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gui_system.html">GUI system</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Compilation and logging</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#logging">logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#compilation">Compilation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="deprecated.html">They killed …. You, bastards! (deprecated concepts)</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pyksp</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Compilation and logging</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/logging_compilation.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="compilation-and-logging">
+<h1>Compilation and logging<a class="headerlink" href="#compilation-and-logging" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="logging">
+<h2>logging<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">message</span></code> function has been updated to accept many arguments, and keyword arg <code class="docutils literal notranslate"><span class="pre">sep:</span> <span class="pre">str='</span> <span class="pre">'</span></code>.
+It doesn’t mean it has to be used for debug :)</p>
+<p>SublimeKSP logger was copied as one behaviour of <code class="docutils literal notranslate"><span class="pre">kLog</span></code> object.</p>
+<p><code class="docutils literal notranslate"><span class="pre">kLog</span></code> can be initialized only once, within positional arg <code class="docutils literal notranslate"><span class="pre">type</span></code> and optional <code class="docutils literal notranslate"><span class="pre">path</span></code> (later – <code class="docutils literal notranslate"><span class="pre">label</span></code>)
+strings are put to log by <code class="docutils literal notranslate"><span class="pre">logpr(*args,</span> <span class="pre">sep='</span> <span class="pre">')</span></code> function.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">if kLog() is not initialized, logpr is doing nothing</p>
+</div>
+<table border="1" class="docutils">
+<colgroup>
+<col width="13%" />
+<col width="22%" />
+<col width="65%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">type arg</th>
+<th class="head">path arg</th>
+<th class="head">behaviour of logpr()</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>kLog.array</td>
+<td>None</td>
+<td>similar to SKSP print(), array is saved to the data folder</td>
+</tr>
+<tr class="row-odd"><td>kLog.array</td>
+<td>local or full path</td>
+<td>similar to SKSP print()</td>
+</tr>
+<tr class="row-even"><td>kLog.pgs</td>
+<td>None</td>
+<td>puts lines to pgs_str_key</td>
+</tr>
+</tbody>
+</table>
+<p>for using pgs – place this code to the one of script slots:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>on init
+  set_script_title(&quot;log_viever&quot;)
+  declare ui_label $log_label(6, 4)
+  set_control_par_str(get_ui_id($log_label),$CONTROL_PAR_TEXT,...\
+  &quot;log started&quot;)
+end on
+
+on pgs_changed
+  if (pgs_get_key_val(_log_flag,0)=1)
+    pgs_set_key_val(_log_flag,0,0)
+    set_control_par_str(get_ui_id($log_label),$CONTROL_PAR_TEXTLINE...\
+    ,pgs_get_str_key_val(_log_msg))
+  end if
+  if (pgs_get_key_val(_log_flag,0)=2)
+    pgs_set_key_val(_log_flag,0,0)
+    set_control_par_str(get_ui_id($log_label),$CONTROL_PAR_TEXT,...\
+    &quot;log started&quot;)
+  end if
+end on
+</pre></div>
+</div>
+</div>
+<div class="section" id="compilation">
+<h2>Compilation<a class="headerlink" href="#compilation" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">kScript()</span></code> Is used for generating code of all API calls used in project.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">All KSP objects, attempted to appear in code has to be placed inside script main method.</p>
+</div>
+<p><strong>args:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">kScript</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">compact</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">max_line_length</span><span class="o">=</span><span class="mi">79</span><span class="p">,</span>
+            <span class="n">indents</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+            <span class="n">docstrings</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="bp">None</span><span class="p">:</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><dl class="first docutils">
+<dt>out_file can be as str filename with .txt ending as well as <code class="docutils literal notranslate"><span class="pre">Kscript.clipboard</span></code></dt>
+<dd><ul class="first last">
+<li>if filename is not full path, the __main__.__file__ path will be used.</li>
+<li>if out_file is <code class="docutils literal notranslate"><span class="pre">Kscript.clipboard</span></code>, compiled code will be copied to the exchange buffer</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li>title is script title to be set via set_script_title() func</li>
+<li>if compact is True, all variable names will be hashed</li>
+<li>with max_line_length being not None, lines with length &gt; max_line_length will be wrapped to fit it. currently, lines with “quoted strings” are not wrapped</li>
+<li>indents and docstrings are out of work</li>
+</ul>
+<p><strong>Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">script</span> <span class="o">=</span> <span class="n">kScript</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;C:/file.txt&#39;</span><span class="p">,</span>
+                     <span class="s1">&#39;myscript&#39;</span><span class="p">,</span> <span class="n">max_line_length</span><span class="o">=</span><span class="mi">70</span><span class="p">,</span> <span class="n">compact</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">foo</span><span class="p">():</span>
+    <span class="n">mw</span> <span class="o">=</span> <span class="n">kMainWindow</span><span class="p">()</span>
+    <span class="n">buttons_area</span> <span class="o">=</span> <span class="n">kWidget</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="n">mw</span><span class="p">)</span>
+    <span class="n">buttons_area</span><span class="o">.</span><span class="n">place_pct</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
+    <span class="n">ba_bg</span> <span class="o">=</span> <span class="n">kLabel</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="n">buttons_area</span><span class="p">)</span>
+    <span class="n">ba_bg</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">sticky</span><span class="o">=</span><span class="s1">&#39;nswe&#39;</span><span class="p">)</span>
+    <span class="n">ba_bg</span><span class="o">.</span><span class="n">text</span> <span class="o">&lt;&lt;=</span> <span class="s1">&#39;&#39;</span>
+<span class="n">script</span><span class="o">.</span><span class="n">main</span> <span class="o">=</span> <span class="n">foo</span>
+<span class="n">script</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="deprecated.html" class="btn btn-neutral float-right" title="They killed …. You, bastards! (deprecated concepts)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="gui_system.html" class="btn btn-neutral" title="GUI system" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Levitanus.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.0.8',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

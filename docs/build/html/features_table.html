@@ -1,0 +1,335 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Features (or SKSP vs pyksp) &mdash; pyksp 0.0.8 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Datatypes and “syntax”" href="datatypes.html" />
+    <link rel="prev" title="Welcome to pyksp’s documentation!" href="index.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> pyksp
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Features (or SKSP vs pyksp)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#now-the-blitz-comparisson-table">now the blitz comparisson table</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="datatypes.html">Datatypes and “syntax”</a></li>
+<li class="toctree-l1"><a class="reference internal" href="callbacks_functions.html">callbacks and functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="condition_loops.html">Conditions adn Loops</a></li>
+<li class="toctree-l1"><a class="reference internal" href="built_ins.html">KSP built-ins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gui_system.html">GUI system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="logging_compilation.html">Compilation and logging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deprecated.html">They killed …. You, bastards! (deprecated concepts)</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pyksp</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Features (or SKSP vs pyksp)</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/features_table.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="features-or-sksp-vs-pyksp">
+<h1>Features (or SKSP vs pyksp)<a class="headerlink" href="#features-or-sksp-vs-pyksp" title="Permalink to this headline">¶</a></h1>
+<p>The thing has to be counted is that pyksp is not a compiler. If You just type code and compile it, it will not make any key difference of what SKSP does.
+But even now and even on compilation it counts something more:
+for example it raises exceptions if id passed to the <code class="docutils literal notranslate"><span class="pre">set_control_par</span></code> is not a valid id of ui control. Or it knows exactly the length of every array, and runs every for-loop entirely, so exception will be raised at the wrong index.</p>
+<p>On the current stage, if You pass code to the SKSP You can be sure about 95% that it’s static semantic is right (i mean, that Kontakt will not reject your code at pressing the apply button). Pyksp can not give that warrancy yet, it’s very early alpha release. But when we sure it’s built-ins API is correct, within pasting the code (even without unit-tests inside python) we can be calm about many runtime things, we can not be calm within just static analyses.</p>
+<p>The second advantage is that every object (even built-ins like EVENT_NOTE) is alive object. So it can be tested inside python. A huge amount of code can be written without pasting to Kontakt. And every time tests can be batch-checked.</p>
+<p>The third adventage is Python. Many types of pre-calculations and many ways of keeping the project data can be applied. Only restriction is pyksp is still a preprocessor, but the power of this preprocessing is restricted only by Your imagination.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Still knowing of how code will be generated and what is good KSP practice and what is bad is required.</p>
+</div>
+<div class="section" id="now-the-blitz-comparisson-table">
+<h2>now the blitz comparisson table<a class="headerlink" href="#now-the-blitz-comparisson-table" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="docutils">
+<colgroup>
+<col width="55%" />
+<col width="18%" />
+<col width="26%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">feature</th>
+<th class="head">pyksp</th>
+<th class="head">SublimeKSP</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>full KSP backvard-copability</td>
+<td>not</td>
+<td>yes</td>
+</tr>
+<tr class="row-odd"><td>improved functions</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr class="row-even"><td>variable amount of functions arguments</td>
+<td>yes</td>
+<td>no</td>
+</tr>
+<tr class="row-odd"><td>returns from functions</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr class="row-even"><td>multi-typed functions</td>
+<td>every of 6</td>
+<td>only in inlined functions</td>
+</tr>
+<tr class="row-odd"><td>undefined type at declaration</td>
+<td>yes</td>
+<td>buggy</td>
+</tr>
+<tr class="row-even"><td>‘lists’: undefined size of arrays and appending in init</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr class="row-odd"><td>constant as size of arrays</td>
+<td>every array</td>
+<td>only lists and constants</td>
+</tr>
+<tr class="row-even"><td>arrays concatination</td>
+<td>not yet</td>
+<td>yes</td>
+</tr>
+<tr class="row-odd"><td>shorten control pars</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr class="row-even"><td>iterative pre-processing</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr class="row-odd"><td>logging</td>
+<td>improved</td>
+<td>yes</td>
+</tr>
+<tr class="row-even"><td>advanced layout and custom ‘widgets’</td>
+<td>yes</td>
+<td>not</td>
+</tr>
+<tr class="row-odd"><td>structs</td>
+<td>classes?</td>
+<td>yes</td>
+</tr>
+<tr class="row-even"><td>families</td>
+<td>subclasses?</td>
+<td>yes</td>
+</tr>
+<tr class="row-odd"><td>ui-arrays</td>
+<td>see ‘hello world’</td>
+<td>yes</td>
+</tr>
+<tr class="row-even"><td>constant blocks</td>
+<td>not as syntax</td>
+<td>yes</td>
+</tr>
+<tr class="row-odd"><td>persisten shorthand</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr class="row-even"><td>multidimentional arrays</td>
+<td>needs to think</td>
+<td>yes</td>
+</tr>
+<tr class="row-odd"><td>preprocessor variables are mutable</td>
+<td>yep</td>
+<td>nope</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="datatypes.html" class="btn btn-neutral float-right" title="Datatypes and “syntax”" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="Welcome to pyksp’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Levitanus.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.0.8',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

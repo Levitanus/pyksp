@@ -1,0 +1,371 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>callbacks and functions &mdash; pyksp 0.0.8 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Conditions adn Loops" href="condition_loops.html" />
+    <link rel="prev" title="Datatypes and “syntax”" href="datatypes.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> pyksp
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="features_table.html">Features (or SKSP vs pyksp)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datatypes.html">Datatypes and “syntax”</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">callbacks and functions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#callbacks">callbacks</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#init-callback">init callback</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ni-callback-id-and-ni-callback-type">NI_CALLBACK_ID and NI_CALLBACK_TYPE</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#functions">functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#prototyping">prototyping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#what-do-we-have-now">what do we have now?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#specification">specification</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="condition_loops.html">Conditions adn Loops</a></li>
+<li class="toctree-l1"><a class="reference internal" href="built_ins.html">KSP built-ins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gui_system.html">GUI system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="logging_compilation.html">Compilation and logging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deprecated.html">They killed …. You, bastards! (deprecated concepts)</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pyksp</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>callbacks and functions</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/callbacks_functions.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="callbacks-and-functions">
+<h1>callbacks and functions<a class="headerlink" href="#callbacks-and-functions" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="callbacks">
+<h2>callbacks<a class="headerlink" href="#callbacks" title="Permalink to this headline">¶</a></h2>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">callbacks usage API can be changed. Now they are blocking useful features</p>
+</div>
+<p>by default import <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">pyksp.compiler</span> <span class="pre">import</span> <span class="pre">*</span></code> callbacks decorators are imported within namespace <code class="docutils literal notranslate"><span class="pre">on</span></code>.</p>
+<p>So two mechanics can be used:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@on.release</span>
+<span class="k">def</span> <span class="nf">release_cb</span><span class="p">():</span>
+    <span class="n">some</span> <span class="n">code</span>
+</pre></div>
+</div>
+<p>or if it more flexible at some points (I’m thinking of rejecting decorators at all, and leave only this one)</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">release_cb</span><span class="p">():</span>
+    <span class="n">some</span> <span class="n">code</span>
+
+<span class="n">release_cb</span> <span class="o">=</span> <span class="n">on</span><span class="o">.</span><span class="n">release</span><span class="p">(</span><span class="n">release_cb</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>I’m still thinking of how test them properly, and, hope, in the closest update callbacks question will be solved.</p>
+<div class="section" id="init-callback">
+<h3>init callback<a class="headerlink" href="#init-callback" title="Permalink to this headline">¶</a></h3>
+<p>generally, everything not placed inside callback or function is init callback.
+But if something is put in decorated function, it will be placed at the very end of init.</p>
+</div>
+<div class="section" id="ni-callback-id-and-ni-callback-type">
+<h3>NI_CALLBACK_ID and NI_CALLBACK_TYPE<a class="headerlink" href="#ni-callback-id-and-ni-callback-type" title="Permalink to this headline">¶</a></h3>
+<p>works in offline. So every callback execution new id will be recieved. NI_CALLBACK_TYPE will also be checked respective to their constants.
+So, generally, this constant can be used in regular Python <code class="docutils literal notranslate"><span class="pre">if</span></code>, not in <code class="docutils literal notranslate"><span class="pre">If()</span></code> at some cases. But this has not been tested in real project.</p>
+</div>
+</div>
+<div class="section" id="functions">
+<h2>functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<p>Let’s remember how functions works in <strong>SublimeKSP</strong>:</p>
+<ul class="simple">
+<li>there is native ksp function within keyword <code class="docutils literal notranslate"><span class="pre">function</span></code> and without arguments</li>
+<li>there is <code class="docutils literal notranslate"><span class="pre">clever</span></code> function, which can not be called, but always will work as some sort of macro</li>
+<li>there is <code class="docutils literal notranslate"><span class="pre">taskfunc</span></code>, which can be called, and can recieve args, but can not be inlined</li>
+</ul>
+<p>so the last time i put them together was something like this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">on</span> <span class="n">ui_control</span> <span class="p">(</span><span class="n">menu_working_regime</span><span class="p">)</span>
+    <span class="n">render_pad_area</span>
+<span class="n">end</span> <span class="n">on</span>
+
+<span class="n">taskfunc</span> <span class="n">render_pad_area</span> <span class="n">override</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="p">:</span><span class="o">=</span> <span class="mi">1</span> <span class="n">to</span> <span class="n">PADS_ROWS_AMOUNT</span>
+        <span class="n">render_pad_area_line</span> <span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="n">end</span> <span class="k">for</span>
+<span class="n">end</span> <span class="n">taskfunc</span>
+<span class="n">function</span> <span class="n">render_pad_area</span><span class="o">.</span><span class="n">func</span> <span class="n">override</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="p">:</span><span class="o">=</span> <span class="mi">1</span> <span class="n">to</span> <span class="n">PADS_ROWS_AMOUNT</span>
+        <span class="n">render_pad_area_line</span><span class="o">.</span><span class="n">func</span> <span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="n">end</span> <span class="k">for</span>
+<span class="n">end</span> <span class="n">function</span>
+
+<span class="n">taskfunc</span> <span class="n">render_pad_area_line</span> <span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="n">override</span>
+    <span class="n">render_pad_area_line</span><span class="o">.</span><span class="n">macro</span> <span class="p">(</span><span class="n">line</span><span class="p">)</span>
+    <span class="n">render_pads_line</span> <span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">track</span><span class="p">)</span>
+<span class="n">end</span> <span class="n">taskfunc</span>
+<span class="n">function</span> <span class="n">render_pad_area_line</span><span class="o">.</span><span class="n">func</span> <span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="n">override</span>
+    <span class="n">render_pad_area_line</span><span class="o">.</span><span class="n">macro</span> <span class="p">(</span><span class="n">line</span><span class="p">)</span>
+    <span class="n">render_pads_line</span><span class="o">.</span><span class="n">func</span> <span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">track</span><span class="p">)</span>
+<span class="n">end</span> <span class="n">function</span>
+</pre></div>
+</div>
+<p>Within <strong>pyksp</strong> things are also not as simple, as walk in the park, but much maintainable:</p>
+<div class="section" id="prototyping">
+<h3>prototyping<a class="headerlink" href="#prototyping" title="Permalink to this headline">¶</a></h3>
+<p>Still the function in state of prototyping I recommend to start from the simple Python function, add or not add arguments to it, use or not use return values, use as many locals as You wish.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">avoid of passing function objects as args. pyksp can’t pass them through. It is still possible to invoke callables in place on the arguments places.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">myfunc</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">ui_ids</span><span class="p">,</span> <span class="n">someint</span><span class="p">):</span>
+    <span class="n">local_str</span> <span class="o">=</span> <span class="s1">&#39;some_text&#39;</span>
+    <span class="n">ret_value</span> <span class="o">=</span> <span class="n">label</span><span class="o">.</span><span class="n">x</span>
+    <span class="c1"># some ids job</span>
+    <span class="k">return</span> <span class="n">ret_value</span>
+</pre></div>
+</div>
+<p>When logic is ready, it’s time to think if Function has to be called somewhere. If has,
+place decorator, and do some refactor for matching specification:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@func</span>
+<span class="k">def</span> <span class="nf">myfunc</span><span class="p">(</span><span class="n">label_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+            <span class="n">ui_ids</span><span class="p">:</span> <span class="n">kArg</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="mi">15</span><span class="p">),</span>
+            <span class="n">someint</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+            <span class="n">local_str</span><span class="o">=</span><span class="n">kLoc</span><span class="p">(</span><span class="nb">str</span><span class="p">),</span>
+            <span class="n">ret_value</span><span class="o">=</span><span class="n">kOut</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="mi">2</span><span class="p">)):</span>
+    <span class="n">ret_value</span> <span class="o">&lt;&lt;=</span> <span class="n">get_control_par</span><span class="p">(</span><span class="n">label_id</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">)</span>
+    <span class="c1"># some ids job</span>
+    <span class="k">return</span> <span class="bp">None</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="what-do-we-have-now">
+<h3>what do we have now?<a class="headerlink" href="#what-do-we-have-now" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>Now by default everywhere function is used, it will be called, within it’s args being put to <code class="docutils literal notranslate"><span class="pre">stack</span></code></li>
+<li>If it invoked inside init it will be inlined with saving true local args</li>
+<li>for inlining it’s code somewhere at some reason additional keyword-only argument <code class="docutils literal notranslate"><span class="pre">inline=True</span></code> has to be passed</li>
+</ul>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">if you’re familiar with how taskfunc works, theese <code class="docutils literal notranslate"><span class="pre">&#64;func</span></code> s work just the same. But can accept not only <code class="docutils literal notranslate"><span class="pre">int</span></code>, but also <code class="docutils literal notranslate"><span class="pre">str</span></code> and <code class="docutils literal notranslate"><span class="pre">float</span></code> arguments, as well as all types of Ksp arrays. You can imagine how much code will take to put many args to func, be careful.</p>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">if function is inlined, args still will be put to stack for purpose of maintaining variable args amount without parsing the body code. I’ll think if this mechanic can be improved.</p>
+</div>
+</div>
+<div class="section" id="specification">
+<h3>specification<a class="headerlink" href="#specification" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>All arguments (except of self, if method is being wrapped) has to be annotated with types of expecting arguments, as it expected by mypy.</li>
+<li>Annotations can be as simple: int, str, float as well as objects of special classes <code class="docutils literal notranslate"><span class="pre">kArg</span></code>, <code class="docutils literal notranslate"><span class="pre">kLoc</span></code>, <code class="docutils literal notranslate"><span class="pre">kOut</span></code> reccomended to use <code class="docutils literal notranslate"><span class="pre">kArg</span></code> instead of (<code class="docutils literal notranslate"><span class="pre">int</span></code>, <code class="docutils literal notranslate"><span class="pre">str</span></code>, <code class="docutils literal notranslate"><span class="pre">float</span></code>)</li>
+<li><code class="docutils literal notranslate"><span class="pre">kArg</span></code> used as annotation. the first argument has to be (<code class="docutils literal notranslate"><span class="pre">int</span></code>, <code class="docutils literal notranslate"><span class="pre">str</span></code> or <code class="docutils literal notranslate"><span class="pre">float</span></code>) and the second argument tells that KspArray with the specified size is expected</li>
+<li><code class="docutils literal notranslate"><span class="pre">kLoc</span></code> used as default value of an argument. As <code class="docutils literal notranslate"><span class="pre">kArg</span></code>, <em>type</em> is requeired and <em>size</em> is optional. inside the function attribute can be used as native KspArray or KspVar</li>
+<li><code class="docutils literal notranslate"><span class="pre">kOut</span></code> used as defaul argument and has the same notation as <code class="docutils literal notranslate"><span class="pre">kLoc</span></code> and <code class="docutils literal notranslate"><span class="pre">kArg</span></code>, but it can not accept basic <code class="docutils literal notranslate"><span class="pre">int</span></code>, <code class="docutils literal notranslate"><span class="pre">str</span></code> or <code class="docutils literal notranslate"><span class="pre">float</span></code> objects. returns the last assigned value to the passed KspVar instead</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">You can use return statement, but it will not be counted during code generation</p>
+</div>
+<div class="admonition hint">
+<p class="first admonition-title">Hint</p>
+<p class="last">You can pass a const argument instead of self, and name it self :D. It just has came to my mind, I’ll think about constant args</p>
+</div>
+<div class="admonition tip">
+<p class="first admonition-title">Tip</p>
+<p class="last">If You want fake-local arg, You can specify <code class="docutils literal notranslate"><span class="pre">KspVar</span></code> (and <code class="docutils literal notranslate"><span class="pre">KspArray</span></code> ) object as default value of argument. <strong>But be careful!</strong> If function is defined outside of script.main function (for example, it is class method), things will go very bad. I’ll think of checking if it happens.</p>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="condition_loops.html" class="btn btn-neutral float-right" title="Conditions adn Loops" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="datatypes.html" class="btn btn-neutral" title="Datatypes and “syntax”" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Levitanus.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.0.8',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
