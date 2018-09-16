@@ -70,8 +70,10 @@ class kMainWindow(KSP):
                  skin_offset: int=None) -> None:
         if width < 633:
             raise AttributeError('width can be not less than 633 px')
-        self._width = width
-        self._height = height
+        self._x = WidgetPar('x', 0)
+        self._y = WidgetPar('y', 0)
+        self._width = WidgetPar('width', width)
+        self._height = WidgetPar('height', height)
         if wallpaper:
             Output().put(
                 'set_control_par_str($INST_WALLPAPER_ID,' +
@@ -80,7 +82,7 @@ class kMainWindow(KSP):
             Output().put(
                 'set_control_par_str($INST_ICON_ID,' +
                 f'$CONTROL_PAR_PICTURE,{icon})')
-        else:
+        elif icon is False:
             Output().put(
                 'set_control_par($INST_ICON_ID,' +
                 '$CONTROL_PAR_HIDE,$HIDE_WHOLE_CONTROL)')
@@ -88,9 +90,11 @@ class kMainWindow(KSP):
         if skin_offset is not None:
             self._skin_offset = skin_offset
             Output().put(f'set_skin_offset({skin_offset})')
-        Output().put(f'set_ui_width_px({width})')
+        if width != 633:
+            Output().put(f'set_ui_width_px({width})')
         Output().put(f'set_ui_height_px({height})')
         self._childs: List[kWidget] = list()
+        Output().put(f'make_perfview')
 
     @property
     def skin_offset(self):
@@ -98,11 +102,11 @@ class kMainWindow(KSP):
 
     @property
     def x(self):
-        return 0
+        return self._x
 
     @property
     def y(self):
-        return 0
+        return self._y
 
     @property
     def width(self):
@@ -126,10 +130,12 @@ class WidgetPar(kInt):
         self._val = value
 
     def _set_compiled(self, val):
+        if isinstance(val, WidgetPar):
+            val = get_runtime_val(val)
         self._val = val
 
     def _set_runtime(self, val):
-        self._val = val
+        self._val = get_runtime_val(val)
 
     def _get_compiled(self):
         if self._val is None:
@@ -241,10 +247,10 @@ class kWidget(metaclass=WidgetMeta):
         if not self._parent:
             raise RuntimeError('has to be set to parent')
 
-        p_x = self._parent.x.val
-        p_y = self._parent.y.val
-        p_w = self._parent.width.val
-        p_h = self._parent.height.val
+        p_x = self._parent.x
+        p_y = self._parent.y
+        p_w = self._parent.width
+        p_h = self._parent.height
 
         def get_self_par(par, def_par):
             out = par
@@ -267,13 +273,13 @@ class kWidget(metaclass=WidgetMeta):
             return get_self_par(self.height, '_def_height')
 
         def center_w():
-            out = ((p_x + p_w) / 2) - (s_w() / 2)
+            out = ((p_x + p_w) / 2) - int((s_w() / 2))
             if isinstance(out, float):
                 out = int(out)
             return out
 
         def center_h():
-            out = ((p_y + p_h) / 2) - (s_h() / 2)
+            out = ((p_y + p_h) / 2) - int((s_h() / 2))
             if isinstance(out, float):
                 out = int(out)
             return out
@@ -371,28 +377,36 @@ class kWidget(metaclass=WidgetMeta):
         if height:
             self.height <<= height
 
-        if x_pct:
+        if x_pct is not None:
             if x_pct < 0 or x_pct > 100:
                 raise AttributeError(
                     'x_pct has to be between 0 and 100')
-            self.x <<= int(self._parent.x +
-                           (self._parent.width * x_pct / 100))
-        if y_pct:
+            self.x <<= int(
+                get_runtime_val(
+                self._parent.x +
+                                       (self._parent.width * x_pct / 100)))
+        if y_pct is not None:
             if y_pct < 0 or y_pct > 100:
                 raise AttributeError(
                     'y_pct has to be between 0 and 100')
-            self.y <<= int(self._parent.y +
-                           (self._parent.height * y_pct / 100))
+            self.y <<= int(
+                get_runtime_val(
+                self._parent.y +
+                                       (self._parent.height * y_pct / 100)))
         if width_pct:
             if width_pct < 0 or width_pct > 100:
                 raise AttributeError(
                     'width_pct has to be between 0 and 100')
-            self.width <<= int(self._parent.width * width_pct / 100)
+            self.width <<= int(
+                get_runtime_val(
+                    self._parent.width * width_pct / 100))
         if height_pct:
             if height_pct < 0 or height_pct > 100:
                 raise AttributeError(
                     'height_pct has to be between 0 and 100')
-            self.height <<= int(self._parent.height * height_pct / 100)
+            self.height <<= int(
+                get_runtime_val(
+                self._parent.height * height_pct / 100))
 
         s_r = get_runtime_val(self.x + self.width)
         p_r = get_runtime_val(self._parent.x + self._parent.width)
@@ -739,6 +753,26 @@ CONTROL_PAR_ACTIVE_INDEX = bControlXyIntVar(
     'CONTROL_PAR_ACTIVE_INDEX', 'active_index')
 CONTROL_PAR_CURSOR_PICTURE = bControlXyStrVar(
     'CONTROL_PAR_CURSOR_PICTURE', 'cursor_picture')
+
+class SetUiColor(BuiltInFuncInt):
+    '''set_control_par( 
+                 control_or_id: Union['KspNativeControl', int],
+                 parameter: bControlParVar, value: Union[KspIntVar, int]):
+    sets control parameter within int value.
+    control_or_id can be either KspNativeControl instance
+    or it's id
+    be careful within KSP For loops, as control object will produce
+    constant id, not the For index'''
+
+    def __init__(self):
+        super().__init__('set_ui_color',
+                         args=OrderedDict(value=(int)),
+                         def_ret=kNone())
+
+    def __call__(self, value: Union[KspIntVar, int]):
+        super().__call__(value)
+
+set_ui_color = SetUiColor()
 
 
 class ControlParFunc:
@@ -2499,7 +2533,7 @@ class kLabel(KspNativeControl, metaclass=kLabelMeta):
                  height: Optional[int]=None):
         super().__init__(name=name, persist=persist,
                          preserve=preserve, parent=parent,
-                         x=x, y=y, width=width, height=height,)
+                         x=x, y=y, width=width, height=height)
 
 
 class kLevelMeterMeta(KspNativeControlMeta):

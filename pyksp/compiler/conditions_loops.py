@@ -121,7 +121,7 @@ class If(KSP):
                 check(False)
             return
         self.set_bool(True)
-        Output().put(f'if({self.__condition.expand()})')
+        Output().put(f'if({get_string_repr(self.__condition)})')
         self.set_bool(False)
         return
 

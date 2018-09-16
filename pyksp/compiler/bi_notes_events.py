@@ -11,6 +11,8 @@ from k_built_ins import RpnCallback
 
 
 # from base_types import KspArray
+from base_types import KspIntVar
+from base_types import AstBase
 
 from native_types import kNone
 from native_types import kArrInt
@@ -114,7 +116,8 @@ VCC_PITCH_BEND = BuiltInIntVar('VCC_PITCH_BEND')
 class NoteOff(BuiltInFuncInt):
 
     def __init__(self):
-        super().__init__('note_off', OrderedDict(note_id=int),
+        super().__init__('note_off',
+                         args=OrderedDict(note_id=int),
                          def_ret=kNone())
 
     def __call__(self, note_id=int):
@@ -128,8 +131,8 @@ class NoteOff(BuiltInFuncInt):
         fade_out(), since fade_out() works on a voice level'''
         return super().__call__(note_id)
 
-    def calculate(self, *args):
-        return self._def_ret
+    # def calculate(self, *args):
+    #     return self._def_ret
 
 
 note_off = NoteOff().__call__
@@ -139,8 +142,12 @@ class PlayNote(BuiltInFuncInt):
 
     def __init__(self):
         super().__init__('play_note',
-                         OrderedDict(note=int, velocity=int,
-                                     sample_offset=int, duration=int),
+                         args=OrderedDict(
+                             note=(int, KspIntVar, AstBase),
+                             velocity=(int, KspIntVar, AstBase),
+                             sample_offset=(
+                                 int, KspIntVar, AstBase),
+                             duration=(int, KspIntVar, AstBase)),
                          def_ret=1)
 
     def __call__(self, note=int, velocity=int,
@@ -169,8 +176,8 @@ class PlayNote(BuiltInFuncInt):
         return super().__call__(note, velocity,
                                 sample_offset, duration)
 
-    def calculate(self, *args):
-        return self._def_ret
+    # def calculate(self, *args):
+    #     return self._def_ret
 
 
 play_note = PlayNote().__call__
@@ -200,8 +207,8 @@ class SetController(BuiltInFuncInt):
         CC.set_value(controller, value)
         return super().__call__(controller, value)
 
-    def calculate(self, *args):
-        return self._def_ret
+    # def calculate(self, *args):
+    #     return self._def_ret
 
 
 set_controller = SetController().__call__

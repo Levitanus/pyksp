@@ -558,6 +558,7 @@ from bi_misc import set_listener
 from bi_misc import stop_wait
 from bi_misc import wait
 from bi_misc import wait_ticks
+from bi_misc import in_range
 from bi_misc import NI_KEY_TYPE_DEFAULT
 from bi_misc import NI_KEY_TYPE_CONTROL
 from bi_misc import NI_KEY_TYPE_NONE
@@ -816,3 +817,4 @@ from bi_ui_controls import set_menu_item_value
 from bi_ui_controls import set_menu_item_visibility
 from bi_ui_controls import get_ui_wf_property
 from bi_ui_controls import set_ui_wf_property
+from bi_ui_controls import set_ui_color

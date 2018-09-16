@@ -1,0 +1,241 @@
+{ Compiled on Sun Sep 16 16:30:00 2018 }
+on init
+    set_script_title("test_trem")
+    declare %_stack_functions_int_arr[32000]
+    declare %_stack_functions_int_idx[100]
+    declare $_stack_functions_int_pointer := -1
+    declare !_stack_functions_str_arr[32000]
+    declare %_stack_functions_str_idx[100]
+    declare $_stack_functions_str_pointer := -1
+    declare ?_stack_functions_real_arr[32000]
+    declare %_stack_functions_real_idx[100]
+    declare $_stack_functions_real_pointer := -1
+    declare %_kKnob_ids[3]
+    declare %_all_ui_ids[4]
+    declare ui_knob $control0 (0, 1000000, 10000)
+    %_all_ui_ids[0] := get_ui_id($control0)
+    %_kKnob_ids[0] := %_all_ui_ids[0]
+    declare ui_knob $control1 (0, 1000000, 10000)
+    %_all_ui_ids[1] := get_ui_id($control1)
+    %_kKnob_ids[1] := %_all_ui_ids[1]
+    declare ui_knob $control2 (0, 1000000, 10000)
+    %_all_ui_ids[2] := get_ui_id($control2)
+    %_kKnob_ids[2] := %_all_ui_ids[2]
+    declare !kArrStr0[12]
+    !kArrStr0[0] := "CL_trem_sus_norm_ff"
+    !kArrStr0[1] := "OH_trem_sus_norm_ff"
+    !kArrStr0[2] := "S_trem_sus_norm_ff"
+    !kArrStr0[3] := "CL_trem_sus_norm_f"
+    !kArrStr0[4] := "OH_trem_sus_norm_f"
+    !kArrStr0[5] := "S_trem_sus_norm_f"
+    !kArrStr0[6] := "CL_trem_sus_norm_p"
+    !kArrStr0[7] := "OH_trem_sus_norm_p"
+    !kArrStr0[8] := "S_trem_sus_norm_p"
+    !kArrStr0[9] := "CL_trem_sus_norm_pp"
+    !kArrStr0[10] := "OH_trem_sus_norm_pp"
+    !kArrStr0[11] := "S_trem_sus_norm_pp"
+    declare %norm_sus_grps_idx[12]
+    declare !kArrStr1[12]
+    !kArrStr1[0] := "CL_trem_rls_norm_ff"
+    !kArrStr1[1] := "OH_trem_rls_norm_ff"
+    !kArrStr1[2] := "S_trem_rls_norm_ff"
+    !kArrStr1[3] := "CL_trem_rls_norm_f"
+    !kArrStr1[4] := "OH_trem_rls_norm_f"
+    !kArrStr1[5] := "S_trem_rls_norm_f"
+    !kArrStr1[6] := "CL_trem_rls_norm_p"
+    !kArrStr1[7] := "OH_trem_rls_norm_p"
+    !kArrStr1[8] := "S_trem_rls_norm_p"
+    !kArrStr1[9] := "CL_trem_rls_norm_pp"
+    !kArrStr1[10] := "OH_trem_rls_norm_pp"
+    !kArrStr1[11] := "S_trem_rls_norm_pp"
+    declare %norm_rls_grps_idx[12]
+    declare !kArrStr2[12]
+    !kArrStr2[0] := "CL_trem_sus_sulE_ff"
+    !kArrStr2[1] := "OH_trem_sus_sulE_ff"
+    !kArrStr2[2] := "S_trem_sus_sulE_ff"
+    !kArrStr2[3] := "CL_trem_sus_sulE_f"
+    !kArrStr2[4] := "OH_trem_sus_sulE_f"
+    !kArrStr2[5] := "S_trem_sus_sulE_f"
+    !kArrStr2[6] := "CL_trem_sus_sulE_p"
+    !kArrStr2[7] := "OH_trem_sus_sulE_p"
+    !kArrStr2[8] := "S_trem_sus_sulE_p"
+    !kArrStr2[9] := "CL_trem_sus_sulE_pp"
+    !kArrStr2[10] := "OH_trem_sus_sulE_pp"
+    !kArrStr2[11] := "S_trem_sus_sulE_pp"
+    declare %sule_sus_grps_idx[12]
+    declare !kArrStr3[12]
+    !kArrStr3[0] := "CL_trem_rls_sulE_ff"
+    !kArrStr3[1] := "OH_trem_rls_sulE_ff"
+    !kArrStr3[2] := "S_trem_rls_sulE_ff"
+    !kArrStr3[3] := "CL_trem_rls_sulE_f"
+    !kArrStr3[4] := "OH_trem_rls_sulE_f"
+    !kArrStr3[5] := "S_trem_rls_sulE_f"
+    !kArrStr3[6] := "CL_trem_rls_sulE_p"
+    !kArrStr3[7] := "OH_trem_rls_sulE_p"
+    !kArrStr3[8] := "S_trem_rls_sulE_p"
+    !kArrStr3[9] := "CL_trem_rls_sulE_pp"
+    !kArrStr3[10] := "OH_trem_rls_sulE_pp"
+    !kArrStr3[11] := "S_trem_rls_sulE_pp"
+    declare %sule_rls_grps_idx[12]
+    declare $_for_loop_curr_idx := -1
+    declare %_for_loop_idx[20]
+    declare %_kButton_ids[1]
+    declare ui_button $control3
+    %_all_ui_ids[3] := get_ui_id($control3)
+    %_kButton_ids[0] := %_all_ui_ids[3]
+    declare $last_id
+    declare $curr_id
+    declare %_all_x_params[4] := (-1, -1, -1, -1)
+    declare %_all_y_params[4] := (-1, -1, -1, -1)
+    declare %_all_width_params[4] := (-1, -1, -1, -1)
+    declare %_all_height_params[4] := (-1, -1, -1, -1)
+    inc($_for_loop_curr_idx)
+    %_for_loop_idx[$_for_loop_curr_idx] := 0
+    while(%_for_loop_idx[$_for_loop_curr_idx] < 4)
+        if(%_all_x_params[%_for_loop_idx[$_for_loop_curr_idx]] # -1)
+            set_control_par(%_all_ui_ids[%_for_loop_idx[$_for_loop_curr_idx]],...
+            $CONTROL_PAR_POS_X, %_all_x_params[%_for_loop_idx[$_for_loop_curr_idx]])
+        end if
+        if(%_all_y_params[%_for_loop_idx[$_for_loop_curr_idx]] # -1)
+            set_control_par(%_all_ui_ids[%_for_loop_idx[$_for_loop_curr_idx]],...
+            $CONTROL_PAR_POS_Y, %_all_y_params[%_for_loop_idx[$_for_loop_curr_idx]])
+        end if
+        if(%_all_width_params[%_for_loop_idx[$_for_loop_curr_idx]] # -1)
+            set_control_par(%_all_ui_ids[%_for_loop_idx[$_for_loop_curr_idx]],...
+            $CONTROL_PAR_WIDTH,...
+            %_all_width_params[%_for_loop_idx[$_for_loop_curr_idx]])
+        end if
+        if(%_all_height_params[%_for_loop_idx[$_for_loop_curr_idx]] # -1)
+            set_control_par(%_all_ui_ids[%_for_loop_idx[$_for_loop_curr_idx]],...
+            $CONTROL_PAR_HEIGHT,...
+            %_all_height_params[%_for_loop_idx[$_for_loop_curr_idx]])
+        end if
+        %_for_loop_idx[$_for_loop_curr_idx] := %_for_loop_idx[$_for_loop_curr_idx] + 1
+    end while
+    dec($_for_loop_curr_idx)
+    message("")
+    set_control_par($INST_ICON_ID,$CONTROL_PAR_HIDE,$HIDE_WHOLE_CONTROL)
+    set_ui_height_px(100)
+    make_perfview
+    set_ui_color(0)
+    set_control_par_str(%_all_ui_ids[0], $CONTROL_PAR_TEXT, "Close")
+    set_control_par(%_all_ui_ids[0], $CONTROL_PAR_VALUE, 630000)
+    set_control_par_str(%_all_ui_ids[1], $CONTROL_PAR_TEXT, "OH")
+    set_control_par(%_all_ui_ids[1], $CONTROL_PAR_VALUE, 630000)
+    set_control_par_str(%_all_ui_ids[2], $CONTROL_PAR_TEXT, "Lead")
+    set_control_par(%_all_ui_ids[2], $CONTROL_PAR_VALUE, 630000)
+    inc($_for_loop_curr_idx)
+    %_for_loop_idx[$_for_loop_curr_idx] := 0
+    while(%_for_loop_idx[$_for_loop_curr_idx] < 12)
+        %norm_sus_grps_idx[%_for_loop_idx[$_for_loop_curr_idx]] :=...
+        find_group(!kArrStr0[%_for_loop_idx[$_for_loop_curr_idx]])
+        %sule_sus_grps_idx[%_for_loop_idx[$_for_loop_curr_idx]] :=...
+        find_group(!kArrStr2[%_for_loop_idx[$_for_loop_curr_idx]])
+        %norm_rls_grps_idx[%_for_loop_idx[$_for_loop_curr_idx]] :=...
+        find_group(!kArrStr1[%_for_loop_idx[$_for_loop_curr_idx]])
+        %sule_rls_grps_idx[%_for_loop_idx[$_for_loop_curr_idx]] :=...
+        find_group(!kArrStr3[%_for_loop_idx[$_for_loop_curr_idx]])
+        %_for_loop_idx[$_for_loop_curr_idx] := %_for_loop_idx[$_for_loop_curr_idx] + 1
+    end while
+    dec($_for_loop_curr_idx)
+    set_control_par_str(%_all_ui_ids[3], $CONTROL_PAR_TEXT, "sulE (KS - C0)")
+    set_key_color(24, $KEY_COLOR_LIME)
+    set_key_name(24, "sulE")
+end on
+on note
+    ignore_event($EVENT_ID)
+    disallow_group($ALL_GROUPS)
+    if($EVENT_NOTE = 24)
+        if($EVENT_VELOCITY > 60)
+            $control3 := 1
+        else
+            $control3 := 0
+        end if
+    end if
+    if(in_range($EVENT_NOTE, 28, 51))
+        if(in_range($EVENT_NOTE, 34, 40))
+            select($control3)
+                case(1)
+                    inc($_for_loop_curr_idx)
+                    %_for_loop_idx[$_for_loop_curr_idx] := 0
+                    while(%_for_loop_idx[$_for_loop_curr_idx] < 12)
+                        allow_group(%sule_sus_grps_idx[%_for_loop_idx[$_for_loop_curr_idx]])
+                        inc(%_for_loop_idx[$_for_loop_curr_idx])
+                    end while
+                    dec($_for_loop_curr_idx)
+                case(0)
+                    inc($_for_loop_curr_idx)
+                    %_for_loop_idx[$_for_loop_curr_idx] := 0
+                    while(%_for_loop_idx[$_for_loop_curr_idx] < 12)
+                        allow_group(%norm_sus_grps_idx[%_for_loop_idx[$_for_loop_curr_idx]])
+                        inc(%_for_loop_idx[$_for_loop_curr_idx])
+                    end while
+                    dec($_for_loop_curr_idx)
+            end select
+        else
+            inc($_for_loop_curr_idx)
+            %_for_loop_idx[$_for_loop_curr_idx] := 0
+            while(%_for_loop_idx[$_for_loop_curr_idx] < 12)
+                allow_group(%norm_sus_grps_idx[%_for_loop_idx[$_for_loop_curr_idx]])
+                allow_group(%sule_sus_grps_idx[%_for_loop_idx[$_for_loop_curr_idx]])
+                %_for_loop_idx[$_for_loop_curr_idx] := %_for_loop_idx[$_for_loop_curr_idx] + 1
+            end while
+            dec($_for_loop_curr_idx)
+        end if
+        $curr_id := play_note($EVENT_NOTE, $EVENT_VELOCITY, 0, -1)
+        note_off($last_id)
+        $last_id := $curr_id
+    end if
+end on
+on release
+    disallow_group($ALL_GROUPS)
+    if($EVENT_ID = $last_id)
+        pgs_set_str_key_val(_log_msg, "EVENT_ID == last_id")
+        pgs_set_key_val(_log_flag, 0, 1)
+        if(in_range($EVENT_NOTE, 34, 40))
+            select($control3)
+                case(1)
+                    inc($_for_loop_curr_idx)
+                    %_for_loop_idx[$_for_loop_curr_idx] := 0
+                    while(%_for_loop_idx[$_for_loop_curr_idx] < 12)
+                        allow_group(%sule_rls_grps_idx[%_for_loop_idx[$_for_loop_curr_idx]])
+                        inc(%_for_loop_idx[$_for_loop_curr_idx])
+                    end while
+                    dec($_for_loop_curr_idx)
+                case(0)
+                    inc($_for_loop_curr_idx)
+                    %_for_loop_idx[$_for_loop_curr_idx] := 0
+                    while(%_for_loop_idx[$_for_loop_curr_idx] < 12)
+                        allow_group(%norm_rls_grps_idx[%_for_loop_idx[$_for_loop_curr_idx]])
+                        inc(%_for_loop_idx[$_for_loop_curr_idx])
+                    end while
+                    dec($_for_loop_curr_idx)
+            end select
+        else
+            inc($_for_loop_curr_idx)
+            %_for_loop_idx[$_for_loop_curr_idx] := 0
+            while(%_for_loop_idx[$_for_loop_curr_idx] < 12)
+                allow_group(%norm_rls_grps_idx[%_for_loop_idx[$_for_loop_curr_idx]])
+                allow_group(%sule_rls_grps_idx[%_for_loop_idx[$_for_loop_curr_idx]])
+                %_for_loop_idx[$_for_loop_curr_idx] := %_for_loop_idx[$_for_loop_curr_idx] + 1
+            end while
+            dec($_for_loop_curr_idx)
+        end if
+        play_note($EVENT_NOTE, $EVENT_VELOCITY, 0, 0)
+    end if
+end on
+on ui_control($control0)
+    set_engine_par($ENGINE_PAR_VOLUME, $control0, -1, -1, $NI_BUS_OFFSET + 0)
+    set_control_par_str(%_all_ui_ids[0], $CONTROL_PAR_LABEL,...
+    get_engine_par_disp($ENGINE_PAR_VOLUME, -1, -1, $NI_BUS_OFFSET + 0))
+end on
+on ui_control($control1)
+    set_engine_par($ENGINE_PAR_VOLUME, $control1, -1, -1, $NI_BUS_OFFSET + 1)
+    set_control_par_str(%_all_ui_ids[1], $CONTROL_PAR_LABEL,...
+    get_engine_par_disp($ENGINE_PAR_VOLUME, -1, -1, $NI_BUS_OFFSET + 1))
+end on
+on ui_control($control2)
+    set_engine_par($ENGINE_PAR_VOLUME, $control2, -1, -1, $NI_BUS_OFFSET + 2)
+    set_control_par_str(%_all_ui_ids[2], $CONTROL_PAR_LABEL,...
+    get_engine_par_disp($ENGINE_PAR_VOLUME, -1, -1, $NI_BUS_OFFSET + 2))
+end on

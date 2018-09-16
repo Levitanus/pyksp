@@ -585,7 +585,7 @@ class KspVar(KspObject):
         returns val
         '''
         if not isinstance(val, self.ref_type):
-            raise TypeError(f'has to be one of: {self.ref_type}.' +
+            raise TypeError(f'has to be one of: {self.ref_type}.\n' +
                             f'val ({val}) is of type({type(val)})')
         if isinstance(val, KspVar):
             val = val.val
