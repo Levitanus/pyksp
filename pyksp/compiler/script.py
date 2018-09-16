@@ -103,13 +103,13 @@ class kScript:
         KSP.in_init(True)
         if self._compact:
             IName.set_compact(True)
-        try:
-            self.main()
-        except AttributeError:
-            raise RuntimeError(
-                '''all KSP objects attemped to appear in the code
-                has to be placed inside function, which is assigned
-                to script main attribute''')
+        # try:
+        self.main()
+        # except AttributeError:
+        #     raise RuntimeError(
+        #         '''all KSP objects attemped to appear in the code
+        #         has to be placed inside function, which is assigned
+        #         to script main attribute''')
         try:
             kLog()
             if kLog()._path:
@@ -133,6 +133,7 @@ class kScript:
         print('generating other callbacks')
         cbs = Callback.get_all_bodies()
         print('generating functions bodies')
+        funcs = list()
         for f in Function._functions.values():
             funcs = f._generate_executable()
             break

@@ -8,6 +8,7 @@ from abstract import Output
 
 from base_types import KspStrVar
 from base_types import KspIntVar
+from base_types import AstBase
 
 from k_built_ins import InitCallback
 from k_built_ins import BuiltInFuncInt
@@ -35,6 +36,29 @@ from conditions_loops import While
 from conditions_loops import If
 # from conditions_loops import Else
 from conditions_loops import check
+
+
+class InRange(BuiltInFuncInt):
+
+    def __init__(self):
+        super().__init__('in_range',
+                         args=OrderedDict(
+                             value=(int, KspIntVar, AstBase),
+                             min_val=(int, KspIntVar, AstBase),
+                             max_val=(int, KspIntVar, AstBase)))
+
+    def __call__(self, value: int, min_val: int, max_val):
+        '''returns true if value in bounds of min_val & max_val'''
+        return super().__call__(value, min_val, max_val)
+
+    def calculate(self, value, min_val, max_val):
+        value = get_runtime_val(value)
+        min_val = get_runtime_val(min_val)
+        max_val = get_runtime_val(max_val)
+        return value >= min_val and value <= max_val
+
+
+in_range = InRange().__call__
 
 
 class ArrayEqual(BuiltInFuncInt):
