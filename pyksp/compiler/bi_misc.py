@@ -227,8 +227,8 @@ get_purge_state = GetPurgeState().__call__
 class GroupName(BuiltInFuncStr):
 
     def __init__(self):
-        super().__init__('group_name',
-                         args=OrderedDict(group_idx=int),
+        super().__init__(name='group_name',
+                         args=OrderedDict(group_idx=(int, KspIntVar, AstBase)),
                          def_ret='group_name')
 
     def __call__(self, group_idx: int):

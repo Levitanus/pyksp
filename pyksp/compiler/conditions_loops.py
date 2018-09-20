@@ -479,7 +479,7 @@ class For(KSP):
             return
         if not requirement:
             raise KspCondError(for_wrong_arg_msg)
-        if not isinstance(arg, (int, KspIntVar)):
+        if not isinstance(arg, (int, KspIntVar, AstOperator)):
             raise KspCondError(for_type_err_msg.format(
                 name=arg_name,
                 arg_typ=type(arg),
@@ -561,8 +561,8 @@ class For(KSP):
         Under compilation idx assignement and while cond lines'''
         self.__idx <<= self.__start
         if self.is_compiled():
-            # Output().put(f'{self.__idx.val} := {self.__start}')
-            Output().put(f'while({self.__idx.val} < {self.__stop})')
+            Output().put(
+                f'while({self.__idx.val} < {get_string_repr(self.__stop)})')
         for i in range(*get_runtime(*self.__args)):
             self.__idx._set_runtime(i)
             if i > get_runtime(self.__start) and \
@@ -643,9 +643,9 @@ class While(KSP):
             if exc is not KspCondBrake:
                 return
         if self.is_compiled():
-            if isinstance(value, KspCondBrake):
-                if str(value) != '':
-                    raise KspCondError(
-                        'While loop can not be breaked')
+            # if isinstance(value, KspCondBrake):
+            #     if str(value) != '':
+            #         raise KspCondError(
+            #             'While loop can not be breaked')
             Output().put('end while')
         return True

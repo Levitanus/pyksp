@@ -487,7 +487,7 @@ fade_in = FadeIn().__call__
 class FadeOuut(BuiltInFuncInt):
 
     def __init__(self):
-        super().__init__('fade_in',
+        super().__init__('fade_out',
                          args=OrderedDict(event_id=int, fade_time=int,
                                           stop_voice=int),
                          def_ret=kNone())
@@ -505,7 +505,7 @@ class FadeOuut(BuiltInFuncInt):
         return super().__call__(event_id, fade_time, stop_voice)
 
 
-fade_in = FadeOuut().__call__
+fade_out = FadeOuut().__call__
 
 
 class GetEventIds(BuiltInFuncInt):

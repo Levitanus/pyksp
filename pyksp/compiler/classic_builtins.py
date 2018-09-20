@@ -699,7 +699,7 @@ from bi_notes_events import change_vol
 from bi_notes_events import delete_event_mark
 from bi_notes_events import event_status
 from bi_notes_events import fade_in
-from bi_notes_events import fade_in
+from bi_notes_events import fade_out
 from bi_notes_events import get_event_ids
 from bi_notes_events import get_event_par
 from bi_notes_events import get_event_par_arr

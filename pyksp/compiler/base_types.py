@@ -1141,8 +1141,8 @@ class KspArray(KspVar):
                 self._size = len(seq)
             else:
                 self._size = 0
-            self._init_size = size
-            self._seq = [None] * size
+            self._init_size = get_runtime(size)
+            self._seq = [None] * get_runtime(size)
         else:
             self._size = 0
             self._init_size = 0
@@ -1425,6 +1425,7 @@ def get_runtime(*args):
             continue
         if isinstance(arg, AstBase):
             out.append(arg.get_value())
+            continue
         out.append(arg)
     if len(args) == 1:
         return out[0]

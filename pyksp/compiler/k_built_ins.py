@@ -273,7 +273,7 @@ class BuiltInIntVar(BuilInVar, kInt):
     ''''''
 
     def __init__(self, name: str, callbacks=all_callbacks,
-                 def_val: int=0):
+                 def_val: int=1):
         BuiltIn.__init__(self, callbacks=callbacks)
         kInt.__init__(self, value=def_val, name=name, preserve=False,
                       is_local=True, persist=False)
@@ -283,7 +283,7 @@ class BuiltInRealVar(BuilInVar, kReal):
     ''''''
 
     def __init__(self, name: str, callbacks=all_callbacks,
-                 def_val: float=0.0):
+                 def_val: float=1.0):
         BuiltIn.__init__(self, callbacks=callbacks)
         kReal.__init__(self, value=def_val, name=name, preserve=False,
                        is_local=True, persist=False)

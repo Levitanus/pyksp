@@ -383,16 +383,16 @@ class kWidget(metaclass=WidgetMeta):
                     'x_pct has to be between 0 and 100')
             self.x <<= int(
                 get_runtime_val(
-                self._parent.x +
-                                       (self._parent.width * x_pct / 100)))
+                    self._parent.x +
+                    (self._parent.width * x_pct / 100)))
         if y_pct is not None:
             if y_pct < 0 or y_pct > 100:
                 raise AttributeError(
                     'y_pct has to be between 0 and 100')
             self.y <<= int(
                 get_runtime_val(
-                self._parent.y +
-                                       (self._parent.height * y_pct / 100)))
+                    self._parent.y +
+                    (self._parent.height * y_pct / 100)))
         if width_pct:
             if width_pct < 0 or width_pct > 100:
                 raise AttributeError(
@@ -406,7 +406,7 @@ class kWidget(metaclass=WidgetMeta):
                     'height_pct has to be between 0 and 100')
             self.height <<= int(
                 get_runtime_val(
-                self._parent.height * height_pct / 100))
+                    self._parent.height * height_pct / 100))
 
         s_r = get_runtime_val(self.x + self.width)
         p_r = get_runtime_val(self._parent.x + self._parent.width)
@@ -754,6 +754,7 @@ CONTROL_PAR_ACTIVE_INDEX = bControlXyIntVar(
 CONTROL_PAR_CURSOR_PICTURE = bControlXyStrVar(
     'CONTROL_PAR_CURSOR_PICTURE', 'cursor_picture')
 
+
 class SetUiColor(BuiltInFuncInt):
     '''set_control_par( 
                  control_or_id: Union['KspNativeControl', int],
@@ -771,6 +772,7 @@ class SetUiColor(BuiltInFuncInt):
 
     def __call__(self, value: Union[KspIntVar, int]):
         super().__call__(value)
+
 
 set_ui_color = SetUiColor()
 
@@ -1200,11 +1202,11 @@ class ControlPar():
     def _get_ref_from_basic(self, ref_type: Union[Type[int], Type[str],
                                                   Type[float]]):
         if ref_type is int:
-            return (KspIntVar, int)
+            return (KspIntVar, int, AstBase)
         if ref_type is str:
-            return (KspStrVar, str)
+            return (KspStrVar, str, AstBase)
         if ref_type is float:
-            return (KspRealVar, float)
+            return (KspRealVar, float, AstBase)
 
     def _get(self, control_or_id: Union['KspNativeControl', int],
              idx: int):
@@ -1917,21 +1919,8 @@ class KspNativeControlMeta(WidgetMeta):
 
     def generate_init_code():
         out = list()
-        # for cls in KspNativeControlMeta.classes:
-        #     if not cls.ids:
-        #         continue
-        #     cls_params = list()
-        #     for item in (cls.x, cls.y, cls.width, cls.height):
-        #         out, vals, avail = item.generate_init_code()
-        #         if out:
-        #                   f' ({item._name})')
-        #             out.extend(out)
-        #             cls_params.append(
-        #                 dict(
-        #                     vals=vals,
-        #                     avail=avail,
-
-        #                 ))
+        if KspNativeControl.objects_count == 0:
+            return []
         params = dict(x=list(), y=list(), width=list(), height=list())
         for obj in KspNativeControlMeta.objects:
             if obj.x._init_value:
@@ -1988,7 +1977,7 @@ def init_default(cls):
     return ControlPar('default', cls, kArrInt,
                       kParIntVar, int, 1,
                       set_control_par, get_control_par,
-                      CONTROL_PAR_VALUE)
+                      CONTROL_PAR_DEFAULT_VALUE)
 
 
 def init_picture(cls):
