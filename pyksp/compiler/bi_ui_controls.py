@@ -63,7 +63,7 @@ class kParVarGetError(Exception):
 class kMainWindow(KSP):
     '''can be used as parent of widgets,
     sets ui_height_px and ui_width_px.
-    Within icon being set to None – hides it'''
+    Within icon being set to False – hides it'''
 
     def __init__(self, width: int=633, height: int=100,
                  wallpaper: str=None, icon: str=None,
@@ -457,6 +457,7 @@ class bKnobUnitConst(bControlParConst):
     pass
 
 
+INST_ICON_ID = bControlParConst('INST_ICON_ID')
 KNOB_UNIT_NONE = bKnobUnitConst('KNOB_UNIT_NONE')
 KNOB_UNIT_DB = bKnobUnitConst('KNOB_UNIT_DB')
 KNOB_UNIT_HZ = bKnobUnitConst('KNOB_UNIT_HZ')
@@ -524,7 +525,7 @@ CONTROL_PAR_UNIT = bControlParStrVar('CONTROL_PAR_UNIT',
                                      'unit')
 
 CONTROL_PAR_FONT_TYPE = bControlParIntVar(
-    'CONTROL_PAR_FONT_TYPE', 'font')
+    'CONTROL_PAR_FONT_TYPE', 'font_type')
 
 
 class font:

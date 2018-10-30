@@ -367,8 +367,8 @@ class ChangeTune(BuiltInFuncInt):
         <ID-number>
         the ID number of the note event to be changed
         <tune>
-        the pan position of the note event, from -1000 (left) to 1000
-        (right)
+        the tune amount in millicents, so 100000 equals 100 cent
+        (i.e. a half tone)
         <relative-bit>
         If the relative bit is set to 0, the amount is absolute, i.e. the
         amount, overwrites any previous set values of that event.

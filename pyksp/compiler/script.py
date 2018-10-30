@@ -35,7 +35,7 @@ def refresh_all():
     and bi_ui_controls.refresh()
     '''
     KspObject.refresh()
-    # Callback.refresh()
+    Callback.refresh()
     # Function.refresh()
     BuiltIn.refresh()
     refresh_names_count()
@@ -95,6 +95,8 @@ class kScript:
         self._compact = compact
         self._title = title
         self._line_length = max_line_length
+        self.indents = indents
+        self.docstrings = docstrings
 
     def _generate_code(self):
         print('generating code')
@@ -187,6 +189,8 @@ class kScript:
     def compile(self):
         print(f'compiling the script {self}')
         code = self._generate_code()
+        print('clearing data')
+        refresh_all()
         newcode = ''
         for line in code:
             newcode += line + '\n'

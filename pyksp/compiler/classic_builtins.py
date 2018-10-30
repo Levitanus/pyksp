@@ -2,6 +2,7 @@ from k_built_ins import message
 from k_built_ins import exit
 from k_built_ins import reset_ksp_timer
 from k_built_ins import ignore_controller
+# from k_built_ins import kabs
 from k_built_ins import exp
 from k_built_ins import log
 from k_built_ins import kpow
@@ -709,6 +710,7 @@ from bi_notes_events import ignore_event
 from bi_notes_events import set_event_mark
 from bi_notes_events import reset_rls_trig_counter
 from bi_notes_events import will_never_terminate
+from bi_ui_controls import INST_ICON_ID
 from bi_ui_controls import KNOB_UNIT_NONE
 from bi_ui_controls import KNOB_UNIT_DB
 from bi_ui_controls import KNOB_UNIT_HZ

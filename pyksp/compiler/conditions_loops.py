@@ -509,7 +509,10 @@ class For(KSP):
                 self._out_touched = False
             return
         if isinstance(value, KspCondBrake):
-            self.__idx <<= len(self.__seq)
+            if self.__func is self.__foreach_handler:
+                self.__idx <<= len(self.__seq)
+            else:
+                self.__idx <<= self.__stop
             Output().put(f'{value}')
         self.__generate_exit_code()
         if self._out_touched:

@@ -460,7 +460,7 @@ class Function(KspObject):
         for inst in cls._sored:
             key = self._get_key(inst._func)
             out.extend(inits[key])
-            out.append('')
+            # out.append('')
         return out
 
     def _generate_ex_proxy(self):

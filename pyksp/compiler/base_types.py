@@ -314,6 +314,9 @@ class AstOperator(AstBase):
     def __ge__(self, other):
         return AstGe(self, other)
 
+    def abs(self):
+        return AstAbs(self)
+
 
 class AstNeg(AstOperator):
     priority = 2
@@ -378,7 +381,16 @@ class AstDiv(AstOperator):
         return self.standart('/', val1, val2)
 
     def get_value(self):
-        return super().get_value(lambda arg1, arg2: arg1 / arg2)
+        def division(arg1, arg2):
+            args = get_runtime(arg1, arg2)
+            if isinstance(args[0], int) and isinstance(args[1], int):
+                try:
+                    return arg1 // arg2
+                except ZeroDivisionError:
+                    return 0
+            else:
+                return arg1 / arg2
+        return super().get_value(lambda arg1, arg2: division(arg1, arg2))
 
 
 class AstMod(AstOperator):
@@ -515,6 +527,17 @@ class AstGe(AstOperator):
 
     def get_value(self):
         return super().get_value(lambda arg1, arg2: arg1 >= arg2)
+
+
+class AstAbs(AstOperator):
+    priority = 1
+
+    def expand(self):
+        val = self.unpack_args(*self._args)
+        return self.bracket_unary('abs', val)
+
+    def get_value(self):
+        return super().get_value(lambda arg1: abs(arg1))
 
 
 class KspVar(KspObject):
@@ -785,6 +808,11 @@ class KspNumeric(KspVar):
     def _warn_other(self, value):
         if isinstance(value, self.warning_types):
             raise self.TypeWarn(value)
+
+    def abs(self):
+        if self.is_compiled():
+            return AstAbs(self)
+        return abs(self._get_runtime())
 
     @abstractmethod
     def __truediv__(self, other):

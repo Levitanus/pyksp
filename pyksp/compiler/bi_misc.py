@@ -2,6 +2,8 @@ from collections import OrderedDict
 import os
 import re
 
+from typing import Callable
+
 from abstract import KSP
 from abstract import SingletonMeta
 from abstract import Output
@@ -1229,12 +1231,29 @@ def logpr(*args, sep=' '):
     - characters '\\n', '\\r', '\\t', '\\v' can not be used
     '''
     try:
-        kLog().put(*args, sep=sep)
+        if not kLog().disabled():
+            kLog().put(*args, sep=sep)
     except TypeError as e:
         if str(e).startswith('__init__()'):
             pass
         else:
             raise e
+
+
+def logoff(f: Callable) -> Callable:
+    """Decorator for tunring off logger for particular function"""
+    def wrapper(*args, **kwargs):
+        try:
+            kLog()._disabled = True
+            out = f(*args, **kwargs)
+            kLog()._disabled = False
+        except TypeError as e:
+            if str(e).startswith('__init__()'):
+                out = f(*args, **kwargs)
+            else:
+                raise e
+        return out
+    return wrapper
 
 
 class kLog(metaclass=SingletonMeta):
@@ -1277,6 +1296,7 @@ class kLog(metaclass=SingletonMeta):
     def __init__(self, l_type: object, path: str=None) -> None:
         self._type = l_type
         self._path = path
+        self._disabled = False
         if l_type is self.pgs:
             pgs_create_str_key('_log_msg')
             pgs_create_key('_log_flag', 1)
@@ -1357,3 +1377,6 @@ class kLog(metaclass=SingletonMeta):
             if char in ('\n', '\r', '\t', '\v'):
                 raise AttributeError(
                     f'symbol {repr(char)} is not allowed')
+
+    def disabled(self):
+        return self._disabled

@@ -60,13 +60,13 @@ class Callback(KSP):
         self._header = header
         self.__lines = list()
         self._type = cb_type
-        self.__functions = list()
+        self.__functions = set()
         self.__bvars = dict()
         for var in built_in_vars:
             self.__bvars[var] = -1
 
     def add_function(self, function):
-        self.__functions.append(function)
+        self.__functions.add(function)
 
     def open(self):
         Callback.__id += 1
@@ -126,6 +126,9 @@ class Callback(KSP):
 
     def _refresh(self):
         self.__lines.clear()
+        self.__lines = list()
+        self.__functions = set()
+        self.__bvars = dict()
 
 
 class InitCallbackCl(Callback):
@@ -173,6 +176,10 @@ class UiControlCallbackCl(Callback):
             out.extend(control.lines)
             out.append(f'end on')
         return out
+
+    def _refresh(self):
+        super()._refresh()
+        self.__controls = dict()
 
 
 class FunctionCallbackCl(Callback):
@@ -402,6 +409,8 @@ class BuiltInFunc(BuiltIn):
         else:
             val = self.calculate()
         self._var._set_runtime(val)
+        if self._no_parentesis:
+            line = self._name
         if not line:
             line = f'{self._name}()'
         self._var._get_compiled = lambda self=self:\
@@ -685,6 +694,25 @@ class Exp(BuiltInFuncReal):
 
 
 exp = Exp().__call__
+
+
+# class Abs(BuiltInFuncReal):
+
+#     def __init__(self):
+#         super().__init__(name='abs',
+#                          args=OrderedDict(
+#                              value=(KspIntVar, int, KspRealVar,
+#                                     float, AstBase)))
+
+#     def calculate(self, value):
+#         return abs(get_runtime_val(value))
+
+#     def __call__(self, value: float):
+#         '''Kontakt abs() Return absolute value.'''
+#         return super().__call__(value)
+
+
+# kabs = Abs().__call__
 
 
 class Log(BuiltInFuncReal):

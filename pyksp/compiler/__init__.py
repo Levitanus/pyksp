@@ -34,6 +34,7 @@ from bi_ui_controls import kFileSelector
 
 from bi_misc import kLog
 from bi_misc import logpr
+from bi_misc import logoff
 
 import callbacks as on
 

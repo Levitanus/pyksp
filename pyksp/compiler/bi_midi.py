@@ -1,6 +1,7 @@
 from collections import OrderedDict
 
 from native_types import kNone
+from native_types import kInt
 
 # from k_built_ins import all_callbacks
 from k_built_ins import BuiltInFuncInt
@@ -685,12 +686,13 @@ class SetMidi(BuiltInFuncInt):
                          args=OrderedDict(channel=int,
                                           command=bMidiCommand,
                                           byte1=int,
-                                          byte2=int),
+                                          byte2=(int, kInt)),
                          callbacks=(UiControlCallback,
                                     InitCallback,
                                     UiUpdateCallback,
                                     ListenerCallback,
-                                    AsyncCompleteCallback),
+                                    AsyncCompleteCallback,
+                                    MidiCallback),
                          def_ret=1)
 
     def __call__(self, channel: int, command: bMidiCommand,
@@ -699,7 +701,7 @@ class SetMidi(BuiltInFuncInt):
         Remarks
         If you simply want to change the MIDI channel and/or any of
         the MIDI bytes, you can also use set_event_par().'''
-        return super().__call__()
+        return super().__call__(channel, command, byte1, byte2)
 
 
 set_midi = SetMidi().__call__
