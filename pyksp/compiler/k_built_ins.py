@@ -72,6 +72,7 @@ class Callback(KSP):
         Callback.__id += 1
         NI_CALLBACK_ID.set_value(Callback.__id)
         NI_CALLBACK_TYPE.set_value(self._type)
+        # Output().indent()
         Output().set(self.__lines)
         self.set_callback(self)
 
@@ -80,12 +81,14 @@ class Callback(KSP):
             NI_CALLBACK_TYPE.set_value(self._type)
         Output().release()
         self.set_callback(None)
+        # Output().unindent()
 
     def generate_body(self):
         if not self.__functions:
             return []
         out = list()
         out.append(f'on {self._header}')
+        Output().indent()
         # out.extend(self.__lines)
         self.__lines.clear()
         self.open()
@@ -106,6 +109,7 @@ class Callback(KSP):
                         f'original exception: {e}')
         out.extend(self.__lines)
         self.close()
+        Output().unindent()
         out.append(f'end on')
         return out
 
@@ -164,6 +168,7 @@ class UiControlCallbackCl(Callback):
         else:
             self.__controls[control.name()] = Control(control)
         Output().release()
+        # Output().indent()
         Output().set(self.__controls[control.name()].lines)
         self._last_control = control
 
@@ -192,12 +197,14 @@ class FunctionCallbackCl(Callback):
     def open(self):
         if self.callback() is None:
             self.__levels = 1
+            # Output().indent()
             return self.set_callback(self)
         if self.callback() is self:
             self.__levels += 1
             return
         self.__root = self.callback()
         self.__root.close(keep_type=True)
+        # Output().indent()
         self.set_callback(self)
 
     def close(self):
@@ -205,11 +212,13 @@ class FunctionCallbackCl(Callback):
             self.__levels -= 1
             if self.__levels <= 0:
                 self.__levels = 0
+                # Output().unindent()
                 self.set_callback(None)
                 if self.__root:
                     self.__root.open()
                     self.__root = None
             return
+        # Output().unindent()
         self.set_callback(None)
         self.__root.open()
         self.__root = None

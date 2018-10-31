@@ -482,9 +482,11 @@ class Function(KspObject):
         FunctionCallback.open()
         otpt.set(out)
         otpt.put(f'function {self.name()}')
+        otpt.indent()
 
         self._func(**passed)
 
+        otpt.unindent()
         otpt.put('end function')
         Output().release()
         FunctionCallback.close()

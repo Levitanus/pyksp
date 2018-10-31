@@ -41,6 +41,8 @@ class KSP(metaclass=ABCMeta):
     __is_bool = False
     __in_init = True
     __callback = None
+    indents = False
+    docs = False
 
     @staticmethod
     def is_compiled():
@@ -97,6 +99,8 @@ class KSP(metaclass=ABCMeta):
         KSP.__is_compiled = False
         KSP.__is_bool = False
         KSP.__in_init = True
+        KSP.indents = False
+        KSP.docs = False
 
 
 class INameLocal(KSP):
@@ -280,13 +284,34 @@ class Output(metaclass=SingletonMeta):
         def __init__(self, extra=''):
             super().__init__('Output is set yet. ' + extra)
 
+    class IndentError(Exception):
+        def __init__(self, extra=''):
+            super().__init__(extra)
+
     blocked = KspBoolProp()
+
+    def indent(self):
+        """increase indentation level to be used within compilation"""
+        # if self.blocked:
+        #     return
+        # self.put('{indented. indent level is %s}' % (self.__indent + 1))
+        self.__indent += 1
+
+    def unindent(self):
+        """increase indentation level to be used within compilation"""
+        # if self.blocked:
+        #     return
+        self.__indent -= 1
+        # self.put('{unindented. indent level is %s}' % self.__indent)
+        if self.__indent < 0:
+            raise self.IndentError('indent level below 0')
 
     def __init__(self):
         self.__default = list()
         self.callable_on_put = None
         self.exception_on_put = None
         self.__output = self.__default
+        self.__indent = int()
 
     def set(self, obj):
         '''set list for code from internal to external
@@ -321,11 +346,13 @@ class Output(metaclass=SingletonMeta):
         if isinstance(data, list):
             self.__output.extend(data)
             return
+        if KSP.indents is not False:
+            data = self.__indent * KSP.indents * ' ' + data
         self.__output.append(data)
 
     def pop(self):
         '''pop the last index from list'''
-        return self.__output.pop()
+        return self.__output.pop().strip()
 
     def refresh(self):
         '''erase all data from internal list and set defaults'''

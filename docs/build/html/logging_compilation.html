@@ -28,7 +28,7 @@
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="They killed …. You, bastards! (deprecated concepts)" href="deprecated.html" />
+    <link rel="next" title="Other functions" href="extras.html" />
     <link rel="prev" title="GUI system" href="gui_system.html" /> 
 
   
@@ -91,7 +91,9 @@
 <li class="toctree-l2"><a class="reference internal" href="#compilation">Compilation</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="extras.html">Other functions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="deprecated.html">They killed …. You, bastards! (deprecated concepts)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
 
             
@@ -228,9 +230,9 @@ end on
 </div>
 <p><strong>args:</strong></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">kScript</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
-            <span class="n">compact</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">max_line_length</span><span class="o">=</span><span class="mi">79</span><span class="p">,</span>
-            <span class="n">indents</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
-            <span class="n">docstrings</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">compact</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">max_line_length</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">79</span><span class="p">,</span>
+            <span class="n">indents</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+            <span class="n">docs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="bp">None</span><span class="p">:</span>
 </pre></div>
 </div>
 <ul class="simple">
@@ -246,7 +248,6 @@ end on
 <li>title is script title to be set via set_script_title() func</li>
 <li>if compact is True, all variable names will be hashed</li>
 <li>with max_line_length being not None, lines with length &gt; max_line_length will be wrapped to fit it. currently, lines with “quoted strings” are not wrapped</li>
-<li>indents and docstrings are out of work</li>
 </ul>
 <p><strong>Example:</strong></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">script</span> <span class="o">=</span> <span class="n">kScript</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;C:/file.txt&#39;</span><span class="p">,</span>
@@ -273,7 +274,7 @@ end on
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="deprecated.html" class="btn btn-neutral float-right" title="They killed …. You, bastards! (deprecated concepts)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="extras.html" class="btn btn-neutral float-right" title="Other functions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="gui_system.html" class="btn btn-neutral" title="GUI system" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

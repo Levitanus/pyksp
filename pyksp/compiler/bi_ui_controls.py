@@ -2128,10 +2128,14 @@ class KspNativeControl(kWidget, metaclass=KspNativeControlMeta):
         if KSP.in_init():
             outed = True
             KSP.in_init(False)
+            # Output().unindent()
         UiControlCallback.open(self.var)
+        Output().indent()
         function(control=self)
+        Output().unindent()
         UiControlCallback.close()
         if outed:
+            # Output().indent()
             KSP.in_init(True)
 
 

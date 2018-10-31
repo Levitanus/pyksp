@@ -122,6 +122,7 @@ class If(KSP):
             return
         self.set_bool(True)
         Output().put(f'if({get_string_repr(self.__condition)})')
+        Output().indent()
         self.set_bool(False)
         return
 
@@ -133,7 +134,9 @@ class If(KSP):
                 return
         if self.is_compiled():
             if exc_type is KspCondBrake:
+                Output().unindent()
                 raise KspCondBrake('end if')
+            Output().unindent()
             Output().put('end if')
         Output().callable_on_put = If.refresh
         if exc_type is KspCondBrake:
@@ -192,10 +195,11 @@ class Else(KSP):
         for item in if_result:
             self.__if_count += 1
             if self.is_compiled() and Output().blocked is not True:
-                if Output().pop() != 'end if':
+                if Output().pop().strip() != 'end if':
                     raise\
                         KspCondError(
                             'something is wrong here. Library bug.')
+                # Output().indent()
             last_result = item
         return last_result
 
@@ -209,6 +213,7 @@ class Else(KSP):
                 return
             return True
         Output().put('else')
+        Output().indent()
 
     def __is_elif(self):
         """Restoring if order inside can_be_else,
@@ -225,9 +230,12 @@ class Else(KSP):
         self.__if_count += 1
         can_be_else.append(result)
         if self.is_compiled():
+            Output().indent()
             Output().put('else')
+            Output().indent()
             self.set_bool(True)
             Output().put(f'if({cond.expand()})')
+            Output().indent()
             self.set_bool(False)
 
     def __exit__(self, exc_type, value, trace):
@@ -239,9 +247,11 @@ class Else(KSP):
                 return
         self.__build_end_code(value)
         if self.__func is self.__is_elif:
+            # Output().unindent()
             Output().callable_on_put = If.refresh
         if isinstance(value, KspCondBrake):
             return
+        # Output().unindent()
         return True
 
     def __build_end_code(self, value):
@@ -249,12 +259,15 @@ class Else(KSP):
         if self.is_compiled():
             postfix = ''
             for idx in range(self.__if_count):
+                # Output().unindent()
                 postfix += 'end if'
                 if idx != self.__if_count - 1:
                     postfix += '\n'
             if isinstance(value, KspCondBrake):
+                # Output().unindent()
                 raise KspCondBrake(postfix)
             for line in postfix.split('\n'):
+                Output().unindent()
                 Output().put(line)
 
 
@@ -314,6 +327,7 @@ class Select(KSP):
         Select._vars.append(self.__var)
         if self.is_compiled():
             Output().put(f'select({self.__var.val})')
+            Output().indent()
         Output().exception_on_put = KspCondError(
             '''Wrong syntax. all code has to be in Case context''')
 
@@ -321,6 +335,7 @@ class Select(KSP):
         Select._vars.pop()
         Output().exception_on_put = None
         if self.is_compiled():
+            Output().unindent()
             Output().put('end select')
 
 
@@ -351,6 +366,7 @@ class Case(KSP):
                 '''Case has to be inside Select() context''')
         if self.is_compiled():
             Output().put(f'case({self.__state})')
+            Output().indent()
             return
         if callable(var):
             var = var()
@@ -365,6 +381,7 @@ class Case(KSP):
                 return
         Output().exception_on_put = KspCondError(
             '''Wrong syntax. all code hase to be in Case block''')
+        Output().unindent()
         return True
 
 
@@ -527,6 +544,7 @@ class For(KSP):
                 self.__idx.inc()
             if self.__func == self.__range_handler:
                 self.__idx += self.__step
+            Output().unindent()
             Output().put('end while')
         For.idx.dec()
 
@@ -536,6 +554,7 @@ class For(KSP):
         self.__idx <<= 0
         if self.is_compiled():
             Output().put(f'while({self.__idx.val} < {len(self.__seq)})')
+            Output().indent()
         for idx in range(len(self.__seq)):
             if idx > 0 and self.is_compiled() and not Output().blocked:
                 self._out_touched = True
@@ -566,6 +585,7 @@ class For(KSP):
         if self.is_compiled():
             Output().put(
                 f'while({self.__idx.val} < {get_string_repr(self.__stop)})')
+            Output().indent()
         for i in range(*get_runtime(*self.__args)):
             self.__idx._set_runtime(i)
             if i > get_runtime(self.__start) and \
@@ -627,6 +647,7 @@ class While(KSP):
         if self.__condition.get_value():
             self.set_bool(True)
             Output().put(f'while({self.__condition.expand()})')
+            Output().indent()
             self.set_bool(False)
             self.__count += 1
             return True
@@ -650,5 +671,6 @@ class While(KSP):
             #     if str(value) != '':
             #         raise KspCondError(
             #             'While loop can not be breaked')
+            Output().unindent()
             Output().put('end while')
         return True

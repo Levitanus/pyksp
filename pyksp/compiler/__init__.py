@@ -52,3 +52,6 @@ from stack import kLoc
 from functions import kArg
 from functions import kOut
 from functions import func
+
+from extras import docstring
+from extras import comment

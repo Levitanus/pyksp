@@ -122,7 +122,9 @@ a simple hello world:
    built_ins.rst
    gui_system.rst
    logging_compilation.rst
+   extras.rst
    deprecated.rst
+   changelog.rst
 
 
 

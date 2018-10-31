@@ -23,6 +23,8 @@ from functions import FuncStack
 from bi_ui_controls import KspNativeControlMeta
 from bi_misc import kLog
 
+from dev_tools import print_lines
+
 
 def refresh_all():
     '''clears the Output()
@@ -87,7 +89,7 @@ class kScript:
     def __init__(self, out_file: str, title: str=None,
                  compact=False, max_line_length=79,
                  indents=False,
-                 docstrings=False) -> None:
+                 docs=True) -> None:
         if out_file is self.clipboard:
             self._file = out_file
         else:
@@ -96,13 +98,22 @@ class kScript:
         self._title = title
         self._line_length = max_line_length
         self.indents = indents
-        self.docstrings = docstrings
+        self.docs = docs
+
+    def _indent_list(self, sequence):
+        out = list()
+        for line in sequence:
+            out.append(' ' * self.indents + line)
+        return out
 
     def _generate_code(self):
         print('generating code')
         refresh_all()
         KSP.set_compiled(True)
+        KSP.indents = self.indents
+        KSP.docs = self.docs
         KSP.in_init(True)
+        # Output().indent()
         if self._compact:
             IName.set_compact(True)
         # try:
@@ -116,8 +127,10 @@ class kScript:
             kLog()
             if kLog()._path:
                 KSP.in_init(False)
+                # Output().unindent()
                 persistence_changed(kLog()._log_arr_pers)
                 KSP.in_init(True)
+                # Output().indent()
         except TypeError as e:
             if str(e).startswith('__init__()'):
                 pass
@@ -130,6 +143,7 @@ class kScript:
         print('getting inits of NativeControls params')
         ctrls = KspNativeControlMeta.generate_init_code()
         print('getting lines of init callback, pasted as decorated funcs')
+        # Output().indent()
         init_cb = InitCallback.generate_body()[1:-1]
         KSP.in_init(False)
         print('generating other callbacks')
@@ -151,9 +165,9 @@ class kScript:
         out.extend(obj_init)
         out.extend(ctrls)
         out.extend(regular)
+        out = out[:2] + self._indent_list(out[2:])
         out.extend(init_cb)
         out.append('end on')
-
         out.extend(funcs)
         out.extend(cbs)
         print('wrapping long lines')
@@ -168,7 +182,7 @@ class kScript:
             return lines
         new_lines = list()
         for line in lines:
-            line = line.strip()
+            # line = line.strip()
             if len(line) <= self._line_length:
                 new_lines.append(line)
                 continue
@@ -180,7 +194,7 @@ class kScript:
 
     def wrap(self, s, w):
         new = textwrap.wrap(s, w, break_long_words=False,
-                            subsequent_indent='    ')
+                            subsequent_indent=' ' * self.indents)
         for idx in range(len(new) - 1):
             new[idx] += '...'
         new[-1]
@@ -188,7 +202,11 @@ class kScript:
 
     def compile(self):
         print(f'compiling the script {self}')
-        code = self._generate_code()
+        try:
+            code = self._generate_code()
+        except Output.IndentError as e:
+            print_lines(Output().get())
+            raise e
         print('clearing data')
         refresh_all()
         newcode = ''

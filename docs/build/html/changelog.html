@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>They killed …. You, bastards! (deprecated concepts) &mdash; pyksp 0.0.8 documentation</title>
+  <title>Changelog &mdash; pyksp 0.0.8 documentation</title>
   
 
   
@@ -28,8 +28,7 @@
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Changelog" href="changelog.html" />
-    <link rel="prev" title="Other functions" href="extras.html" /> 
+    <link rel="prev" title="They killed …. You, bastards! (deprecated concepts)" href="deprecated.html" /> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -88,8 +87,16 @@
 <li class="toctree-l1"><a class="reference internal" href="gui_system.html">GUI system</a></li>
 <li class="toctree-l1"><a class="reference internal" href="logging_compilation.html">Compilation and logging</a></li>
 <li class="toctree-l1"><a class="reference internal" href="extras.html">Other functions</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">They killed …. You, bastards! (deprecated concepts)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deprecated.html">They killed …. You, bastards! (deprecated concepts)</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#v-0-09-alpha">V 0.09 alpha</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#fixed">fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#added">added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#changed">changed</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 
             
@@ -135,13 +142,13 @@
     
       <li><a href="index.html">Docs</a> &raquo;</li>
         
-      <li>They killed …. You, bastards! (deprecated concepts)</li>
+      <li>Changelog</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="_sources/deprecated.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/changelog.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -154,38 +161,35 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="they-killed-you-bastards-deprecated-concepts">
-<h1>They killed …. You, bastards! (deprecated concepts)<a class="headerlink" href="#they-killed-you-bastards-deprecated-concepts" title="Permalink to this headline">¶</a></h1>
-<blockquote>
-<div><p><strong>get_ui_id()</strong></p>
-<blockquote>
-<div>because there big amount of arrays with ids</div></blockquote>
-<p><strong>USE_CODE_IF(&lt;condition-symbol&gt;)
-…
-END_USE_CODE</strong></p>
-<p><strong>USE_CODE_IF_NOT(&lt;condition-symbol&gt;)
-…
-END_USE_CODE</strong></p>
-<blockquote>
-<div>because they are not useful within prerocessor</div></blockquote>
-<p><strong>old_type_mf_vars</strong></p>
-<blockquote>
-<div>???</div></blockquote>
-<p><strong>$CONTROL_PAR_BASEPATH,
-$CONTROL_PAR_COLUMN_WIDTH,
-$CONTROL_PAR_FILEPATH,
-$CONTROL_PAR_FILE_TYPE</strong></p>
-<blockquote>
-<div>i believe they are accessible as constants. Needs to be checked.</div></blockquote>
-<p>declare ui_label $&lt;variable-name&gt; <strong>(&lt;width&gt;,&lt;height&gt;)</strong></p>
-<blockquote>
-<div>declared within (1, 1) args</div></blockquote>
-<p>add_text_line(&lt;variable&gt;,&lt;text&gt;)
-set_text(&lt;variable&gt;,&lt;text&gt;)
-hide_part(&lt;variable&gt;,&lt;hide-mask&gt;)</p>
-<blockquote>
-<div>duplication os control_pars</div></blockquote>
-</div></blockquote>
+  <div class="section" id="changelog">
+<h1>Changelog<a class="headerlink" href="#changelog" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="v-0-09-alpha">
+<h2>V 0.09 alpha<a class="headerlink" href="#v-0-09-alpha" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="fixed">
+<h3>fixed<a class="headerlink" href="#fixed" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>removed brackets of non-bracket function (like exit)</li>
+<li>fade_in and fade_out generation</li>
+<li>some built_ins bodies</li>
+<li>missed <code class="docutils literal notranslate"><span class="pre">set_ui_color(color:</span> <span class="pre">int)</span></code> returned</li>
+</ul>
+</div>
+<div class="section" id="added">
+<h3>added<a class="headerlink" href="#added" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>kScript now supports indents. parameter acceps int value of indentation level</li>
+<li>new function <code class="docutils literal notranslate"><span class="pre">comment(comment:</span> <span class="pre">str)</span></code>, allows to place comments to the exported code</li>
+<li>new decorator <code class="docutils literal notranslate"><span class="pre">&#64;docstring</span></code> places the docstring of wrapped function to the generated code every time it’s invocated</li>
+<li>both of them are sensitive to the kScript param docs</li>
+</ul>
+</div>
+<div class="section" id="changed">
+<h3>changed<a class="headerlink" href="#changed" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>kScript parameter <code class="docutils literal notranslate"><span class="pre">docstrings</span></code> now is <code class="docutils literal notranslate"><span class="pre">docs</span></code></li>
+</ul>
+</div>
+</div>
 </div>
 
 
@@ -196,10 +200,8 @@ hide_part(&lt;variable&gt;,&lt;hide-mask&gt;)</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="changelog.html" class="btn btn-neutral float-right" title="Changelog" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
-      
-        <a href="extras.html" class="btn btn-neutral" title="Other functions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="deprecated.html" class="btn btn-neutral" title="They killed …. You, bastards! (deprecated concepts)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

@@ -61,9 +61,9 @@ Compilation
 .. code-block:: python
 
     kScript(self, out_file: str, title: str=None,
-                compact=False, max_line_length=79,
-                indents=False,
-                docstrings=False) -> None:
+                compact: bool=False, max_line_length: int=79,
+                indents: Union[int, bool]=False,
+                docs: Union[int, bool]=False) -> None:
 
 * out_file can be as str filename with .txt ending as well as ``Kscript.clipboard``
     * if filename is not full path, the __main__.__file__ path will be used.
@@ -71,7 +71,6 @@ Compilation
 * title is script title to be set via set_script_title() func
 * if compact is True, all variable names will be hashed
 * with max_line_length being not None, lines with length > max_line_length will be wrapped to fit it. currently, lines with "quoted strings" are not wrapped
-* indents and docstrings are out of work
 
 **Example:**
 
