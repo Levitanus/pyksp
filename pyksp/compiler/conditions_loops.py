@@ -11,6 +11,8 @@ from abstract import KSP
 from native_types import kInt
 from native_types import kArrInt
 
+from typing import List
+
 # from dev_tools import unpack_lines
 
 
@@ -439,6 +441,8 @@ class For(KSP):
     idx = None
     arr = None
 
+    running_instances: List['For'] = list()
+
     def maxlen(self, val):
         For.__maxlen = val
 
@@ -456,9 +460,17 @@ class For(KSP):
     def __init__(self, start: int=None, stop: int=None,
                  step: int=None, arr: KspArray=None):
         self.init_arrays()
+        self.running_instances.append(self)
         self._out_touched = False
         For.idx.inc()
-        self.__idx = For.arr[For.idx]
+        self._idx = For.arr[For.idx]
+        for idx, inst in enumerate(reversed(self.running_instances)):
+            print(idx)
+            if idx == 0:
+                formule = For.idx
+            else:
+                formule = For.idx - idx
+            inst._idx = For.arr[formule]
         if self.__is_foreach(arr, start, stop, step):
             # self.enumerate = enumerate
             return
@@ -527,9 +539,9 @@ class For(KSP):
             return
         if isinstance(value, KspCondBrake):
             if self.__func is self.__foreach_handler:
-                self.__idx <<= len(self.__seq)
+                self._idx <<= len(self.__seq)
             else:
-                self.__idx <<= self.__stop
+                self._idx <<= self.__stop
             Output().put(f'{value}')
         self.__generate_exit_code()
         if self._out_touched:
@@ -538,29 +550,37 @@ class For(KSP):
         return True
 
     def __generate_exit_code(self):
-        '''inc(self.__idx) if for, step line if range'''
+        '''inc(self._idx) if for, step line if range'''
         if self.is_compiled():
             if self.__func == self.__foreach_handler:
-                self.__idx.inc()
+                self._idx.inc()
             if self.__func == self.__range_handler:
-                self.__idx += self.__step
+                self._idx += self.__step
             Output().unindent()
             Output().put('end while')
         For.idx.dec()
+        self.running_instances.pop()
+        for idx, inst in enumerate(reversed(self.running_instances)):
+            print(idx)
+            if idx == 0:
+                formule = For.idx
+            else:
+                formule = For.idx - idx
+            inst._idx = For.arr[formule]
 
     def __foreach_handler(self):
         '''Uder tests returns iterator over self.__seq,
         under compilation idx assignement and while cond lines'''
-        self.__idx <<= 0
+        self._idx <<= 0
         if self.is_compiled():
-            Output().put(f'while({self.__idx.val} < {len(self.__seq)})')
+            Output().put(f'while({self._idx.val} < {len(self.__seq)})')
             Output().indent()
         for idx in range(len(self.__seq)):
             if idx > 0 and self.is_compiled() and not Output().blocked:
                 self._out_touched = True
                 Output().blocked = True
-            self.__idx._set_runtime(idx)
-            item = self.__seq[self.__idx]
+            self._idx._set_runtime(idx)
+            item = self.__seq[self._idx]
             yield item
         if self._out_touched:
             Output().blocked = False
@@ -581,18 +601,18 @@ class For(KSP):
     def __range_handler(self):
         '''Under tests returns generator over range(args) function
         Under compilation idx assignement and while cond lines'''
-        self.__idx <<= self.__start
+        self._idx <<= self.__start
         if self.is_compiled():
             Output().put(
-                f'while({self.__idx.val} < {get_string_repr(self.__stop)})')
+                f'while({self._idx.val} < {get_string_repr(self.__stop)})')
             Output().indent()
         for i in range(*get_runtime(*self.__args)):
-            self.__idx._set_runtime(i)
+            self._idx._set_runtime(i)
             if i > get_runtime(self.__start) and \
                     self.is_compiled()and not Output().blocked:
                 self._out_touched = True
                 Output().blocked = True
-            yield self.__idx
+            yield self._idx
         if self._out_touched:
             self._out_touched = False
             Output().blocked = False

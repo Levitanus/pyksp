@@ -1,0 +1,15 @@
+
+import rope.base.project
+from rope.base import libutils
+
+myproject = rope.base.project.Project(
+    'e:/packages/pyksp')
+#myproject.validate('e:/packages/pyksp/pyksp/compiler/conditions_loops.py')
+myproject.validate()
+ropy = libutils.path_to_resource(myproject, 'e:/packages/pyksp/pyksp/compiler/conditions_loops.py')
+
+from rope.refactor.rename import Rename
+changes = Rename(myproject, ropy, 12731).get_changes('_idx', docs=True)
+myproject.do(changes)
+
+myproject.close()
