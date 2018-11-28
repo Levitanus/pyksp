@@ -1913,9 +1913,9 @@ class KspNativeControlMeta(WidgetMeta):
         cls.help._init_control(obj, None)
         cls.hide._init_control(obj, None)
         cls.z_layer._init_control(obj, None)
-        cls.key_alt._init_control(obj, None)
-        cls.key_control._init_control(obj, None)
-        cls.key_shift._init_control(obj, None)
+        cls.key_alt._init_control(obj, 1)
+        cls.key_control._init_control(obj, 1)
+        cls.key_shift._init_control(obj, 1)
         return obj
 
     def generate_init_code():
@@ -2289,6 +2289,8 @@ class kKnobMeta(KspNativeControlMeta):
                                **kwargs)
 
         value_min_max(obj, min_val, max_val)
+        if isinstance(display_ratio, bKnobUnitConst):
+            display_ratio = display_ratio._get_compiled()
         obj._decl_postfix = f'({min_val}, {max_val}, {display_ratio})'
 
         cls.value._init_control(obj, None, obj.var)
@@ -3361,6 +3363,7 @@ class kTableMeta(KspNativeControlMeta):
                              set_control_par_arr,
                              get_control_par_arr,
                              NI_CONTROL_PAR_IDX)
+        cls.default = init_default(cls)
 
         return cls
 
@@ -3368,11 +3371,12 @@ class kTableMeta(KspNativeControlMeta):
 
         obj = super().__call__(*args, size=size,
                                **kwargs)
-        obj._decl_postfix = f'(1, 1, {val_range})'
+        obj._decl_postfix = f'[{size}](1, 1, {val_range})'
         cls.value._init_control(obj, None, obj.var)
         cls.bar_color._init_control(obj, None)
         cls.zero_line_color._init_control(obj, None)
         cls.idx._init_control(obj, None)
+        cls.default._init_control(obj, None)
         return obj
 
 
@@ -3441,11 +3445,11 @@ class kXyMeta(KspNativeControlMeta):
                                   set_control_par_arr,
                                   get_control_par_arr,
                                   CONTROL_PAR_HIDE)
-        cls.idx = ControlPar('idx', cls, kArrInt,
-                             kParArrIntVar, int, 1,
-                             set_control_par_arr,
-                             get_control_par_arr,
-                             NI_CONTROL_PAR_IDX)
+        cls.active_index = ControlPar('active_idx', cls, kArrInt,
+                                      kParIntVar, int, 1,
+                                      set_control_par_arr,
+                                      get_control_par_arr,
+                                      CONTROL_PAR_ACTIVE_INDEX)
 
         return cls
 
@@ -3454,6 +3458,8 @@ class kXyMeta(KspNativeControlMeta):
             raise TypeError('size of xy has to be even')
 
         obj = super().__call__(*args, size=size, **kwargs)
+        obj._decl_postfix = f'[{size}]'
+
         cls.value._init_control(obj, None, obj.var)
         obj._cursor_pictures = kArrStr(size=size, is_local=True)
         obj._cursor_hide = kArrInt(size=size, is_local=True)
@@ -3463,7 +3469,7 @@ class kXyMeta(KspNativeControlMeta):
         cls.mouse_mode._init_control(obj, None)
         cls.cursor_picture._init_control(obj, None, obj._cursor_pictures)
         cls.hide_arr._init_control(obj, None, obj._cursor_hide)
-        cls.idx._init_control(obj, None)
+        cls.active_index._init_control(obj, 1)
 
         return obj
 

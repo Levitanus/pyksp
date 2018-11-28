@@ -3,6 +3,11 @@ import sys
 path = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(path)
 
+from base_types import KspVar
+from base_types import KspIntVar
+from base_types import KspStrVar
+from base_types import KspRealVar
+
 from native_types import kInt
 from native_types import kStr
 from native_types import kReal

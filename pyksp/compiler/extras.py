@@ -14,8 +14,18 @@ def docstring(f):
     if script docs attribute is set to True"""
     @wraps(f)
     def wrapper(*args, **kwargs):
-        if KSP.docs:
-            Output().put('{%s}' % f.__doc__)
+        if not KSP.docs:
+            return f(*args, **kwargs)
+        Output().put('{%s}' % f.__doc__)
+        # if not KSP.indents:
+        #     Output().put('{%s}' % f.__doc__)
+        #     return
+        # comm = cleandoc(f.__doc__).split('\n')
+        # new = comm[0]
+        # if len(comm) > 1:
+        #     for line in comm[1:]:
+        #         new += f'\n{" " * KSP.indents}{line}'
+        # Output().put('{%s}' % new)
         return f(*args, **kwargs)
 
     return wrapper

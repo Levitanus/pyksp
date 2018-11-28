@@ -2,12 +2,15 @@ from k_built_ins import message
 from k_built_ins import exit
 from k_built_ins import reset_ksp_timer
 from k_built_ins import ignore_controller
-# from k_built_ins import kabs
+from k_built_ins import kabs
+from k_built_ins import int_to_real
+from k_built_ins import real_to_int
 from k_built_ins import exp
 from k_built_ins import log
 from k_built_ins import kpow
 from k_built_ins import sqrt
 from k_built_ins import ceil
+from k_built_ins import kabs
 from k_built_ins import floor
 from k_built_ins import kround
 from k_built_ins import cos

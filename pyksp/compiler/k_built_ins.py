@@ -7,6 +7,7 @@ from collections import OrderedDict
 # import re
 
 from typing import Tuple
+from typing import Union
 
 import math
 
@@ -705,23 +706,77 @@ class Exp(BuiltInFuncReal):
 exp = Exp().__call__
 
 
-# class Abs(BuiltInFuncReal):
+class IntToReal(BuiltInFuncReal):
 
-#     def __init__(self):
-#         super().__init__(name='abs',
-#                          args=OrderedDict(
-#                              value=(KspIntVar, int, KspRealVar,
-#                                     float, AstBase)))
+    def __init__(self):
+        super().__init__(name='int_to_real',
+                         args=OrderedDict(
+                             value=(KspIntVar, int, AstBase)))
 
-#     def calculate(self, value):
-#         return abs(get_runtime_val(value))
+    def calculate(self, value):
+        return float(get_runtime_val(value))
 
-#     def __call__(self, value: float):
-#         '''Kontakt abs() Return absolute value.'''
-#         return super().__call__(value)
+    def __call__(self, value: int):
+        '''exponential function (returns the value of e^x)'''
+        return super().__call__(value)
 
 
-# kabs = Abs().__call__
+int_to_real = IntToReal().__call__
+
+
+class RealToInt(BuiltInFuncInt):
+
+    def __init__(self):
+        super().__init__(name='real_to_int',
+                         args=OrderedDict(
+                             value=(KspRealVar, float, AstBase)))
+
+    def calculate(self, value):
+        value = get_runtime_val(value)
+        return int(value)
+
+    def __call__(self, value: float):
+        '''exponential function (returns the value of e^x)'''
+        return super().__call__(value)
+
+
+real_to_int = RealToInt().__call__
+
+
+class AbsReal(BuiltInFuncReal):
+
+    def __init__(self):
+        super().__init__(name='abs',
+                         args=OrderedDict(
+                             value=(KspRealVar,
+                                    float, AstBase)))
+
+    def calculate(self, value):
+        return abs(get_runtime_val(value))
+
+
+class AbsInt(BuiltInFuncInt):
+
+    def __init__(self):
+        super().__init__(name='abs',
+                         args=OrderedDict(
+                             value=(KspIntVar,
+                                    int, AstBase)))
+
+    def calculate(self, value):
+        return abs(get_runtime_val(value))
+
+
+abs_int = AbsInt()
+abs_real = AbsReal()
+
+
+def kabs(value: Union[KspIntVar, KspRealVar, AstBase, int, float]):
+    '''Kontakt abs() Return absolute value.'''
+    # print(get_runtime_val(value), value)
+    if isinstance(get_runtime_val(value), float):
+        return abs_real(value)
+    return abs_int(value)
 
 
 class Log(BuiltInFuncReal):
@@ -732,11 +787,16 @@ class Log(BuiltInFuncReal):
                              value=(KspRealVar, float, AstBase)))
 
     def calculate(self, value):
-        return math.log(get_runtime_val(value))
+        try:
+            return math.log(get_runtime_val(value))
+        except ValueError as e:
+            print(get_runtime_val(value))
+            raise e
 
     def __call__(self, value: float):
         '''logarithmic function'''
         return super().__call__(value)
+        # return 0.0
 
 
 log = Log().__call__
