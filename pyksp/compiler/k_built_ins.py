@@ -43,6 +43,14 @@ def get_runtime_val(val):
     return val
 
 
+def get_compiled(val):
+    if hasattr(val, '_get_compiled'):
+        return val._get_compiled()
+    if hasattr(val, 'expand'):
+        return val.expand()
+    return val
+
+
 def _all_subclasses(cls):
     return set(cls.__subclasses__()).union(
         [s for c in cls.__subclasses__()
@@ -99,6 +107,7 @@ class Callback(KSP):
                 func()
             else:
                 try:
+                    print(sig.parameters)
                     obj = sig.parameters['self']
                     func(obj)
                 except AttributeError as e:
@@ -108,6 +117,8 @@ class Callback(KSP):
                         ' argument. Example: init(self.method)' +
                         'or use as decorator with no arguments passed\n' +
                         f'original exception: {e}')
+                except KeyError:
+                    func()
         out.extend(self.__lines)
         self.close()
         Output().unindent()

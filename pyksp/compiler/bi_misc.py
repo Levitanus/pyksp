@@ -109,7 +109,9 @@ class Search(BuiltInFuncInt):
                          args=OrderedDict(array=kArrInt, value=int))
 
     def __call__(self, array: kArrInt, value: int):
-        '''returns the number of elements in an array'''
+        '''searches the specified array for the specified value and
+        returns the index of its first position.
+        If the value is not found, the function returns -1'''
         return super().__call__(array, value)
 
     def calculate(self, array, value):
@@ -120,6 +122,7 @@ class Search(BuiltInFuncInt):
         for idx, item in enumerate(array.iter_runtime()):
             if item._get_runtime() == value:
                 return idx
+        return -1
 
 
 search = Search().__call__
@@ -442,6 +445,7 @@ class key_color(BuiltInIntVar):
         return keys[note_nr].color
 
     def _set_item(note_nr, color):
+        note_nr = get_runtime_val(note_nr)
         if not KSP.is_compiled():
             color = color.id
         keys[note_nr].color = color
@@ -465,6 +469,8 @@ KEY_COLOR_MAGENTA = key_color('KEY_COLOR_MAGENTA')
 KEY_COLOR_FUCHSIA = key_color('KEY_COLOR_FUCHSIA')
 KEY_COLOR_DEFAULT = key_color('KEY_COLOR_DEFAULT')
 KEY_COLOR_INACTIVE = key_color('KEY_COLOR_INACTIVE')
+KEY_COLOR_BLACK = key_color('KEY_COLOR_BLACK')
+KEY_COLOR_WHITE = key_color('KEY_COLOR_WHITE')
 KEY_COLOR_NONE = key_color('KEY_COLOR_NONE')
 
 

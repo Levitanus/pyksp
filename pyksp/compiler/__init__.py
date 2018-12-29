@@ -20,22 +20,37 @@ from native_types import kVar
 from script import kScript
 
 from bi_ui_controls import kMainWindow
+# from bi_ui_controls import kMainWindowMeta
 from bi_ui_controls import kWidget
+# from bi_ui_controls import kWidgetMeta
 from bi_ui_controls import KspNativeControl
+from bi_ui_controls import KspNativeControlMeta
 from bi_ui_controls import kButton
+from bi_ui_controls import kButtonMeta
 from bi_ui_controls import kSlider
+from bi_ui_controls import kSliderMeta
 from bi_ui_controls import kSwitch
+from bi_ui_controls import kSwitchMeta
 from bi_ui_controls import kKnob
+from bi_ui_controls import kKnobMeta
 from bi_ui_controls import kMenu
+from bi_ui_controls import kMenuMeta
 from bi_ui_controls import kLabel
-
+from bi_ui_controls import kLabelMeta
 from bi_ui_controls import kLevelMeter
+from bi_ui_controls import kLevelMeterMeta
 from bi_ui_controls import kTable
+from bi_ui_controls import kTableMeta
 from bi_ui_controls import kValueEdit
+from bi_ui_controls import kValueEditMeta
 from bi_ui_controls import kTextEdit
+from bi_ui_controls import kTextEditMeta
 from bi_ui_controls import kWaveForm
+from bi_ui_controls import kWaveFormMeta
 from bi_ui_controls import kXy
+from bi_ui_controls import kXyMeta
 from bi_ui_controls import kFileSelector
+from bi_ui_controls import kFileSelectorMeta
 
 from bi_misc import kLog
 from bi_misc import logpr
@@ -57,6 +72,7 @@ from stack import kLoc
 from functions import kArg
 from functions import kOut
 from functions import func
+from functions import kLocals
 
 from extras import docstring
 from extras import comment

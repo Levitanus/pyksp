@@ -29,6 +29,7 @@ from k_built_ins import BuiltInIntVar
 # from k_built_ins import ListenerCallback
 from k_built_ins import UiControlCallback
 from k_built_ins import get_runtime_val
+from k_built_ins import get_compiled
 from k_built_ins import all_callbacks
 
 from native_types import kInt
@@ -879,6 +880,9 @@ class kParVar(KSP):
     def bound_var(self, var: KspVar):
         self._bounded_var = var
 
+    def name(self):
+        return self._get_compiled()
+
     @property
     def val(self):
         if self.is_compiled():
@@ -1555,7 +1559,7 @@ class SetControlParArr(BuiltInFuncInt, ControlParFunc):
         l_c_id = self._get_line_c_id(control_or_id)
         parameter = self._resolve_parameter(control_or_id, parameter)
         super().__call__(l_c_id, parameter, value, idx)
-        self._set_runtime(control_or_id, parameter, value)
+        self._set_runtime(control_or_id, parameter, value, idx)
 
     def _set_runtime(self, control_or_id: Union['KspNativeControl', int],
                      parameter: Union[bControlParVar, str], value: int,
@@ -1663,7 +1667,7 @@ class SetControlParStrArr(BuiltInFuncInt, ControlParFunc):
         l_c_id = self._get_line_c_id(control_or_id)
         parameter = self._resolve_parameter(control_or_id, parameter)
         super().__call__(l_c_id, parameter, value, idx)
-        self._set_runtime(control_or_id, parameter, value)
+        self._set_runtime(control_or_id, parameter, value, idx)
 
     def _set_runtime(self, control_or_id: Union['KspNativeControl', int],
                      parameter: Union[bControlParVar, str], value: str,
@@ -2687,7 +2691,7 @@ class kMenu(KspNativeControl, metaclass=kMenuMeta):
     def _set_value(self, val, prop_ret):
         self.var <<= val
 
-    def add_item(self, text: str, value: int):
+    def add_item(self, text: str, value: int, idx: int=None):
         '''create a menu entry
         <text>
         the text of the menu entry
@@ -2705,7 +2709,13 @@ class kMenu(KspNativeControl, metaclass=kMenuMeta):
         command.'''
         if not KSP.in_init():
             raise RuntimeError('has to be inside init callback')
-        self._items.append(MenuItem(text, value, self._items_amount))
+        if idx is None:
+            idx = self._items_amount
+        Output().put(
+            f'add_menu_item({get_compiled(self.var)}, {get_compiled(text)}, {get_compiled(value)})')
+        self._items.append(MenuItem(get_runtime_val(
+            text), get_runtime_val(value), get_runtime_val(idx)))
+        item = self._items[0]
         self._items_amount += 1
 
     def get_item_str(self, idx: int):
@@ -2714,7 +2724,9 @@ class kMenu(KspNativeControl, metaclass=kMenuMeta):
 
     def get_item_value(self, idx: int):
         '''returns the value of the menu’s entry.'''
-        return get_menu_item_value(self.id, idx)
+        value = get_menu_item_value(self.id, idx)
+
+        return value
 
     def get_item_visibility(self, idx: int):
         '''returns 1 if the menu entry is visible, otherwise 0.'''
@@ -2786,7 +2798,9 @@ class GetMenuItemValue(BuiltInFuncInt):
     def calculate(self, menu_id, idx):
         menu = ControlId.get_by_id(menu_id)
         idx = get_runtime_val(idx)
-        return menu._items[idx].value
+        for item in menu._items:
+            if item.idx == idx:
+                return item.value
 
 
 get_menu_item_value = GetMenuItemValue().__call__
@@ -3417,19 +3431,19 @@ class kXyMeta(KspNativeControlMeta):
                                CONTROL_PAR_VALUE)
         cls.mouse_behaviour_x = ControlPar('mouse_behaviour_x',
                                            cls, kArrInt,
-                                           kParArrIntVar, int, 1,
+                                           kParIntVar, int, 1,
                                            set_control_par,
                                            get_control_par,
                                            CONTROL_PAR_MOUSE_BEHAVIOUR_X)
         cls.mouse_behaviour_y = ControlPar('mouse_behaviour_y',
                                            cls, kArrInt,
-                                           kParArrIntVar, int, 1,
+                                           kParIntVar, int, 1,
                                            set_control_par,
                                            get_control_par,
                                            CONTROL_PAR_MOUSE_BEHAVIOUR_Y)
         cls.mouse_mode = ControlPar('mouse_mode',
                                     cls, kArrInt,
-                                    kParArrIntVar, int, 1,
+                                    kParIntVar, int, 1,
                                     set_control_par,
                                     get_control_par,
                                     CONTROL_PAR_MOUSE_MODE)
@@ -3463,10 +3477,12 @@ class kXyMeta(KspNativeControlMeta):
         cls.value._init_control(obj, None, obj.var)
         obj._cursor_pictures = kArrStr(size=size, is_local=True)
         obj._cursor_hide = kArrInt(size=size, is_local=True)
+        obj._mouse_behaviour_x = kArrInt(size=size, is_local=True)
+        obj._mouse_behaviour_y = kArrInt(size=size, is_local=True)
 
-        cls.mouse_behaviour_x._init_control(obj, None)
-        cls.mouse_behaviour_y._init_control(obj, None)
-        cls.mouse_mode._init_control(obj, None)
+        cls.mouse_behaviour_x._init_control(obj, 1000)
+        cls.mouse_behaviour_y._init_control(obj, 1000)
+        cls.mouse_mode._init_control(obj, 1)
         cls.cursor_picture._init_control(obj, None, obj._cursor_pictures)
         cls.hide_arr._init_control(obj, None, obj._cursor_hide)
         cls.active_index._init_control(obj, 1)

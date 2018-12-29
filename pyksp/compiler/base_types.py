@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from abc import ABCMeta
 from warnings import warn
 
 from abstract import KspObject
@@ -401,7 +402,7 @@ class AstMod(AstOperator):
         return self.standart('mod', val1, val2)
 
     def get_value(self):
-        return super().get_value(lambda arg1, arg2: arg1 & arg2)
+        return super().get_value(lambda arg1, arg2: arg1 % arg2)
 
 
 class AstPow(AstOperator):
@@ -1052,6 +1053,18 @@ class KspIntVar(KspNumeric):
     def __ifloordiv__(self, other):
         return super().__ifloordiv__(other)
 
+    def __mod__(self, other):
+        if self.is_compiled():
+            return AstMod(self, other)
+        other = get_runtime(other)
+        return self._get_runtime() % other
+
+    def __rmod__(self, other):
+        if self.is_compiled():
+            return AstMod(other, self)
+        other = get_runtime(other)
+        return self._get_runtime() % other
+
 
 class KspRealVar(KspNumeric):
     def __truediv__(self, other):
@@ -1334,8 +1347,11 @@ class KspArray(KspVar):
 
     def _check_cashed_item(self, idx):
         '''returns cashed object from index, or make one.'''
-        if self._cashed[idx] is not None:
-            return False
+        try:
+            if self._cashed[idx] is not None:
+                return False
+        except IndexError as e:
+            raise IndexError(f'{str(e)}. idx is {idx}')
         val = self._seq[idx]
         if val is None:
             self._seq[idx] = self.__default

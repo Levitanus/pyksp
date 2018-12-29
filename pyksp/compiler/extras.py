@@ -1,11 +1,14 @@
 from abstract import Output
 from abstract import KSP
+from abstract import IName
 
 from typing import Union
 from typing import List
 
 from functools import wraps
 from inspect import cleandoc
+
+from re import sub
 
 
 def docstring(f):
@@ -27,6 +30,23 @@ def docstring(f):
         #         new += f'\n{" " * KSP.indents}{line}'
         # Output().put('{%s}' % new)
         return f(*args, **kwargs)
+
+    return wrapper
+
+
+def scope(f):
+    """Decorator for making all Ksp declarations 'local'
+    adds current scope to the declaration name"""
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        # print(dir(f))
+        scope = f'{f.__module__}_{f.__qualname__}_'
+        scope = sub(r'(__init__)|[<>]', '', scope)
+        scope = sub(r'\.', '_', scope)
+        IName.scope(scope)
+        ret_val = f(*args, **kwargs)
+        IName.scope('')
+        return ret_val
 
     return wrapper
 

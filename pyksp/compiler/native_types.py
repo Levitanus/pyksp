@@ -218,7 +218,8 @@ class kArrInt(KspArray):
                          item_type=kInt,
                          size=size,
                          seq=sequence,
-                         def_val=0)
+                         def_val=0,
+                         persist=persist)
 
     def _get_compiled(self):
         return self.name()
@@ -259,7 +260,8 @@ class kArrReal(KspArray):
                          item_type=kReal,
                          size=size,
                          seq=sequence,
-                         def_val=0.0)
+                         def_val=0.0,
+                         persist=persist)
 
     def _get_compiled(self):
         return self.name()
@@ -300,7 +302,8 @@ class kArrStr(KspArray):
                          item_type=kStr,
                          size=size,
                          seq=sequence,
-                         def_val='')
+                         def_val='',
+                         persist=persist)
 
     def _get_compiled(self):
         return self.name()
@@ -412,6 +415,8 @@ class kVar:
                                 size=self.size)
         raise TypeError('can be initialized only with:%s' %
                         (int, str, float, kInt, kStr, kReal, list))
+
+#
 
 
 class kNone(kInt, metaclass=SingletonMeta):

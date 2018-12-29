@@ -396,23 +396,22 @@ class ChangeVol(BuiltInFuncInt):
                          def_ret=kNone())
 
     def __call__(self, event_id: int, vol: int, relative_bit: int):
-        '''change the pan position of a specific note event
+        '''change the volume of a specific note event in millidecibel
         <ID-number>
         the ID number of the note event to be changed
-        <vol>
-        the pan position of the note event, from -1000 (left) to 1000
-        (right)
+        <volume>
+        the volume change in millidecibel
         <relative-bit>
-        If the relative bit is set to 0, the amount is absolute, i.e. the
-        amount, overwrites any previous set values of that event.
-        If set to 1, the amount is relative to the actual value of the
-        event.
+        If the relative bit is set to 0, the amount is absolute, i.e.
+        the amount overwrites any previous set values of that event.
+        If it is set to 1, the amount is relative to the actual value
+        of the event.
         The different implications are only relevant with more than one
         change_vol() statement applied to the same event.
         Remarks
-        • change_vol()works on a note event level and does not change any
-        vol settings in the instrument itself. It is also not related
-        to any MIDI modulations regarding vol.'''
+        • change_vol()works on a note event level and does not change
+        any tune settings in the instrument itself. It is also not
+        related to any MIDI modulations regarding volume (e.g. MIDI CC7).'''
         return super().__call__(event_id, vol, relative_bit)
 
 

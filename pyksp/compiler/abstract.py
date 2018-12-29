@@ -137,6 +137,7 @@ class IName(INameLocal):
 
     __is_compact = False
     __names: List[str] = list()
+    __scope: List[str] = ['']
 
     @staticmethod
     def is_compact():
@@ -152,6 +153,8 @@ class IName(INameLocal):
 
     def __init__(self, name, prefix='', postfix='',
                  preserve=False):
+        # print(IName.__scope)
+        name = IName.__scope[-1] + name
         self._preserve = preserve
         self._full = name
         if not preserve and self.is_compact() is True:
@@ -161,7 +164,8 @@ class IName(INameLocal):
         if name in IName.__names:
             raise NameError(f'name "{name}" exists')
         IName.__names.append(name)
-        super().__init__(name=name, prefix=prefix, postfix=postfix)
+        super().__init__(name=name,
+                         prefix=prefix, postfix=postfix)
 
     @staticmethod
     def get_compact_name(name):
@@ -172,6 +176,13 @@ class IName(INameLocal):
         compact = ''.join((symbols[ch & 0x1F] for ch
                            in hash.digest()[:5]))
         return compact
+
+    @staticmethod
+    def scope(name: str=''):
+        if not name:
+            IName.__scope.pop()
+            return
+        IName.__scope.append(name)
 
     @property
     def full(self):

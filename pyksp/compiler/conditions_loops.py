@@ -465,7 +465,6 @@ class For(KSP):
         For.idx.inc()
         self._idx = For.arr[For.idx]
         for idx, inst in enumerate(reversed(self.running_instances)):
-            print(idx)
             if idx == 0:
                 formule = For.idx
             else:
@@ -561,7 +560,6 @@ class For(KSP):
         For.idx.dec()
         self.running_instances.pop()
         for idx, inst in enumerate(reversed(self.running_instances)):
-            print(idx)
             if idx == 0:
                 formule = For.idx
             else:

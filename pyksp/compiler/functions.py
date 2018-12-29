@@ -307,6 +307,86 @@ class FuncArgs(KSP):
         return f_self, maped, outs
 
 
+class LocalParam:
+    def __init__(self, var: str, var_name, var_type,
+                 var_value: dict) -> None:
+        self.var = var
+        self.var_value = var_value
+        self.var_type = var_type
+        self.var_name = var_name
+
+
+class kLocals:
+    """Collects local vars definitions and initialize them
+
+    Example:
+
+    # adding kLocals objects
+    local = kLocals()
+
+    def __init__(self):
+        # initialising local variables
+        self.local.init_vars()
+
+
+    # specifying arguments, that are local
+    @local('check')
+    # syntax for annotation: name: type=default value
+    def render_table(self, check: k.kInt=2)->None:
+        check <<= 5
+
+
+    """
+
+    def __init__(self):
+        self.vars = dict()
+        self.funcs = dict()
+
+    def __call__(self, *local_names):
+        """mark specified arguments be local"""
+
+        def decorator(func):
+            func_name = f'{func.__module__}_{func.__name__}'
+            sig = signature(func)
+            self.funcs[func_name] = dict()
+            for var_name in local_names:
+                if var_name in sig.parameters:
+                    assert var_name not in self.vars.keys(), \
+                        f'choose another name, current is {var_name}'
+                    var_type = sig.parameters[var_name].annotation
+                    value = sig.parameters[var_name].default
+                    name = f'{func_name}__{var_name}'
+                    var = var_type(value, name=name)
+                    param = LocalParam(
+                        var, name, var_type, value)
+                    self.vars[var_name] = param
+                    self.funcs[func_name][var_name] = param
+
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                added = dict()
+                for name in self.funcs[func_name]:
+                    added[name] = self.funcs[func_name][name].var
+                kwargs = {**kwargs, **added}
+                return func(*args, **kwargs)
+            return wrapper
+        return decorator
+
+    def init_vars(self) -> None:
+        """initialize local vars"""
+        for name in self.vars.keys():
+            var = self.vars[name].var
+            var_type = self.vars[name].var_type
+            var_value = self.vars[name].var_value
+            var_name = self.vars[name].var_name
+            print('var: ', var, var.name(), var_type, var_value)
+            var_type(var_value, name=var_name)
+            try:
+                var_type(var_value, name=var_name)
+            except NameError:
+                continue
+
+
 class FuncCallsStack:
     '''used for sorting functions during generating their executables'''
     stack = list()

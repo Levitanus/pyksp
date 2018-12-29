@@ -839,10 +839,10 @@ class EnginePars(metaclass=SingletonMeta):
         group = get_runtime_val(group)
         slot = get_runtime_val(slot)
         generic = get_runtime_val(generic)
-        if group > -1:
-            if generic > -1:
-                raise AttributeError(
-                    'with group index generic has to be -1')
+        # if group > -1:
+        #     if generic > -1:
+        #         raise AttributeError(
+        #             'with group index generic has to be -1')
 
         key = f'{group}{slot}{generic}'
         return key

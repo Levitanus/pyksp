@@ -584,6 +584,8 @@ from bi_misc import KEY_COLOR_MAGENTA
 from bi_misc import KEY_COLOR_FUCHSIA
 from bi_misc import KEY_COLOR_DEFAULT
 from bi_misc import KEY_COLOR_INACTIVE
+from bi_misc import KEY_COLOR_WHITE
+from bi_misc import KEY_COLOR_BLACK
 from bi_misc import KEY_COLOR_NONE
 from bi_misc import get_key_color
 from bi_misc import set_key_color
