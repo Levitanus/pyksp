@@ -69,13 +69,14 @@ class Callback(KSP):
         self._header = header
         self.__lines = list()
         self._type = cb_type
-        self.__functions = set()
+        self.__functions = list()
         self.__bvars = dict()
         for var in built_in_vars:
             self.__bvars[var] = -1
 
     def add_function(self, function):
-        self.__functions.add(function)
+        if function not in self.__functions:
+            self.__functions.append(function)
 
     def open(self):
         Callback.__id += 1
@@ -143,7 +144,7 @@ class Callback(KSP):
     def _refresh(self):
         self.__lines.clear()
         self.__lines = list()
-        self.__functions = set()
+        self.__functions = list()
         self.__bvars = dict()
 
 

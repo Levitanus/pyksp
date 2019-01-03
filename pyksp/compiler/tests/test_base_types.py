@@ -1,15 +1,13 @@
-import os
-import sys
 import unittest as t
 
-path = os.path.abspath(os.path.dirname(__file__)) + '/..'
-sys.path.append(path)
-path = os.path.abspath(os.path.dirname(__file__))
-sys.path.append(path)
+ismain: bool = False
+if __name__ == '__main__':
+    __name__ = 'pyksp.compiler.tests.test_base_types'
+    ismain = True
 
-from mytests import DevTest
+from .mytests import DevTest
 
-from base_types import *
+from ..base_types import *
 
 
 class NumericWarn:
@@ -1061,5 +1059,5 @@ class TestKspArray(DevTest):
         self.assertEqual(out, [1, 2, 3, 4, 5])
 
 
-if __name__ == '__main__':
+if ismain:
     t.main()

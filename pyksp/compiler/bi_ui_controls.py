@@ -83,7 +83,7 @@ class kMainWindow(KSP):
             Output().put(
                 'set_control_par_str($INST_ICON_ID,' +
                 f'$CONTROL_PAR_PICTURE,{icon})')
-        elif icon is False:
+        else:
             Output().put(
                 'set_control_par($INST_ICON_ID,' +
                 '$CONTROL_PAR_HIDE,$HIDE_WHOLE_CONTROL)')

@@ -118,8 +118,9 @@ class TestSelect(DevTest):
                         check()
                         y += 1
                     with Case(3):
+                        # print(Output().get())
                         check()
-                        CondFalse()
+                        # CondFalse()
         with self.assertRaises(KspCondError):
             with Case(3):
                 pass

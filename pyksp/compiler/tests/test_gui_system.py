@@ -19,20 +19,22 @@ from bi_ui_controls import *
 null_lines = \
     '''set_control_par($INST_ICON_ID,$CONTROL_PAR_HIDE,\
 $HIDE_WHOLE_CONTROL)
-set_ui_width_px(633)
-set_ui_height_px(100)'''
+set_ui_height_px(100)
+make_perfview'''
 
 packed_lines = \
     '''set_control_par_str($INST_WALLPAPER_ID,\
 $CONTROL_PAR_PICTURE,wallpaper)
 set_control_par_str($INST_ICON_ID,$CONTROL_PAR_PICTURE,icon)
 set_ui_width_px(800)
-set_ui_height_px(300)'''
+set_ui_height_px(300)
+make_perfview'''
 
 
 class TestMainWindow(DevTest):
 
     def runTest(self):
+        self.maxDiff = None
         kMainWindow()
         self.assertEqual(unpack_lines(Output().get()), null_lines)
         Output().refresh()

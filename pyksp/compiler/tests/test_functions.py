@@ -157,7 +157,6 @@ executables = '''function {method}
 %_stack_functions_int_arr[0 + %_stack_functions_int_idx[\
 $_stack_functions_int_pointer]] := 3
 end function
-
 function {foo}
 inc($_for_loop_curr_idx)
 %_for_loop_idx[$_for_loop_curr_idx] := 0
@@ -178,8 +177,7 @@ dec($_stack_functions_int_pointer)
 inc(%_for_loop_idx[$_for_loop_curr_idx])
 end while
 dec($_for_loop_curr_idx)
-end function
-'''
+end function'''
 
 invoked_in_init = \
     '''inc($_stack_functions_int_pointer)

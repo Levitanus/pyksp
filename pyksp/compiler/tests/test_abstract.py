@@ -1,15 +1,12 @@
-import os
-import sys
+
 import unittest as t
 
-path = os.path.abspath(os.path.dirname(__file__)) + '/..'
-sys.path.append(path)
-path = os.path.abspath(os.path.dirname(__file__))
-sys.path.append(path)
-
-from mytests import DevTest
-
-from abstract import *
+ismain: bool = False
+if __name__ == '__main__':
+    __name__ = 'pyksp.compiler.tests.test_abstract'
+    ismain = True
+from .mytests import DevTest
+from ..abstract import *
 
 
 class TestSingleton(DevTest):
@@ -25,22 +22,6 @@ class TestSingleton(DevTest):
         self.assertEqual(b.val, 1)
         b.val = 2
         self.assertEqual(a.val, 2)
-
-
-class TestKspBoolProp(DevTest):
-
-    class Test:
-        a = KspBoolProp()
-
-    def runTest(self):
-        a = self.Test()
-        self.assertEqual(a.a, False)
-        with self.assertRaises(TypeError):
-            a.a = 4
-        a.a = True
-        self.assertEqual(a.a, True)
-        b = self.Test()
-        self.assertEqual(b.a, True)
 
 
 class TestKSP(DevTest):
@@ -113,6 +94,23 @@ class TestName(DevTest):
         g = self.Test4()
         self.assertEqual(g.name(), '@bu20h[20]')
 
+        IName.set_compact(False)
+        IName.scope('lvl1_')
+        scoped_a = self.Test3()
+        self.assertEqual(scoped_a.name(), '$lvl1_my name')
+
+        IName.scope('lvl2_')
+        scoped_b = self.Test3()
+        self.assertEqual(scoped_b.name(), '$lvl2_my name')
+        self.assertEqual(scoped_a.name(), '$lvl1_my name')
+
+        IName.scope()
+        with self.assertRaises(NameError):
+            self.Test3()
+        scoped_c = self.Test3(name='name')
+        self.assertEqual(scoped_c.name(), '$lvl1_name')
+        IName.scope()
+
 
 class TestKspObject(DevTest):
 
@@ -149,6 +147,7 @@ class TestKspObject(DevTest):
             return f'{self.name()} init'
 
     def runTest(self):
+
         a = self.Test('a')
 
         self.assertEqual(a.generate_all_inits(), ['a init'])
@@ -165,7 +164,11 @@ class TestKspObject(DevTest):
 
 class TestOutput(DevTest):
 
-    def runTest(self):
+    def setUp(self)->None:
+        Output().refresh()
+        Output().release()
+
+    def test_core(self):
         self.temp = None
         output = Output()
         out = list()
@@ -193,9 +196,48 @@ class TestOutput(DevTest):
         with self.assertRaises(TypeError):
             output.put('some')
 
+    def test_indents(self):
+        otpt = Output()
+        KSP.indents = 2
+        otpt.put('line1')
+        otpt.indent()
+        otpt.put('line2')
+        otpt.indent()
+        otpt.put('line3')
+        KSP.indents = 3
+        otpt.put('line4')
+        otpt.unindent()
+        otpt.put('line5')
+        otpt.unindent()
+        otpt.put('line6')
+        with self.assertRaises(otpt.IndentError):
+            otpt.unindent()
+        otpt.put('line7')
+        self.assertEqual(otpt.get(),
+                         ['line1',
+                          '  line2',
+                          '    line3',
+                          # indents = 3
+                          '      line4',
+                          '   line5',
+                          'line6',
+                          'line7'])
+
+    def test_block(self):
+        otpt = Output()
+        otpt.put('before passed')
+        otpt.blocked = True
+        otpt.put('blocked')
+        self.assertTrue(otpt.blocked)
+        otpt.blocked = False
+        otpt.put('after passed')
+        self.assertEqual(otpt.get(),
+                         ['before passed',
+                          'after passed'])
+
     def my_call(self):
         self.temp = 'my_call'
 
 
-if __name__ == '__main__':
+if ismain:
     t.main()

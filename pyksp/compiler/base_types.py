@@ -1,16 +1,141 @@
+"""Base classes for building KSP type system and compiler interfaces."""
+
 from abc import abstractmethod
-from abc import ABCMeta
-from warnings import warn
+
+from typing import Union
+from typing import TypeVar
+from typing import Any
+from typing import List
+from typing import Callable
+from typing import Tuple
+from typing import Generic
+from typing import Sequence
+from typing import overload
+from typing import NoReturn
+from typing import cast
+from typing_extensions import Protocol
+from typing_extensions import runtime
 
 from abstract import KspObject
 from abstract import KSP
 from abstract import Output
+from abstract import KspGeneric
 
-from typing import Union
+T = TypeVar('T')
 
 
-class AstBase(KSP):
+@runtime
+class HasToInt(Protocol):
+    def to_int(self) -> int:
+        ...
+
+
+@runtime
+class HasToFloat(Protocol):
+    def to_float(self) -> int:
+        ...
+
+
+@runtime
+class HasToStr(Protocol):
+    def to_str(self) -> str:
+        ...
+
+
+@runtime
+class HasCompiled(Protocol):
+    def get_compiled(self) -> str:
+        ...
+
+    def set_compiled(self, value: str) -> None:
+        ...
+
+
+@runtime
+class HasRuntime(Protocol):
+    def get_runtime(self) -> Union[str, float, int]:
+        ...
+
+    def set_runtime(self, value: Union[str, float, int]) -> None:
+        ...
+
+
+@runtime
+class AstObject(Protocol, Generic[T]):
+    value_type: T
+
+    def expand(self) -> str:
+        ...
+
+    def get_value(self) -> T:
+        ...
+
+
+ResolvedToInt = Union[int, HasToInt]
+ResolvedToFloat = Union[float, HasToFloat]
+ResolvedToStr = Union[str, HasToStr]
+ResolvedToCompiled = Union[str, HasCompiled]
+ResolvedToRuntime = Union[str, HasRuntime]
+ValidAst = Union[AstObject[Union[int, float, str]], str]
+
+
+def resolve_to_int(value: ResolvedToInt) -> int:
+    if isinstance(value, int):
+        return value
+    return value.to_int()
+
+
+def resolve_to_float(value: ResolvedToFloat) -> float:
+    if isinstance(value, float):
+        return value
+    return value.to_float()
+
+
+def resolve_to_str(value: ResolvedToStr) -> str:
+    if isinstance(value, str):
+        return value
+    return value.to_str()
+
+
+@overload
+def get_runtime(value: ResolvedToInt) -> int:
+    ...
+
+
+@overload
+def get_runtime(value: ResolvedToFloat) -> float:
+    ...
+
+
+@overload
+def get_runtime(value: ResolvedToStr) -> str:
+    ...
+
+
+@overload
+def get_runtime(value: AstObject[T]) -> T:
+    ...
+
+
+def get_runtime(value: Union[ResolvedToInt,
+                             ResolvedToFloat,
+                             ResolvedToStr,
+                             AstObject[T]]) -> Union[int, str, float, T]:
+    """Return runtime value of an KSP object."""
+    if isinstance(value, (int, HasToInt)):
+        return resolve_to_int(value)
+    if isinstance(value, (float, HasToFloat)):
+        return resolve_to_float(value)
+    if isinstance(value, (str, HasToStr)):
+        return resolve_to_str(value)
+    if isinstance(value, (AstObject)):
+        return value.get_value()
+    raise TypeError(f'can not resolve type for {value}')
+
+
+class AstBase(KspGeneric[T]):
     '''Base abstract class for all Ast objects.
+
     Requires overriding of methods expand() and get_value()
 
     expand(self) has to return string representation of method
@@ -18,12 +143,12 @@ class AstBase(KSP):
     '''
 
     @abstractmethod
-    def expand(self):
-        pass
+    def expand(self) -> str:
+        ...
 
     @abstractmethod
-    def get_value(self):
-        pass
+    def get_value(self) -> T:
+        ...
 
 
 class AstAssign(AstBase):
@@ -31,7 +156,8 @@ class AstAssign(AstBase):
     Has not method get_value()
     '''
 
-    def __init__(self, to_arg, from_arg):
+    def __init__(self, to_arg: 'KspVar',
+                 from_arg: ValidAst) -> None:
         if isinstance(to_arg, KspVar):
             self._to_arg = to_arg.name()
             if not self._to_arg:
@@ -41,26 +167,27 @@ class AstAssign(AstBase):
                 f'can assign only to instance of {KspVar}')
         if isinstance(from_arg, AstAssign):
             raise TypeError('AstAssign is root, can not be added')
-        if callable(from_arg):
-            self._from_arg = from_arg()
         if isinstance(from_arg, (str, int, float)):
             self._from_arg = from_arg
         elif isinstance(from_arg, AstBase):
             self._from_arg = from_arg.expand()
         elif isinstance(from_arg, KspVar):
-            self._from_arg = from_arg.name()
+            self._from_arg = from_arg.get_compiled()
         else:
-            raise TypeError('can assign only instances of: %s' % (
-                (KspVar, str, int, float, AstBase)
-            ))
+            raise TypeError('can assign only instances of: ' +
+                            f'{(KspVar, str, int, float, AstBase)}')
 
-    def expand(self):
+    def expand(self) -> str:
         '''expand AstObject to string representation "a := b"'''
         super().expand()
         return f'{self._to_arg} := {self._from_arg}'
 
-    def get_value(self):
+    def get_value(self) -> NoReturn:
         raise NotImplementedError('AstAssign can not return value')
+
+
+ValidStringAst = Union[ValidAst, ResolvedToStr,
+                       ResolvedToFloat, ResolvedToInt]
 
 
 class AstAddString(AstBase):
@@ -68,151 +195,156 @@ class AstAddString(AstBase):
     args has to be instances of (callable, str, AstBase, KspVar)
     '''
 
-    def __init__(self, arg1, arg2):
-        self._args = [arg1, arg2]
+    def __init__(self,
+                 arg1: ValidStringAst, arg2: ValidStringAst) -> None:
+        self._args = (arg1, arg2)
 
-    def expand(self):
+    def expand(self) -> str:
         '''returns "a & b"'''
         super().expand()
         args = list()
         for arg in self._args:
-            if callable(arg):
-                arg = arg()
             if isinstance(arg, str):
                 args.append(f'"{arg}"')
                 continue
-            if isinstance(arg, AstBase):
+            if isinstance(arg, (int, float)):
+                args.append(f'{arg}')
+                continue
+            if isinstance(arg, AstObject):
                 args.append(arg.expand())
                 continue
-            if isinstance(arg, KspVar):
-                args.append(f'{arg.val}')
+            if isinstance(arg, HasCompiled):
+                args.append(f'{arg.get_compiled()}')
                 continue
             raise NotImplementedError('maybe something has to be ' +
                                       f'added to {AstAddString}?')
         return f'{args[0]} & {args[1]}'
 
-    def get_value(self):
+    def get_value(self) -> str:
         '''returns self.expand()'''
-        args = list()
+        args: List[Union[int, str, float]] = list()
         for arg in self._args:
-            if isinstance(arg, str):
-                args.append(arg)
-                continue
-            if isinstance(arg, AstBase):
-                args.append(f'{arg.get_value()}')
-                continue
-            if isinstance(arg, KspVar):
-                args.append(f'{arg._get_runtime()}')
-                continue
-        return args[0] + args[1]
+            args.append(get_runtime(arg))
+        return str(args[0]) + str(args[1])
 
-    def __add__(self, other):
+    def __add__(self, other: ValidStringAst) -> 'AstAddString':
         '''returns AstAddString(self, other)'''
         return AstAddString(self, other)
 
-    def __radd__(self, other):
+    def __radd__(self, other: ValidStringAst) -> 'AstAddString':
         '''returns AstAddString(other, self)'''
         return AstAddString(other, self)
 
-    def __iadd__(self, other):
+    def __iadd__(self, other: ValidStringAst) -> NoReturn:
         raise NotImplementedError(
             'method __iadd__ is not implemented')
 
 
-class AstOperator(AstBase):
+ValidNumericAst = Union[AstObject,
+                        ResolvedToFloat, ResolvedToInt]
+FuncType = Callable[..., ValidNumericAst]
+F = TypeVar('F', bound=FuncType)
+
+AstT = TypeVar('AstT', AstObject,
+               ResolvedToFloat, ResolvedToInt)
+
+
+class AstOperator(AstBase, Generic[AstT]):
     '''Base abstract class for all operators.'''
 
-    def __init__(self, *args):
-        self._args = args
+    def __init__(self, *args: AstT) -> None:
+        self._args: Tuple[AstT, ...] = args
 
-    def unpack_args(self, *args):
+    def unpack_arg(self,
+                   arg: AstT) ->\
+            Union[str, int, float]:
         '''gets values of KspVar objects and expands AstBase objects
         keeps str, int and float objects untouched
-        returns tuple of args or only arg, if it was alone
+        returns list of args or only arg, if it was alone
         '''
-        new = list()
-        # wrap = False
-        for idx, arg in enumerate(args):
-            # if idx > 0:
-            #     wrap = True
-            if isinstance(arg, KspVar):
-                arg = arg.val
-            if isinstance(arg, AstBase):
-                arg = arg.expand()
-            if not isinstance(arg, (int, str, float)):
-                raise TypeError(
-                    f'arg {arg} has to be resolved to str,' +
-                    ' int or float')
-            new.append(arg)
-        if len(new) == 1:
-            new = new[0]
-        return new
+        if isinstance(arg, HasCompiled):
+            return arg.get_compiled()
+        if isinstance(arg, AstObject):
+            return arg.expand()
+        if not isinstance(arg, (int, str, float)):
+            raise TypeError(
+                f'arg {arg} has to be resolved to str,' +
+                ' int or float')
+        return arg
 
-    def unary(self, string: str, val: Union[int, str, float, KspObject]):
+    def unary(self, string: str, val: ValidNumericAst) -> str:
         '''returns f"{string}{val}"'''
-        val = self.unpack_args(val)
-        return f'{string}{val}'
+        out = self.unpack_arg(val)
+        return f'{string}{out}'
 
     def standart(self, string: str,
-                 val1: Union[int, str, float, KspObject],
-                 val2: Union[int, str, float, KspObject]):
+                 val1: ValidNumericAst,
+                 val2: ValidNumericAst) -> str:
         '''returns f"{val1} {string} {val2}"'''
-        pr = list()
+        pr: List[int] = list()
         for arg in self._args:
-            if isinstance(arg, AstBase):
+            if isinstance(arg, AstOperator):
                 pr.append(arg.priority)
                 continue
             pr.append(0)
-        val1, val2 = self.unpack_args(val1, val2)
+        out1, out2 = map(self.unpack_arg, (val1, val2))
         if self.priority <= pr[1]:
-            val2 = f'({val2})'
+            out2 = f'({out2})'
         if self.priority < pr[0]:
-            val1 = f'({val1})'
-        # if pr[0]
-        return f'{val1} {string} {val2}'
+            out1 = f'({out1})'
+        return f'{out1} {string} {out2}'
 
     def bracket_unary(self, string: str,
-                      val: Union[int, str, float, KspObject]):
+                      val: ValidNumericAst) -> str:
         '''returns f"{string}({val})"'''
-        val = self.unpack_args(val)
-        return f'{string}({val})'
+        out = self.unpack_arg(val)
+        return f'{string}({out})'
 
     def bracket_double(self, string: str,
-                       val1: Union[int, str, float, KspObject],
-                       val2: Union[int, str, float, KspObject]):
+                       val1: ValidNumericAst,
+                       val2: ValidNumericAst) -> str:
         '''returns f"{string}({val1}, {val2})"'''
-        val1, val2 = self.unpack_args(val1, val2)
-        return f'{string}({val1}, {val2})'
+        out1, out2 = map(self.unpack_arg, (val1, val2))
+        return f'{string}({out1}, {out2})'
 
-    @abstractmethod
-    def get_value(self, func):
+    def get_value_proxy(self, func: F) -> Union[int, float]:
         '''use via super
         accepts func (lambda?) and passes init args to it.
         args are expanded via:
         _get_runtime() for KspVar objects
         get_value() for AstBase objects'''
         args = list()
+        arg_type: type
         for arg in self._args:
-            if isinstance(arg, KspVar):
-                arg = arg._get_runtime()
-            if isinstance(arg, AstBase):
-                arg = arg.get_value()
+            if isinstance(arg, HasRuntime):
+                args.append(arg.get_runtime())
+                continue
+            if isinstance(arg, AstObject):
+                args.append(arg.get_value())
+                continue
+            arg_type = type
             args.append(arg)
-        return func(*args)
+        assert map(lambda arg: isinstance(arg, arg_type), args),\
+            f'incompatible types: {map(type, args)}'
+        if arg_type is int:
+            return cast(int, func(*args))
+        if arg_type is float:
+            return cast(float, func(*args))
+        raise RuntimeError
 
-    def __neg__(self):
+    def __neg__(self) -> 'AstNeg':
         return AstNeg(self)
 
-    def __invert__(self):
+    def __invert__(self) -> 'AstNot':
         return AstNot(self)
 
-    def __add__(self, other):
+    def __add__(self, other) -> 'AstAdd':
         return AstAdd(self, other)
 
-    def __radd__(self, other):
+    def __radd__(self, other) -> 'AstAdd':
         return AstAdd(other, self)
 
-    def __iadd__(self, other):
+    def __iadd__(self, other) -> NoReturn:
         raise NotImplementedError(
             'method __iadd__ is not implemented')
 
@@ -327,7 +459,7 @@ class AstNeg(AstOperator):
         return self.unary('-', val)
 
     def get_value(self):
-        return super().get_value(lambda arg: -arg)
+        return super().get_value_proxy(lambda arg: -arg)
 
 
 class AstNot(AstOperator):
@@ -1461,16 +1593,16 @@ def get_string_repr(*args):
     return out
 
 
-def get_runtime(*args):
-    out = list()
-    for arg in args:
-        if isinstance(arg, KspVar):
-            out.append(arg._get_runtime())
-            continue
-        if isinstance(arg, AstBase):
-            out.append(arg.get_value())
-            continue
-        out.append(arg)
-    if len(args) == 1:
-        return out[0]
-    return out
+# def get_runtime(*args):
+#     out = list()
+#     for arg in args:
+#         if isinstance(arg, KspVar):
+#             out.append(arg._get_runtime())
+#             continue
+#         if isinstance(arg, AstBase):
+#             out.append(arg.get_value())
+#             continue
+#         out.append(arg)
+#     if len(args) == 1:
+#         return out[0]
+#     return out

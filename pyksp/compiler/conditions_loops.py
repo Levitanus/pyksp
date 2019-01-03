@@ -383,7 +383,8 @@ class Case(KSP):
                 return
         Output().exception_on_put = KspCondError(
             '''Wrong syntax. all code hase to be in Case block''')
-        Output().unindent()
+        if self.is_compiled():
+            Output().unindent()
         return True
 
 
@@ -471,6 +472,7 @@ class For(KSP):
                 formule = For.idx - idx
             inst._idx = For.arr[formule]
         if self.__is_foreach(arr, start, stop, step):
+            # print('is foreach')
             # self.enumerate = enumerate
             return
         # if enumerate:
@@ -486,6 +488,7 @@ class For(KSP):
             args.append(step)
         self.__args = self.__parse_args(*args)
         self.__start, self.__stop, self.__step = self.__args
+        # print('is range')
 
     def __is_foreach(self, arr, start, stop, step):
         '''Returns True if arr is only argument'''
@@ -499,6 +502,7 @@ class For(KSP):
                 f' Pasted {type(arr)}')
         self.__func = self.__foreach_handler
         self.__seq = arr
+
         return True
 
     def __check_duck_arg(self, arg, arg_name: str,
@@ -537,9 +541,13 @@ class For(KSP):
                 self._out_touched = False
             return
         if isinstance(value, KspCondBrake):
-            if self.__func is self.__foreach_handler:
+            # print(self.__func, self.__foreach_handler)
+            # print(self.__func == self.__foreach_handler)
+            if self.__func == self.__foreach_handler:
+                # print('NOT BOOM')
                 self._idx <<= len(self.__seq)
             else:
+                # print('BOOM')
                 self._idx <<= self.__stop
             Output().put(f'{value}')
         self.__generate_exit_code()

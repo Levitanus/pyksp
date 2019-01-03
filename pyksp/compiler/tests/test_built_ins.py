@@ -11,7 +11,7 @@ from mytests import DevTest
 
 from abstract import Output
 from abstract import KSP
-from abstract import KspObject
+# from abstract import KspObject
 
 from dev_tools import unpack_lines
 
@@ -127,6 +127,7 @@ class TestWrapers(DevTest):
 
     def setUp(self):
         Output().refresh()
+        # Callback.refresh()
         self.var = 4
 
     def cb(self):
@@ -143,6 +144,8 @@ class TestWrapers(DevTest):
         def bar():
             Output().put('bar_line')
 
+        # init(foo)
+        # init(bar)
         init(self.cb)
         self.assertEqual(self.var, 4)
         self.assertEqual(

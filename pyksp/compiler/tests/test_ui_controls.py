@@ -21,7 +21,7 @@ from bi_engine_par import NI_BUS_OFFSET
 from native_types import kInt
 from native_types import kArrInt
 
-from conditions_loops import For, check, Else
+# from conditions_loops import For, check, Else
 
 
 def oget():
@@ -393,7 +393,7 @@ class TestKspNativeControl(DevTest):
 
         table = kTable(3, -5)
         self.assertEqual(table._generate_init(),
-                         ['declare ui_table %control12 (1, 1, -5)',
+                         ['declare ui_table %control12 [3](1, 1, -5)',
                           '%_all_ui_ids[12] := get_ui_id(%control12)',
                           '%_kTable_ids[0] := %_all_ui_ids[12]'])
         self.assertEqual(table.var[2].val,
