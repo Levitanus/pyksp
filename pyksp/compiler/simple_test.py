@@ -104,7 +104,7 @@ b.set_runtime(x)
 b.set_runtime(a)
 
 
-class AstBase(Generic[T]):
+class AstBase(KSP, Generic[T]):
     ...
 
 

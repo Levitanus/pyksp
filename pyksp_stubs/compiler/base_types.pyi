@@ -1,7 +1,7 @@
 from abstract import KspObject
 from abstract import KSP
 from abstract import Output
-from abstract import KspGeneric
+# from abstract import KspGeneric
 
 from typing import Union
 from typing import TypeVar
@@ -82,11 +82,11 @@ def get_compiled(value: Union[ValidKspVar[T],
     ...
 
 
-class AstBase(Generic[T]):
+class AstBase(KSP, Generic[T]):
     ...
 
 
-class AstAssign(Generic[T]):
+class AstAssign(AstBase, Generic[T]):
     '''special top-level Ast class for making assigements.
     Has not method get_value()
     '''
@@ -268,8 +268,8 @@ class AstOperator(AstBase, Generic[FT]):
                  'AstBinOr[FT]']:
         ...
 
-    def __eq__(self,                                      # type: ignore
-               other: ValidAstObjectU[FT])->'AstEq[FT]':  # type: ignore
+    def __eq__(self,
+               other: ValidAstObjectU[FT])->'AstEq[FT]':
         ...
 
     def __ne__(self,                                      # type: ignore
@@ -472,9 +472,12 @@ class KspVar(KspObject, Generic[T]):
     def __init__(self,
                  value: ValidKspVarU[T]=...,
                  name: str=...,
-                 preserve_name: bool=...,
-                 is_local: bool=...,
-                 persist: bool=...) -> None:
+                 name_prefix=...,
+                 name_postfix=...,
+                 preserve_name=...,
+                 has_init=...,
+                 is_local=...,
+                 persist=...) -> None:
         ...
 
     def read(self) -> None:

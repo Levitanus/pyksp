@@ -13,29 +13,14 @@ from typing import Any
 from typing import NoReturn
 from typing import Callable
 from typing import ClassVar
+from typing import Sequence
 # from typing import GenericMeta
 # from typing import Generic
 
 T = TypeVar('T')
 
 
-class KspMeta(ABCMeta):
-    pass
-
-
-class SingletonMeta(KspMeta):
-    """Singleton metaclass."""
-
-    def __call__(cls: Type[T], *args: Any, **kw: Any) -> T:
-        """Return instance of class."""
-        if not hasattr(cls, 'instance'):
-            setattr(cls,
-                    'instance',
-                    super().__call__(*args, **kw))
-        return getattr(cls, 'instance')
-
-
-class KSP(metaclass=KspMeta):
+class KSPMeta(ABCMeta):
     """Base abstract class for all compiler classes."""
 
     __is_compiled: bool = False
@@ -110,6 +95,22 @@ class KSP(metaclass=KspMeta):
         KSP.docs = False
 
 
+class KSP(metaclass=KSPMeta):
+    pass
+
+
+class SingletonMeta(KSPMeta):
+    """Singleton metaclass."""
+
+    def __call__(cls: Type[T], *args: Any, **kw: Any) -> T:
+        """Return instance of class."""
+        if not hasattr(cls, 'instance'):
+            setattr(cls,
+                    'instance',
+                    super().__call__(*args, **kw))
+        return getattr(cls, 'instance')
+
+
 class INameLocal(KSP):
     """Object name interface.
 
@@ -150,7 +151,8 @@ class IName(INameLocal):
     """
 
     __is_compact: bool = False
-    __names: List[str] = list()
+    __names_full: List[str] = list()
+    __names_comp: List[str] = list()
     __scope: List[str] = ['']
 
     @staticmethod
@@ -172,15 +174,24 @@ class IName(INameLocal):
         name = IName.__scope[-1] + name
         self._preserve = preserve
         self._full = name
-        if not preserve and self.is_compact() is True:
-            name = self.get_compact_name(name)
-        else:
-            name = name
-        if name in IName.__names:
+        self._compacted = self.get_compact_name(name)
+        if self._full in IName.__names_full:
             raise NameError(f'name "{name}" exists')
-        IName.__names.append(name)
+        if self._compacted in IName.__names_comp:
+            raise NameError(
+                f'name "{name}" hashe exists, try to rename')
+        IName.__names_full.append(self._full)
+        IName.__names_comp.append(self._compacted)
         super().__init__(name=name,
                          prefix=prefix, postfix=postfix)
+
+    def __call__(self) -> str:
+        """Return full or compacted name depends on selected mode."""
+        if self.is_compact():
+            self._name = self._compacted
+        else:
+            self._name = self._full
+        return super().__call__()
 
     @staticmethod
     def get_compact_name(name: str) -> str:
@@ -207,42 +218,42 @@ class IName(INameLocal):
         """Return full name even if it was compacted."""
         return self._full
 
+    @property
+    def compact(self) -> str:
+        """Return compacted name."""
+        return self._compacted
+
     @staticmethod
     def refresh() -> None:
         """Set all class variables to defaults."""
         INameLocal.refresh()
-        IName.__names = list()
+        IName.__names_full = list()
+        IName.__names_comp = list()
         IName.__is_compact = False
 
 
-class KspObject(KSP):
+class KspObjectMeta(KSPMeta):
     """Base abstract class for all objects can be translated to code."""
 
     comments: bool = False
     _instances: List['KspObject'] = list()
-
-    @property
-    def has_init(self) -> bool:
-        """Return True if has to return init block."""
-        return self._has_init
-
-    @property
-    def is_local(self) -> bool:
-        """Return True if has not return init and executable block."""
-        return self._is_local
 
     @staticmethod
     def instances() -> List['KspObject']:
         """Return list with all instances of KspObject."""
         return KspObject._instances
 
+    def __new__(cls, name: str,
+                bases: Tuple[Type['KspObject'], ...],
+                namespace: Dict[str, Any]) -> Type['KspObject']:
+        clas = super().__new__(cls, name, bases, namespace)
+        return clas
+
     @abstractmethod
     def __init__(self, name: str,
                  name_prefix: str='',
                  name_postfix: str='',
-                 preserve_name: bool=False,
-                 has_init: bool=True,
-                 is_local: bool=False) -> None:
+                 preserve_name: bool=False) -> None:
         """KSP object."""
         self._is_local = is_local
         if is_local:
@@ -255,12 +266,7 @@ class KspObject(KSP):
         else:
             self.name = IName(name, name_prefix, name_postfix,
                               preserve_name)
-        self._has_init = has_init
         KspObject._instances.append(self)
-
-    @abstractmethod
-    def _generate_init(self) -> List[str]:
-        pass
 
     @staticmethod
     def generate_all_inits() -> List[str]:
@@ -284,6 +290,10 @@ class KspObject(KSP):
     def refresh() -> None:
         """Clear all instances."""
         KspObject._instances = list()
+
+
+class KspObject(metaclass=KspObjectMeta):
+    pass
 
 
 class Output(metaclass=SingletonMeta):

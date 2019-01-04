@@ -19,7 +19,6 @@ ST = TypeVar('ST')
 
 class KspMeta(ABCMeta):
     """Metaclass to be parent for all compiler metaclasses."""
-
     ...
 
 
@@ -159,6 +158,11 @@ class IName(INameLocal):
     @property
     def full(self) -> str:
         """Return full name even if it was compacted."""
+        ...
+
+    @property
+    def compact(self) -> str:
+        """Return compacted name."""
         ...
 
     @staticmethod
