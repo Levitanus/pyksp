@@ -222,8 +222,8 @@ class MultiFrame:
     for track which stack has to be poped at pop method of MultiStack
     '''
 
-    def __init__(self, _vars, int_count, str_count, real_count):
-        self.vars = _vars
+    def __init__(self, variables, int_count, str_count, real_count):
+        self.vars = variables
         self.is_int = int_count > 0
         self.is_str = str_count > 0
         self.is_real = real_count > 0

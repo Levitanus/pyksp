@@ -184,8 +184,7 @@ class AstOperator(AstBase):
         val1, val2 = self.unpack_args(val1, val2)
         return f'{string}({val1}, {val2})'
 
-    @abstractmethod
-    def get_value(self, func):
+    def get_value_proxy(self, func):
         '''use via super
         accepts func (lambda?) and passes init args to it.
         args are expanded via:
@@ -327,7 +326,7 @@ class AstNeg(AstOperator):
         return self.unary('-', val)
 
     def get_value(self):
-        return super().get_value(lambda arg: -arg)
+        return self.get_value_proxy(lambda arg: -arg)
 
 
 class AstNot(AstOperator):
@@ -338,7 +337,7 @@ class AstNot(AstOperator):
         return self.unary('.not.', val)
 
     def get_value(self):
-        return super().get_value(lambda arg: ~arg)
+        return self.get_value_proxy(lambda arg: ~arg)
 
 
 class AstAdd(AstOperator):
@@ -349,7 +348,7 @@ class AstAdd(AstOperator):
         return self.standart('+', val1, val2)
 
     def get_value(self):
-        return super().get_value(lambda arg1, arg2: arg1 + arg2)
+        return self.get_value_proxy(lambda arg1, arg2: arg1 + arg2)
 
 
 class AstSub(AstOperator):
@@ -360,7 +359,7 @@ class AstSub(AstOperator):
         return self.standart('-', val1, val2)
 
     def get_value(self):
-        return super().get_value(lambda arg1, arg2: arg1 - arg2)
+        return self.get_value_proxy(lambda arg1, arg2: arg1 - arg2)
 
 
 class AstMul(AstOperator):
@@ -371,7 +370,7 @@ class AstMul(AstOperator):
         return self.standart('*', val1, val2)
 
     def get_value(self):
-        return super().get_value(lambda arg1, arg2: arg1 * arg2)
+        return self.get_value_proxy(lambda arg1, arg2: arg1 * arg2)
 
 
 class AstDiv(AstOperator):
@@ -391,7 +390,7 @@ class AstDiv(AstOperator):
                     return 0
             else:
                 return arg1 / arg2
-        return super().get_value(lambda arg1, arg2: division(arg1, arg2))
+        return self.get_value_proxy(lambda arg1, arg2: division(arg1, arg2))
 
 
 class AstMod(AstOperator):
@@ -402,7 +401,7 @@ class AstMod(AstOperator):
         return self.standart('mod', val1, val2)
 
     def get_value(self):
-        return super().get_value(lambda arg1, arg2: arg1 % arg2)
+        return self.get_value_proxy(lambda arg1, arg2: arg1 % arg2)
 
 
 class AstPow(AstOperator):
@@ -413,7 +412,7 @@ class AstPow(AstOperator):
         return self.bracket_double('pow', val1, val2)
 
     def get_value(self):
-        return super().get_value(lambda arg1, arg2: arg1 ** arg2)
+        return self.get_value_proxy(lambda arg1, arg2: arg1 ** arg2)
 
 
 class AstLogAnd(AstOperator):
@@ -424,7 +423,7 @@ class AstLogAnd(AstOperator):
         return self.standart('and', val1, val2)
 
     def get_value(self):
-        return super().get_value(lambda arg1, arg2: arg1 and arg2)
+        return self.get_value_proxy(lambda arg1, arg2: arg1 and arg2)
 
 
 class AstBinAnd(AstOperator):
@@ -437,7 +436,7 @@ class AstBinAnd(AstOperator):
         return self.standart('.and.', val1, val2)
 
     def get_value(self):
-        return super().get_value(lambda arg1, arg2: arg1 & arg2)
+        return self.get_value_proxy(lambda arg1, arg2: arg1 & arg2)
 
 
 class AstLogOr(AstOperator):
@@ -448,7 +447,7 @@ class AstLogOr(AstOperator):
         return self.standart('or', val1, val2)
 
     def get_value(self):
-        return super().get_value(lambda arg1, arg2: arg1 or arg2)
+        return self.get_value_proxy(lambda arg1, arg2: arg1 or arg2)
 
 
 class AstBinOr(AstOperator):
@@ -461,7 +460,7 @@ class AstBinOr(AstOperator):
         return self.standart('.or.', val1, val2)
 
     def get_value(self):
-        return super().get_value(lambda arg1, arg2: arg1 | arg2)
+        return self.get_value_proxy(lambda arg1, arg2: arg1 | arg2)
 
 
 class AstEq(AstOperator):
@@ -472,7 +471,7 @@ class AstEq(AstOperator):
         return self.standart('=', val1, val2)
 
     def get_value(self):
-        return super().get_value(lambda arg1, arg2: arg1 == arg2)
+        return self.get_value_proxy(lambda arg1, arg2: arg1 == arg2)
 
 
 class AstNe(AstOperator):
@@ -483,7 +482,7 @@ class AstNe(AstOperator):
         return self.standart('#', val1, val2)
 
     def get_value(self):
-        return super().get_value(lambda arg1, arg2: arg1 != arg2)
+        return self.get_value_proxy(lambda arg1, arg2: arg1 != arg2)
 
 
 class AstLt(AstOperator):
@@ -494,7 +493,7 @@ class AstLt(AstOperator):
         return self.standart('<', val1, val2)
 
     def get_value(self):
-        return super().get_value(lambda arg1, arg2: arg1 < arg2)
+        return self.get_value_proxy(lambda arg1, arg2: arg1 < arg2)
 
 
 class AstGt(AstOperator):
@@ -505,7 +504,7 @@ class AstGt(AstOperator):
         return self.standart('>', val1, val2)
 
     def get_value(self):
-        return super().get_value(lambda arg1, arg2: arg1 > arg2)
+        return self.get_value_proxy(lambda arg1, arg2: arg1 > arg2)
 
 
 class AstLe(AstOperator):
@@ -516,7 +515,7 @@ class AstLe(AstOperator):
         return self.standart('<=', val1, val2)
 
     def get_value(self):
-        return super().get_value(lambda arg1, arg2: arg1 <= arg2)
+        return self.get_value_proxy(lambda arg1, arg2: arg1 <= arg2)
 
 
 class AstGe(AstOperator):
@@ -527,7 +526,7 @@ class AstGe(AstOperator):
         return self.standart('>=', val1, val2)
 
     def get_value(self):
-        return super().get_value(lambda arg1, arg2: arg1 >= arg2)
+        return self.get_value_proxy(lambda arg1, arg2: arg1 >= arg2)
 
 
 class AstAbs(AstOperator):
@@ -538,7 +537,7 @@ class AstAbs(AstOperator):
         return self.bracket_unary('abs', val)
 
     def get_value(self):
-        return super().get_value(lambda arg1: abs(arg1))
+        return self.get_value_proxy(lambda arg1: abs(arg1))
 
 
 class KspVar(KspObject):
@@ -1103,7 +1102,10 @@ class KspRealVar(KspNumeric):
         raise ArithmeticError('use built-in round(x) instead')
 
     def __pow__(self, other):
-        raise ArithmeticError('use built-in pow(x) instead')
+        if self.is_compiled():
+            return AstPow(self, other)
+        other = get_runtime(other)
+        return self._get_runtime() ** other
 
     def __rpow__(self, other):
         if self.is_compiled():
