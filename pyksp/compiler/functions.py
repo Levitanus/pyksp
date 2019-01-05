@@ -5,27 +5,27 @@ import re
 
 from functools import wraps
 
-from stack import MultiStack
-from stack import kLoc
+from .stack import MultiStack
+from .stack import kLoc
 
-from abstract import KSP
-from abstract import Output
-from abstract import SingletonMeta
-from abstract import KspObject
+from .abstract import KSP
+from .abstract import Output
+from .abstract import SingletonMeta
+from .abstract import KspObject
 
-from base_types import KspIntVar
-from base_types import KspStrVar
-from base_types import KspRealVar
-from base_types import KspArray
+from .base_types import KspIntVar
+from .base_types import KspStrVar
+from .base_types import KspRealVar
+from .base_types import KspArray
 
-from native_types import kInt
-from native_types import kStr
-from native_types import kReal
-from native_types import kArrInt
-from native_types import kArrStr
-from native_types import kArrReal
+from .native_types import kInt
+from .native_types import kStr
+from .native_types import kReal
+from .native_types import kArrInt
+from .native_types import kArrStr
+from .native_types import kArrReal
 
-from k_built_ins import FunctionCallback
+from .k_built_ins import FunctionCallback
 
 
 class kOut(KSP):

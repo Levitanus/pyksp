@@ -1,18 +1,18 @@
-from native_types import kInt
-from native_types import kStr
-from native_types import kReal
-from native_types import kArrInt
-from native_types import kArrStr
-from native_types import kArrReal
+from .native_types import kInt
+from .native_types import kStr
+from .native_types import kReal
+from .native_types import kArrInt
+from .native_types import kArrStr
+from .native_types import kArrReal
 
-from abstract import KSP
-from base_types import KspArray
-from base_types import KspVar
-from base_types import KspIntVar
-from base_types import KspRealVar
-from base_types import KspStrVar
+from .abstract import KSP
+from .base_types import KspArray
+from .base_types import KspVar
+from .base_types import KspIntVar
+from .base_types import KspRealVar
+from .base_types import KspStrVar
 
-from conditions_loops import For
+from .conditions_loops import For
 
 
 class kLoc(KSP):

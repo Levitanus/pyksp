@@ -13,46 +13,46 @@ from functools import wraps
 from abc import abstractmethod
 from abc import ABCMeta
 
-from abstract import KSP
-from abstract import Output
+from .abstract import KSP
+from .abstract import Output
 
-from base_types import KspVar
-from base_types import KspIntVar
-from base_types import KspStrVar
-from base_types import KspRealVar
-from base_types import AstBase
+from .base_types import KspVar
+from .base_types import KspIntVar
+from .base_types import KspStrVar
+from .base_types import KspRealVar
+from .base_types import AstBase
 
-# from k_built_ins import BuiltInFunc
-from k_built_ins import BuiltInFuncInt
-from k_built_ins import BuiltInFuncStr
-from k_built_ins import BuiltInIntVar
-# from k_built_ins import ListenerCallback
-from k_built_ins import UiControlCallback
-from k_built_ins import get_runtime_val
-from k_built_ins import get_compiled
-from k_built_ins import all_callbacks
+# from .k_built_ins import BuiltInFunc
+from .k_built_ins import BuiltInFuncInt
+from .k_built_ins import BuiltInFuncStr
+from .k_built_ins import BuiltInIntVar
+# from .k_built_ins import ListenerCallback
+from .k_built_ins import UiControlCallback
+from .k_built_ins import get_runtime_val
+from .k_built_ins import get_compiled
+from .k_built_ins import all_callbacks
 
-from native_types import kInt
-from native_types import kStr
-# from native_types import kReal
-from native_types import kArrInt
-from native_types import kArrStr
-from native_types import kArrReal
-from native_types import kNone
+from .native_types import kInt
+from .native_types import kStr
+# from .native_types import kReal
+from .native_types import kArrInt
+from .native_types import kArrStr
+from .native_types import kArrReal
+from .native_types import kNone
 
-from base_types import KspArray
+from .base_types import KspArray
 
-# from dev_tools import WrapProp
+# from .dev_tools import WrapProp
 
-# from gui_system import WidgetMeta
+# from .gui_system import WidgetMeta
 
 
-from conditions_loops import For
-from conditions_loops import If
-from conditions_loops import check
+from .conditions_loops import For
+from .conditions_loops import If
+from .conditions_loops import check
 
-# from gui_system import kWidget
-# from gui_system import kMainWindow
+# from .gui_system import kWidget
+# from .gui_system import kMainWindow
 
 
 class kParVarGetError(Exception):

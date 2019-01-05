@@ -4,40 +4,40 @@ import re
 
 from typing import Callable
 
-from abstract import KSP
-from abstract import SingletonMeta
-from abstract import Output
+from .abstract import KSP
+from .abstract import SingletonMeta
+from .abstract import Output
 
-from base_types import KspStrVar
-from base_types import KspIntVar
-from base_types import AstBase
+from .base_types import KspStrVar
+from .base_types import KspIntVar
+from .base_types import AstBase
 
-from k_built_ins import InitCallback
-from k_built_ins import BuiltInFuncInt
-from k_built_ins import BuiltInFuncStr
-from k_built_ins import get_runtime_val
-from k_built_ins import bListenerConst
-from k_built_ins import BuiltInIntVar
+from .k_built_ins import InitCallback
+from .k_built_ins import BuiltInFuncInt
+from .k_built_ins import BuiltInFuncStr
+from .k_built_ins import get_runtime_val
+from .k_built_ins import bListenerConst
+from .k_built_ins import BuiltInIntVar
 
-from bi_load_save import save_array
-from bi_load_save import save_array_str
+from .bi_load_save import save_array
+from .bi_load_save import save_array_str
 
 
-from base_types import KspArray
+from .base_types import KspArray
 
-from functions import func
-from base_types import AstEq
+from .functions import func
+from .base_types import AstEq
 
-from native_types import kArrStr
-from native_types import kInt
+from .native_types import kArrStr
+from .native_types import kInt
 
-from native_types import kNone
-from native_types import kArrInt
+from .native_types import kNone
+from .native_types import kArrInt
 
-from conditions_loops import While
-from conditions_loops import If
-# from conditions_loops import Else
-from conditions_loops import check
+from .conditions_loops import While
+from .conditions_loops import If
+# from .conditions_loops import Else
+from .conditions_loops import check
 
 
 class InRange(BuiltInFuncInt):

@@ -2,9 +2,9 @@ from abc import abstractmethod
 from abc import ABCMeta
 from warnings import warn
 
-from abstract import KspObject
-from abstract import KSP
-from abstract import Output
+from .abstract import KspObject
+from .abstract import KSP
+from .abstract import Output
 
 from typing import Union
 

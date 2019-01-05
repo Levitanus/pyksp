@@ -1,19 +1,19 @@
-# from base_types import KspVar
-from base_types import AstOperator
-from base_types import KspIntVar
-from base_types import KspArray
-from base_types import get_runtime, get_string_repr
+# from .base_types import KspVar
+from .base_types import AstOperator
+from .base_types import KspIntVar
+from .base_types import KspArray
+from .base_types import get_runtime, get_string_repr
 
-from abstract import Output
-from abstract import KSP
-# from abstract import SingletonMeta
+from .abstract import Output
+from .abstract import KSP
+# from .abstract import SingletonMeta
 
-from native_types import kInt
-from native_types import kArrInt
+from .native_types import kInt
+from .native_types import kArrInt
 
 from typing import List
 
-# from dev_tools import unpack_lines
+# from .dev_tools import unpack_lines
 
 
 class KspCondError(Exception):

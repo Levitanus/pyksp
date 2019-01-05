@@ -5,25 +5,25 @@ import textwrap
 import codecs
 import pyperclip
 
-from abstract import KspObject
-from abstract import Output
-from abstract import IName
-from abstract import KSP
+from .abstract import KspObject
+from .abstract import Output
+from .abstract import IName
+from .abstract import KSP
 
-from native_types import refresh_names_count
-from k_built_ins import Callback
-from k_built_ins import InitCallback
-from callbacks import persistence_changed
-from k_built_ins import BuiltIn
-# from functions import Function
-from bi_ui_controls import refresh as gui_refresh
-from conditions_loops import For
-from functions import Function
-from functions import FuncStack
-from bi_ui_controls import KspNativeControlMeta
-from bi_misc import kLog
+from .native_types import refresh_names_count
+from .k_built_ins import Callback
+from .k_built_ins import InitCallback
+from .callbacks import persistence_changed
+from .k_built_ins import BuiltIn
+# from .functions import Function
+from .bi_ui_controls import refresh as gui_refresh
+from .conditions_loops import For
+from .functions import Function
+from .functions import FuncStack
+from .bi_ui_controls import KspNativeControlMeta
+from .bi_misc import kLog
 
-from dev_tools import print_lines
+from .dev_tools import print_lines
 
 
 def refresh_all():

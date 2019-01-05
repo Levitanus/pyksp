@@ -12,24 +12,24 @@ from typing import Union
 import math
 
 
-# from abstract import KspObject
-from abstract import Output
-from abstract import KSP
-# from abstract import SingletonMeta
+# from .abstract import KspObject
+from .abstract import Output
+from .abstract import KSP
+# from .abstract import SingletonMeta
 
-from base_types import KspVar
-from base_types import KspArray
-from base_types import KspIntVar
-from base_types import KspStrVar
-from base_types import KspRealVar
-from base_types import AstBase
+from .base_types import KspVar
+from .base_types import KspArray
+from .base_types import KspIntVar
+from .base_types import KspStrVar
+from .base_types import KspRealVar
+from .base_types import AstBase
 
-from native_types import kInt
-from native_types import kArrInt
-from native_types import kStr
-from native_types import kReal
-from native_types import kArrReal
-from native_types import kNone
+from .native_types import kInt
+from .native_types import kArrInt
+from .native_types import kStr
+from .native_types import kReal
+from .native_types import kArrReal
+from .native_types import kNone
 
 
 all_callbacks = object()
@@ -558,7 +558,7 @@ NI_CB_TYPE_UI_CONTROL = bCallbackVar('NI_CB_TYPE_UI_CONTROL')
 NI_CB_TYPE_UI_UPDATE = bCallbackVar('NI_CB_TYPE_UI_UPDATE')
 NI_CB_TYPE_MIDI_IN = bCallbackVar('NI_CB_TYPE_MIDI_IN')
 
-AsyncCompleteCallback = Callback('async_comlete',
+AsyncCompleteCallback = Callback('async_complete',
                                  NI_CB_TYPE_ASYNC_OUT,
                                  ('NI_ASYNC_EXIT_STATUS', 'NI_ASYNC_ID'))
 ControllerCallback = Callback('controller',

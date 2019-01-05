@@ -1,21 +1,21 @@
 from collections import OrderedDict
 
-from k_built_ins import NoteCallback
-from k_built_ins import BuiltInFuncInt
-from k_built_ins import ReleaseCallback
-from k_built_ins import ControllerCallback
-from k_built_ins import BuiltInArrayInt
-from k_built_ins import BuiltInIntVar
-from k_built_ins import PolyAtCallback
-from k_built_ins import RpnCallback
+from .k_built_ins import NoteCallback
+from .k_built_ins import BuiltInFuncInt
+from .k_built_ins import ReleaseCallback
+from .k_built_ins import ControllerCallback
+from .k_built_ins import BuiltInArrayInt
+from .k_built_ins import BuiltInIntVar
+from .k_built_ins import PolyAtCallback
+from .k_built_ins import RpnCallback
 
 
-# from base_types import KspArray
-from base_types import KspIntVar
-from base_types import AstBase
+# from .base_types import KspArray
+from .base_types import KspIntVar
+from .base_types import AstBase
 
-from native_types import kNone
-from native_types import kArrInt
+from .native_types import kNone
+from .native_types import kArrInt
 
 
 class bEventMark(BuiltInIntVar):

@@ -37,16 +37,16 @@ arrays:
     arr.extend(list(values)) # the same for list
 '''
 
-from base_types import KspIntVar
-from base_types import KspStrVar
-from base_types import KspRealVar
-from base_types import KspArray
+from .base_types import KspIntVar
+from .base_types import KspStrVar
+from .base_types import KspRealVar
+from .base_types import KspArray
 
-from base_types import AstOperator
-from base_types import AstAddString
+from .base_types import AstOperator
+from .base_types import AstAddString
 
-from abstract import Output
-from abstract import SingletonMeta
+from .abstract import Output
+from .abstract import SingletonMeta
 
 
 class kInt(KspIntVar):

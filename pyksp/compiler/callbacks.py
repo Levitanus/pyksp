@@ -17,19 +17,19 @@ That's it, nothing more.
 '''
 
 
-from k_built_ins import InitCallback as _InitCallback
-from k_built_ins import AsyncCompleteCallback as _AsyncCompleteCallback
-from k_built_ins import ListenerCallback as _ListenerCallback
-from k_built_ins import PersistenceCallback as _PersistenceCallback
-from k_built_ins import PgsCallback as _PgsCallback
-from k_built_ins import PolyAtCallback as _PolyAtCallback
-from k_built_ins import NoteCallback as _NoteCallback
-from k_built_ins import ReleaseCallback as _ReleaseCallback
-from k_built_ins import MidiCallback as _MidiCallback
-from k_built_ins import ControllerCallback as _ControllerCallback
-from k_built_ins import RpnCallback as _RpnCallback
-from k_built_ins import NrpnCallback as _NrpnCallback
-from k_built_ins import UiUpdateCallback as _UiUpdateCallback
+from .k_built_ins import InitCallback as _InitCallback
+from .k_built_ins import AsyncCompleteCallback as _AsyncCompleteCallback
+from .k_built_ins import ListenerCallback as _ListenerCallback
+from .k_built_ins import PersistenceCallback as _PersistenceCallback
+from .k_built_ins import PgsCallback as _PgsCallback
+from .k_built_ins import PolyAtCallback as _PolyAtCallback
+from .k_built_ins import NoteCallback as _NoteCallback
+from .k_built_ins import ReleaseCallback as _ReleaseCallback
+from .k_built_ins import MidiCallback as _MidiCallback
+from .k_built_ins import ControllerCallback as _ControllerCallback
+from .k_built_ins import RpnCallback as _RpnCallback
+from .k_built_ins import NrpnCallback as _NrpnCallback
+from .k_built_ins import UiUpdateCallback as _UiUpdateCallback
 
 
 def init(f):
@@ -47,7 +47,7 @@ def init(f):
     return f
 
 
-def async_comlete(f):
+def async_complete(f):
     '''async complete callback, triggered after the execution of any
     load/save command
     Remarks

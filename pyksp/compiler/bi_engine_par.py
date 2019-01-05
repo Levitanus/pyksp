@@ -1,15 +1,15 @@
 from collections import OrderedDict
 
-from abstract import KSP
-from abstract import SingletonMeta
-# from k_built_ins import bEngineParVar
-from k_built_ins import BuiltInFuncInt
-from k_built_ins import BuiltInFuncStr
-from k_built_ins import get_runtime_val
-from k_built_ins import bTmProVar
-from native_types import kNone
-from k_built_ins import BuiltInIntVar
-# from k_built_ins import PgsCallback
+from .abstract import KSP
+from .abstract import SingletonMeta
+# from .k_built_ins import bEngineParVar
+from .k_built_ins import BuiltInFuncInt
+from .k_built_ins import BuiltInFuncStr
+from .k_built_ins import get_runtime_val
+from .k_built_ins import bTmProVar
+from .native_types import kNone
+from .k_built_ins import BuiltInIntVar
+# from .k_built_ins import PgsCallback
 # ENGINE_PAR_COMMANDS
 
 

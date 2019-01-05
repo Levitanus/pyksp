@@ -1,22 +1,22 @@
 from collections import OrderedDict
 
-from native_types import kNone
-from native_types import kInt
+from .native_types import kNone
+from .native_types import kInt
 
 # from k_built_ins import all_callbacks
-from k_built_ins import BuiltInFuncInt
-from k_built_ins import NI_ASYNC_ID
-from k_built_ins import InitCallback
-from k_built_ins import UiUpdateCallback
-from k_built_ins import UiControlCallback
-from k_built_ins import PgsCallback
-from k_built_ins import MidiCallback
-from k_built_ins import BuiltInIntVar
-from k_built_ins import ListenerCallback
-from k_built_ins import AsyncCompleteCallback
+from .k_built_ins import BuiltInFuncInt
+from .k_built_ins import NI_ASYNC_ID
+from .k_built_ins import InitCallback
+from .k_built_ins import UiUpdateCallback
+from .k_built_ins import UiControlCallback
+from .k_built_ins import PgsCallback
+from .k_built_ins import MidiCallback
+from .k_built_ins import BuiltInIntVar
+from .k_built_ins import ListenerCallback
+from .k_built_ins import AsyncCompleteCallback
 
-from bi_notes_events import bEventParVar
-from bi_notes_events import bEventMark
+from .bi_notes_events import bEventParVar
+from .bi_notes_events import bEventMark
 # from k_built_ins import all_callbacks
 # from k_built_ins import all_callbacks
 # from k_built_ins import all_callbacks

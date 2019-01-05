@@ -1,16 +1,16 @@
 from collections import OrderedDict
 
 # from k_built_ins import all_callbacks
-from k_built_ins import BuiltInFuncInt
-from k_built_ins import BuiltInFuncStr
-from k_built_ins import NI_ASYNC_ID
-from k_built_ins import InitCallback
-from k_built_ins import UiUpdateCallback
-from k_built_ins import UiControlCallback
-from k_built_ins import PgsCallback
-from k_built_ins import bPathVar
+from .k_built_ins import BuiltInFuncInt
+from .k_built_ins import BuiltInFuncStr
+from .k_built_ins import NI_ASYNC_ID
+from .k_built_ins import InitCallback
+from .k_built_ins import UiUpdateCallback
+from .k_built_ins import UiControlCallback
+from .k_built_ins import PgsCallback
+from .k_built_ins import bPathVar
 
-from base_types import KspArray
+from .base_types import KspArray
 # LOAD_SAVE_COMMANDS
 
 
