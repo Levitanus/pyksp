@@ -2,6 +2,10 @@ from collections import OrderedDict
 
 from .abstract import KSP
 from .abstract import SingletonMeta
+
+from .base_types import KspIntVar
+from .base_types import KspStrVar
+from .base_types import KspRealVar
 # from .k_built_ins import bEngineParVar
 from .k_built_ins import BuiltInFuncInt
 from .k_built_ins import BuiltInFuncStr
@@ -827,7 +831,10 @@ class EnginePars(metaclass=SingletonMeta):
         key = self._get_key(group, slot, generic)
         if key not in self.pars:
             self.pars[key] = EngineUnit()
-        self.pars[key].set_par(par, val)
+        try:
+            self.pars[key].set_par(par, val)
+        except AttributeError:
+            self.pars[key] = EngineUnit()
 
     def get_par(self, par, group, slot, generic):
         key = self._get_key(group, slot, generic)
@@ -984,7 +991,8 @@ class SetEnginePar(BuiltInFuncInt):
 
     def __init__(self):
         super().__init__('set_engine_par',
-                         args=OrderedDict(parameter=bEngineParVar,
+                         args=OrderedDict(parameter=(bEngineParVar,
+                                                     KspIntVar),
                                           value=int,
                                           group_idx=int,
                                           slot=int,

@@ -15,9 +15,11 @@ from typing import cast
 from typing import Generic
 from typing_extensions import Protocol
 
-from .base_types import IT
-from .base_types import GT
-from .base_types import RT
+# from .base_types import IT
+# from .base_types import GT
+# from .base_types import RT
+from .base_types import OP
+from .base_types import NumericSupport
 from .base_types import ST
 from .base_types import ITU
 from .base_types import RTU
@@ -34,11 +36,17 @@ from .base_types import AstAddString
 from .abstract import Output
 from .abstract import SingletonMeta
 
+T = TypeVar('T')
+
+IntAsgn = Union[KspIntVar, int, AstOperator[Union[KspIntVar, int]]]
+
 
 class kInt(KspIntVar):
     '''See module doc'''
     warning_types: List[Union[Type[KspStrVar],
-                              Type[KspRealVar], Type[str], Type[float]]] = ...
+                              Type[KspRealVar],
+                              Type[str],
+                              Type[float]]] = ...
     names_count: int = ...
     __init_val: int
 
@@ -49,6 +57,9 @@ class kInt(KspIntVar):
                  is_local: bool=...,
                  persist: bool=...) -> None:
         ...
+
+    # def __ilshift__(self: T, other: Union[AstOperator[ITU], ITU]) -> T:
+    #     ...
 
     def _generate_init(self) -> List[str]:
         ...
@@ -72,7 +83,9 @@ class kInt(KspIntVar):
 class kReal(KspRealVar):
     '''See module doc'''
     warning_types: List[Union[Type[KspStrVar],
-                              Type[KspIntVar], Type[str], Type[int]]] = ...
+                              Type[KspIntVar],
+                              Type[str],
+                              Type[int]]] = ...
     names_count: int = ...
     __init_val: float
 
@@ -100,7 +113,9 @@ class kReal(KspRealVar):
 class kStr(KspStrVar):
     '''See module doc'''
     warning_types: List[Union[Type[KspIntVar],
-                              Type[KspRealVar], Type[int], Type[float]]] = ...
+                              Type[KspRealVar],
+                              Type[int],
+                              Type[float]]] = ...
     names_count: int = ...
     __init_val: str
 
@@ -125,12 +140,13 @@ class kStr(KspStrVar):
         ...
 
 
-class kArrInt(KspArray):
+class kArrInt(KspArray[ITU]):
     '''See module doc'''
     names_count: int = ...
 
     def __init__(self,
-                 sequence: Optional[List[Optional[IT]]]=...,
+                 sequence: Optional[Union[List[int],
+                                          List[KspIntVar]]]=...,
                  name: str=...,
                  size: int=...,
                  preserve: bool=...,
@@ -138,22 +154,27 @@ class kArrInt(KspArray):
                  is_local: bool=...) -> None:
         ...
 
+    def __getitem__(self, idx: OP) -> kInt:
+        ...
+
     def _get_compiled(self) -> str:
         ...
 
-    def _get_runtime(self) -> List[Optional[IT]]:
+    def _get_runtime(self) -> Optional[Union[List[int],
+                                             List[KspIntVar]]]:
         ...
 
     def _generate_init(self) -> List[str]:
         ...
 
 
-class kArrReal(KspArray):
+class kArrReal(KspArray[RTU]):
     '''See module doc'''
     names_count: int = ...
 
     def __init__(self,
-                 sequence: Optional[List[Optional[RT]]]=...,
+                 sequence: Optional[Union[List[float],
+                                          List[KspRealVar]]]=...,
                  name: str=...,
                  size: int=...,
                  preserve: bool=...,
@@ -164,19 +185,20 @@ class kArrReal(KspArray):
     def _get_compiled(self) -> str:
         ...
 
-    def _get_runtime(self) -> List[Optional[RT]]:
+    def _get_runtime(self) -> Optional[Union[List[float],
+                                             List[KspRealVar]]]:
         ...
 
     def _generate_init(self) -> List[str]:
         ...
 
 
-class kArrStr(KspArray):
+class kArrStr(KspArray[Union['KspStrVar', str]]):
     '''See module doc'''
     names_count: int = ...
 
     def __init__(self,
-                 sequence: Optional[List[Optional[ST]]]=...,
+                 sequence: Optional[Union[List[str], List[KspStrVar]]]=...,
                  name: str=...,
                  size: int=...,
                  preserve: bool=...,
@@ -187,7 +209,8 @@ class kArrStr(KspArray):
     def _get_compiled(self) -> str:
         ...
 
-    def _get_runtime(self) -> List[Optional[ST]]:
+    def _get_runtime(self) -> Optional[Union[List[str],
+                                             List[KspStrVar]]]:
         ...
 
     def _generate_init(self) -> List[str]:

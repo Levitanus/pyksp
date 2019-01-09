@@ -12,6 +12,7 @@ from .abstract import KSP
 from .abstract import Output
 from .abstract import SingletonMeta
 from .abstract import KspObject
+from .abstract import IName
 
 from .base_types import KspIntVar
 from .base_types import KspStrVar
@@ -341,11 +342,13 @@ class kLocals:
     def __init__(self):
         self.vars = dict()
         self.funcs = dict()
+        self.init: bool = False
 
     def __call__(self, *local_names):
         """mark specified arguments be local"""
 
         def decorator(func):
+            IName.ignore_scope(True)
             func_name = f'{func.__module__}_{func.__name__}'
             sig = signature(func)
             self.funcs[func_name] = dict()
@@ -361,6 +364,7 @@ class kLocals:
                         var, name, var_type, value)
                     self.vars[var_name] = param
                     self.funcs[func_name][var_name] = param
+            IName.ignore_scope(False)
 
             @wraps(func)
             def wrapper(*args, **kwargs):
@@ -374,17 +378,22 @@ class kLocals:
 
     def init_vars(self) -> None:
         """initialize local vars"""
+        if self.init:
+            return
+        IName.ignore_scope(True)
         for name in self.vars.keys():
             var = self.vars[name].var
             var_type = self.vars[name].var_type
             var_value = self.vars[name].var_value
             var_name = self.vars[name].var_name
-            print('var: ', var, var.name(), var_type, var_value)
+            # print('var: ', var, var.name(), var_type, var_value)
             var_type(var_value, name=var_name)
             try:
                 var_type(var_value, name=var_name)
             except NameError:
                 continue
+        IName.ignore_scope(False)
+        self.init = True
 
 
 class FuncCallsStack:

@@ -138,6 +138,7 @@ class IName(INameLocal):
     __is_compact = False
     __names: List[str] = list()
     __scope: List[str] = ['']
+    __ignore_scope: bool = False
 
     @staticmethod
     def is_compact():
@@ -154,7 +155,8 @@ class IName(INameLocal):
     def __init__(self, name, prefix='', postfix='',
                  preserve=False):
         # print(IName.__scope)
-        name = IName.__scope[-1] + name
+        if not IName.__ignore_scope:
+            name = IName.__scope[-1] + name
         self._preserve = preserve
         self._full = name
         if not preserve and self.is_compact() is True:
@@ -183,6 +185,10 @@ class IName(INameLocal):
             IName.__scope.pop()
             return
         IName.__scope.append(name)
+
+    @staticmethod
+    def ignore_scope(ignore: bool) -> None:
+        IName.__ignore_scope = ignore
 
     @property
     def full(self):

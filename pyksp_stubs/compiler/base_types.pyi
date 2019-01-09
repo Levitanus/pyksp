@@ -21,7 +21,10 @@ from typing import overload
 from typing import Type
 from typing import cast
 from typing import Generic
+from typing import NewType
 from typing_extensions import Protocol
+
+from __future__ import annotations
 
 
 T = TypeVar('T')
@@ -45,17 +48,18 @@ class AstBase(KSP, Generic[T]):
         pass
 
 
-S = TypeVar('S')
-GT = TypeVar('GT', Union['KspIntVar', int],
-             Union['KspRealVar', float], Union['KspStrVar', str])
-ST = TypeVar('ST', str, float)
-NT = TypeVar('NT', Union['KspIntVar', int],
-             Union['KspRealVar', float])
-IT = TypeVar('IT', bound=Union['KspIntVar', int])
-RT = TypeVar('RT', bound=Union['KspRealVar', float])
-
 ITU = Union[int, 'KspIntVar']
 RTU = Union[float, 'KspRealVar']
+STU = Union[float, 'KspRealVar']
+
+S = TypeVar('S')
+GT = TypeVar('GT', Union['KspIntVar', int],
+             Union['KspRealVar', float], Union['KspStrVar', str],
+             'NumericSupport')
+ST = TypeVar('ST', str, float)
+
+OP = TypeVar('OP', ITU, RTU, 'NumericSupport')
+
 ValidAstInput = Union['KspVar', str, float]
 # ValidAstInputGen = Union[GT, ST]
 
@@ -106,43 +110,187 @@ class AstAddString(AstBase):
             'method __iadd__ is not implemented')
 
 
-class AstOperator(AstBase, Generic[NT], metaclass=ABCMeta):
-    '''Base abstract class for all operators.'''
-    _args: List[NT]
-    priority: int
+class NumericSupport(Generic[OP]):
 
-    def __init__(self, *args: NT) -> None:
+    def __neg__(self) ->Union[OP, AstNeg[OP]]:
         ...
 
-    def unpack_args(self, *args: Sequence[NT]) -> ST:
+    def __invert__(self) ->Union[OP, AstNot[OP]]:
+        ...
+
+    def __add__(self, other: OP) ->Union[OP, AstAdd[OP]]:
+        ...
+
+    def __radd__(self, other: OP) ->Union[OP, AstAdd[OP]]:
+        ...
+
+    def __iadd__(self: T, other: OP) ->Union[OP, NoReturn, T]:
+        ...
+
+    def __sub__(self, other: OP) ->Union[OP, AstSub[OP]]:
+        ...
+
+    def __rsub__(self, other: OP) ->Union[OP, AstSub[OP]]:
+        ...
+
+    def __isub__(self: T, other: OP) ->Union[OP, NoReturn, T]:
+        ...
+
+    @overload
+    def __mul__(self, other: Union[NumericSupport[ITU], ITU]) \
+            -> Union[ITU, AstMul[ITU]]:
+        ...
+
+    @overload
+    def __mul__(self, other: Union[NumericSupport[RTU], RTU]) \
+            -> Union[RTU, AstMul[RTU]]:
+        ...
+
+    @overload
+    def __rmul__(self, other: Union[NumericSupport[ITU], ITU]) \
+            -> Union[ITU, AstMul[ITU]]:
+        ...
+
+    @overload
+    def __rmul__(self, other: Union[NumericSupport[RTU], RTU]) \
+            -> Union[RTU, AstMul[RTU]]:
+        ...
+
+    @overload
+    def __imul__(self: T, other: Union[NumericSupport[ITU], ITU])\
+            ->Union[Union[ITU, AstMul[ITU]], NoReturn, T]:
+        ...
+
+    @overload
+    def __imul__(self: T, other: Union[NumericSupport[RTU], RTU])\
+            ->Union[Union[RTU, AstMul[RTU]], NoReturn, T]:
+        ...
+
+    @overload
+    def __truediv__(self, other: Union[NumericSupport[ITU], ITU]) \
+            -> Union[ITU, AstDiv[ITU]]:
+        ...
+
+    @overload
+    def __truediv__(self, other: Union[NumericSupport[RTU], RTU]) \
+            -> Union[RTU, AstDiv[RTU]]:
+        ...
+
+    @overload
+    def __rtruediv__(self, other: Union[NumericSupport[ITU], ITU]) \
+            -> Union[ITU, AstDiv[ITU]]:
+        ...
+
+    @overload
+    def __rtruediv__(self, other: Union[NumericSupport[RTU], RTU]) \
+            -> Union[RTU, AstDiv[RTU]]:
+        ...
+
+    def __itruediv__(self: T, other: OP) ->Union[OP, NoReturn, T]:
+        ...
+
+    def __floordiv__(self, other: OP) ->Union[OP, NoReturn]:
+        ...
+
+    def __rfloordiv__(self, other: OP) ->Union[OP, NoReturn]:
+        ...
+
+    def __ifloordiv__(self: T, other: OP) ->Union[OP, NoReturn, T]:
+        ...
+
+    def __mod__(self, other: OP) ->Union[OP, AstMod[OP]]:
+        ...
+
+    def __rmod__(self, other: OP) ->Union[OP, AstMod[OP]]:
+        ...
+
+    def __imod__(self: T, other: OP) ->Union[OP, NoReturn, T]:
+        ...
+
+    def __pow__(self, other: OP) ->Union[OP, AstPow[OP]]:
+        ...
+
+    def __rpow__(self, other: OP) ->Union[OP, AstPow[OP]]:
+        ...
+
+    def __ipow__(self: T, other: OP) ->Union[OP, NoReturn, T]:
+        ...
+
+    def __eq__(self, other: OP) ->Union[OP, AstEq[OP]]:
+        ...
+
+    def __ne__(self, other: OP) ->Union[OP, AstNe[OP]]:
+        ...
+
+    def __lt__(self, other: OP) ->Union[OP, AstLt[OP]]:
+        ...
+
+    def __gt__(self, other: OP) ->Union[OP, AstGt[OP]]:
+        ...
+
+    def __le__(self, other: OP) ->Union[OP, AstLe[OP]]:
+        ...
+
+    def __ge__(self, other: OP) ->Union[OP, AstGe[OP]]:
+        ...
+
+    def abs(self) -> AstAbs[OP]:
+        ...
+
+    def __and__(self, other: OP) -> Union[AstLogAnd[OP],
+                                          AstBinAnd[OP], OP]:
+        ...
+
+    def __rand__(self, other: OP)-> Union[AstLogAnd[OP],
+                                          AstBinAnd[OP], OP]:
+        ...
+
+    def __or__(self, other: OP) -> Union[AstLogOr[OP], AstBinOr[OP], OP]:
+        ...
+
+    def __ror__(self, other: OP)-> Union[AstLogOr[OP],
+                                         AstBinOr[OP], OP]:
+        ...
+
+
+class AstOperator(AstBase, NumericSupport[OP],
+                  Generic[OP], metaclass=ABCMeta):
+    '''Base abstract class for all operators.'''
+    _args: List[OP]
+    priority: int
+
+    def __init__(self, *args: OP) -> None:
+        ...
+
+    def unpack_args(self, *args: Sequence[OP]) -> ST:
         '''gets values of KspVar objects and expands AstBase objects
         keeps str, int and float objects untouched
         returns tuple of args or only arg, if it was alone
         '''
         ...
 
-    def unary(self, string: str, val: NT) -> str:
+    def unary(self, string: str, val: OP) -> str:
         '''returns f"{string}{val}"'''
         ...
 
     def standart(self, string: str,
-                 val1: NT,
-                 val2: NT) -> str:
+                 val1: OP,
+                 val2: OP) -> str:
         '''returns f"{val1} {string} {val2}"'''
         ...
 
     def bracket_unary(self, string: str,
-                      val: NT) -> str:
+                      val: OP) -> str:
         '''returns f"{string}({val})"'''
         ...
 
     def bracket_double(self, string: str,
-                       val1: NT,
-                       val2: NT) -> str:
+                       val1: OP,
+                       val2: OP) -> str:
         '''returns f"{string}({val1}, {val2})"'''
         ...
 
-    def get_value_proxy(self, func: Callable[[NT], ST]) -> ST:
+    def get_value_proxy(self, func: Callable[[OP], ST]) -> ST:
         '''use via super
         accepts func (lambda?) and passes init args to it.
         args are expanded via:
@@ -150,112 +298,8 @@ class AstOperator(AstBase, Generic[NT], metaclass=ABCMeta):
         get_value() for AstBase objects'''
         ...
 
-    def __neg__(self) -> AstNeg[NT]:
-        ...
 
-    def __invert__(self) -> AstNot[NT]:
-        ...
-
-    def __add__(self, other: NT) -> AstAdd[NT]:
-        ...
-
-    def __radd__(self, other: NT) -> AstAdd[NT]:  # type: ignore
-        ...
-
-    def __iadd__(self, other: NT) -> NoReturn:
-        ...
-
-    def __sub__(self, other: NT) -> AstSub[NT]:
-        ...
-
-    def __rsub__(self, other: NT) -> AstSub[NT]:  # type: ignore
-        ...
-
-    def __isub__(self, other: NT) -> NoReturn:
-        ...
-
-    def __mul__(self, other: NT) -> AstMul[NT]:
-        ...
-
-    def __rmul__(self, other: NT) -> AstMul[NT]:  # type: ignore
-        ...
-
-    def __imul__(self, other: NT) -> NoReturn:
-        ...
-
-    def __truediv__(self, other: NT) -> AstDiv[NT]:
-        ...
-
-    def __rtruediv__(self, other: NT) -> AstDiv[NT]:  # type: ignore
-        ...
-
-    def __itruediv__(self, other: NT) -> NoReturn:
-        ...
-
-    def __floordiv__(self, other: NT) -> NoReturn:
-        ...
-
-    def __rfloordiv__(self, other: NT) -> NoReturn:  # type: ignore
-        ...
-
-    def __ifloordiv__(self, other: NT) -> NoReturn:
-        ...
-
-    def __mod__(self, other: NT) -> AstMod[NT]:
-        ...
-
-    def __rmod__(self, other: NT) -> AstMod[NT]:  # type: ignore
-        ...
-
-    def __imod__(self, other: NT) -> NoReturn:
-        ...
-
-    def __pow__(self, other: NT) -> AstPow[NT]:
-        ...
-
-    def __rpow__(self, other: NT) -> AstPow[NT]:  # type: ignore
-        ...
-
-    def __ipow__(self, other: NT) -> NoReturn:
-        ...
-
-    def __and__(self, other: NT) -> Union[AstLogAnd[NT], AstBinAnd[NT]]:
-        ...
-
-    def __rand__(self, other: NT)-> Union[AstLogAnd[NT],   # type: ignore
-                                          AstBinAnd[NT]]:  # type: ignore
-        ...
-
-    def __or__(self, other: NT) -> Union[AstLogOr[NT], AstBinOr[NT]]:
-        ...
-
-    def __ror__(self, other: NT)-> Union[AstLogOr[NT],   # type: ignore
-                                         AstBinOr[NT]]:  # type: ignore
-        ...
-
-    def __eq__(self, other: NT) -> AstEq[NT]:  # type: ignore
-        ...
-
-    def __ne__(self, other: NT) -> AstNe[NT]:  # type: ignore
-        ...
-
-    def __lt__(self, other: NT) -> AstLt[NT]:  # type: ignore
-        ...
-
-    def __gt__(self, other: NT) -> AstGt[NT]:  # type: ignore
-        ...
-
-    def __le__(self, other: NT) -> AstLe[NT]:  # type: ignore
-        ...
-
-    def __ge__(self, other: NT) -> AstGe[NT]:  # type: ignore
-        ...
-
-    def abs(self) -> AstAbs[NT]:
-        ...
-
-
-class AstNeg(AstOperator, Generic[NT]):
+class AstNeg(AstOperator, Generic[OP]):
 
     def expand(self) -> str:
         ...
@@ -264,165 +308,165 @@ class AstNeg(AstOperator, Generic[NT]):
         ...
 
 
-class AstNot(AstOperator, Generic[NT]):
+class AstNot(AstOperator, Generic[OP]):
 
     def expand(self) -> str:
         ...
 
-    def get_value(self) -> NT:
+    def get_value(self) -> OP:
         ...
 
 
-class AstAdd(AstOperator, Generic[NT]):
+class AstAdd(AstOperator, Generic[OP]):
 
     def expand(self) -> str:
         ...
 
-    def get_value(self) -> NT:
+    def get_value(self) -> OP:
         ...
 
 
-class AstSub(AstOperator, Generic[NT]):
+class AstSub(AstOperator, Generic[OP]):
 
     def expand(self) -> str:
         ...
 
-    def get_value(self) -> NT:
+    def get_value(self) -> OP:
         ...
 
 
-class AstMul(AstOperator, Generic[NT]):
+class AstMul(AstOperator, Generic[OP]):
 
     def expand(self) -> str:
         ...
 
-    def get_value(self) -> NT:
+    def get_value(self) -> OP:
         ...
 
 
-class AstDiv(AstOperator, Generic[NT]):
+class AstDiv(AstOperator, Generic[OP]):
 
     def expand(self) -> str:
         ...
 
-    def get_value(self) -> NT:
+    def get_value(self) -> OP:
         ...
 
 
-class AstMod(AstOperator, Generic[NT]):
+class AstMod(AstOperator, Generic[OP]):
 
     def expand(self) -> str:
         ...
 
-    def get_value(self) -> NT:
+    def get_value(self) -> OP:
         ...
 
 
-class AstPow(AstOperator, Generic[NT]):
+class AstPow(AstOperator, Generic[OP]):
 
     def expand(self) -> str:
         ...
 
-    def get_value(self) -> NT:
+    def get_value(self) -> OP:
         ...
 
 
-class AstLogAnd(AstOperator, Generic[NT]):
+class AstLogAnd(AstOperator, Generic[OP]):
 
     def expand(self) -> str:
         ...
 
-    def get_value(self) -> NT:
+    def get_value(self) -> OP:
         ...
 
 
-class AstBinAnd(AstOperator, Generic[NT]):
+class AstBinAnd(AstOperator, Generic[OP]):
 
     def expand(self) -> str:
         ...
 
-    def get_value(self) -> NT:
+    def get_value(self) -> OP:
         ...
 
 
-class AstLogOr(AstOperator, Generic[NT]):
+class AstLogOr(AstOperator, Generic[OP]):
 
     def expand(self) -> str:
         ...
 
-    def get_value(self) -> NT:
+    def get_value(self) -> OP:
         ...
 
 
-class AstBinOr(AstOperator, Generic[NT]):
+class AstBinOr(AstOperator, Generic[OP]):
 
     def expand(self) -> str:
         ...
 
-    def get_value(self) -> NT:
+    def get_value(self) -> OP:
         ...
 
 
-class AstEq(AstOperator, Generic[NT]):
+class AstEq(AstOperator, Generic[OP]):
 
     def expand(self) -> str:
         ...
 
-    def get_value(self) -> NT:
+    def get_value(self) -> OP:
         ...
 
 
-class AstNe(AstOperator, Generic[NT]):
+class AstNe(AstOperator, Generic[OP]):
 
     def expand(self) -> str:
         ...
 
-    def get_value(self) -> NT:
+    def get_value(self) -> OP:
         ...
 
 
-class AstLt(AstOperator, Generic[NT]):
+class AstLt(AstOperator, Generic[OP]):
 
     def expand(self) -> str:
         ...
 
-    def get_value(self) -> NT:
+    def get_value(self) -> OP:
         ...
 
 
-class AstGt(AstOperator, Generic[NT]):
+class AstGt(AstOperator, Generic[OP]):
 
     def expand(self) -> str:
         ...
 
-    def get_value(self) -> NT:
+    def get_value(self) -> OP:
         ...
 
 
-class AstLe(AstOperator, Generic[NT]):
+class AstLe(AstOperator, Generic[OP]):
 
     def expand(self) -> str:
         ...
 
-    def get_value(self) -> NT:
+    def get_value(self) -> OP:
         ...
 
 
-class AstGe(AstOperator, Generic[NT]):
+class AstGe(AstOperator, Generic[OP]):
 
     def expand(self) -> str:
         ...
 
-    def get_value(self) -> NT:
+    def get_value(self) -> OP:
         ...
 
 
-class AstAbs(AstOperator, Generic[NT]):
+class AstAbs(AstOperator, Generic[OP]):
 
     def expand(self) -> str:
         ...
 
-    def get_value(self) -> NT:
+    def get_value(self) -> OP:
         ...
 
 
@@ -499,14 +543,15 @@ class KspVar(KspObject, Generic[GT]):
     def _get_runtime(self) -> GT:
         pass
 
-    def __ilshift__(self, other: GT) -> 'KspVar[GT]':
+    def __ilshift__(self: T, other: Union[OP, GT]) -> T:
         '''under compilation calls self._set_compiled
         otherwise calls self._set_runtime
 
         returns self'''
         ...
 
-    def __rlshift__(self, other: GT) -> Union[str, ST]:
+    def __rlshift__(self,
+                    other: OP) -> Union[str, OP]:
         '''under compilation calls self._get_compiled
         otherwise calls self._get_runtime
         '''
@@ -541,8 +586,7 @@ class KspStrVar(KspVar[Union['KspStrVar', str]], metaclass=ABCMeta):
     def __add__(self, other: GT) -> Union[AstAddString, str]:
         ...
 
-    def __radd__(self, other: GT) -> Union[AstAddString,  # type: ignore
-                                           str]:  # type: ignore
+    def __radd__(self, other: GT) -> Union[AstAddString, str]:
         ...
 
     def __iadd__(self, other: GT) -> Union[AstAddString, str]:
@@ -565,7 +609,7 @@ class KspStrVar(KspVar[Union['KspStrVar', str]], metaclass=ABCMeta):
         ...
 
 
-class KspNumeric(KspVar[NT], Generic[NT]):
+class KspNumeric(KspVar[OP], NumericSupport[OP], Generic[OP]):
     '''abstract base class for int and real KSP variables
     has to keep class variable "warning_types", consists tuple
     of classes for blocking magic methods.
@@ -580,8 +624,21 @@ class KspNumeric(KspVar[NT], Generic[NT]):
     class TypeWarn(Warning):
         '''raised when type convertion is needed'''
 
-        def __init__(self, val: NT) -> None:  # type: ignore
+        def __init__(self, val: str) -> None:
             ...
+
+    # @abstractmethod
+    # def __truediv__(self, other: OP) -> Union[AstDiv[OP], OP]:
+    #     pass
+
+    # @abstractmethod
+    # def __rtruediv__(self,
+    #                  other: OP) -> Union[AstDiv[OP], OP]:
+    #     pass
+
+    # @abstractmethod
+    # def __itruediv__(self, other: OP) -> Union[AstDiv[OP], OP]:
+    #     pass
 
     def _generate_executable(self) -> NoReturn:
         ...
@@ -589,144 +646,60 @@ class KspNumeric(KspVar[NT], Generic[NT]):
     def _warn_other(self, value: Any) -> None:
         ...
 
-    def abs(self) -> Union[AstAbs[NT], ST]:
-        ...
-
-    @abstractmethod
-    def __truediv__(self, other: NT) -> Union[AstDiv[NT], NT]:
-        pass
-
-    @abstractmethod
-    def __rtruediv__(self,                                 # type: ignore
-                     other: NT) -> Union[AstDiv[NT], NT]:  # type: ignore
-        pass
-
-    @abstractmethod
-    def __itruediv__(self, other: NT) -> Union[AstDiv[NT], NT]:
-        pass
-
-    @abstractmethod
-    def __floordiv__(self, other: NT) -> NoReturn:
-        ...
-
-    @abstractmethod
-    def __rfloordiv__(self, other: NT) -> NoReturn:  # type: ignore
-        ...
-
-    @abstractmethod
-    def __ifloordiv__(self, other: NT) -> NoReturn:
-        ...
-
-    def _expand_other(self, other: NT) -> Union[str, int, float]:
+    def _expand_other(self, other: OP) -> Union[str, int, float]:
         '''returns other, expanded via val property if is
         instance of KspVar'''
-        ...
-
-    def __neg__(self) -> Union[AstNeg[NT], NT]:
-        ...
-
-    def __invert__(self) -> Union[AstNot[NT], NT]:
-        ...
-
-    def __add__(self, other: NT) -> Union[AstAdd[NT], NT]:
-        ...
-
-    def __radd__(self,                                 # type: ignore
-                 other: NT) -> Union[AstAdd[NT], NT]:  # type: ignore
-        ...
-
-    def __iadd__(self, other: NT) -> 'KspNumeric[NT]':
-        ...
-
-    def __sub__(self, other: NT) -> Union[AstSub[NT], NT]:
-        ...
-
-    def __rsub__(self,                                 # type: ignore
-                 other: NT) -> Union[AstSub[NT], NT]:  # type: ignore
-        ...
-
-    def __isub__(self, other: NT) -> 'KspNumeric[NT]':
-        ...
-
-    def __mul__(self, other: NT) -> Union[AstMul[NT], NT]:
-        ...
-
-    def __rmul__(self,                                 # type: ignore
-                 other: NT) -> Union[AstMul[NT], NT]:  # type: ignore
-        ...
-
-    def __imul__(self, other: NT) -> 'KspNumeric[NT]':
-        ...
-
-    def __and__(self, other: NT) -> Union[
-            Union[NT, AstBinAnd[NT]],
-            Union[bool, AstLogAnd[NT]]]:
-        ...
-
-    def __rand__(self, other: NT) -> Union[  # type: ignore
-            Union[NT, AstBinAnd[NT]],
-            Union[bool, AstLogAnd[NT]]]:
-        ...
-
-    def __iand__(self, other: NT) -> NoReturn:
-        ...
-
-    def __or__(self, other: NT) -> Union[  # type: ignore
-            Union[NT, AstBinOr[NT]],
-            Union[bool, AstLogOr[NT]]]:
-        ...
-
-    def __ror__(self, other: NT) -> Union[  # type: ignore
-            Union[NT, AstBinOr[NT]],
-            Union[bool, AstLogOr[NT]]]:
-        ...
-
-    def __ior__(self, other: NT) -> NoReturn:
-        raise NotImplementedError
-
-    def __eq__(self, other: NT) -> Union[bool, AstEq[NT]]:  # type: ignore
-        ...
-
-    def __ne__(self, other: NT) -> Union[bool, AstNe[NT]]:  # type: ignore
-        ...
-
-    def __lt__(self, other: NT) -> Union[bool, AstLt[NT]]:  # type: ignore
-        ...
-
-    def __gt__(self, other: NT) -> Union[bool, AstGt[NT]]:  # type: ignore
-        ...
-
-    def __le__(self, other: NT) -> Union[bool, AstLe[NT]]:  # type: ignore
-        ...
-
-    def __ge__(self, other: NT) -> Union[bool, AstGe[NT]]:  # type: ignore
         ...
 
 
 class KspIntVar(KspNumeric[ITU], metaclass=ABCMeta):
 
-    def __truediv__(self, other: ITU) -> Union[AstDiv[ITU], ITU]:
+    @overload
+    def __truediv__(self, other: Union[NumericSupport[ITU], ITU]) \
+            -> Union[ITU, AstDiv[ITU]]:
         ...
 
-    def __rtruediv__(self, other: ITU) -> Union[AstDiv[ITU], ITU]:
+    @overload
+    def __truediv__(self, other: Union[NumericSupport[RTU], RTU]) \
+            -> NoReturn:
         ...
 
-    def __itruediv__(self, other: ITU) -> Union[AstDiv[ITU], 'KspIntVar']:
+    def __rtruediv__(self, other: Union[NumericSupport[ITU], ITU]) \
+            -> Union[ITU, AstDiv[ITU]]:
         ...
 
-    def __floordiv__(self, other: ITU) -> NoReturn:
+    def __rtruediv__(self, other: Union[NumericSupport[RTU], RTU]) \
+            -> NoReturn:
         ...
 
-    def __rfloordiv__(self, other: ITU) -> NoReturn:
+    @overload
+    def __itruediv__(self: T, other: Union[NumericSupport[ITU], ITU]) \
+            -> T:
         ...
 
-    def __ifloordiv__(self, other: ITU) -> NoReturn:
+    @overload
+    def __itruediv__(self, other: Union[NumericSupport[RTU], RTU]) \
+            -> NoReturn:
         ...
 
-    def __mod__(self, other: ITU) -> Union[AstMod[ITU], ITU]:
+    def __floordiv__(self, other: Union[AstOperator[ITU], ITU])\
+            -> NoReturn:
         ...
 
-    def __rmod__(self, other: ITU) -> Union[AstMod[ITU], ITU]:
+    def __rfloordiv__(self, other: Union[AstOperator[ITU], ITU])\
+            -> NoReturn:
+        ...
+
+    def __ifloordiv__(self, other: Union[AstOperator[ITU], ITU])\
+            -> NoReturn:
+        ...
+
+    def __mod__(self, other: Union[AstOperator[ITU], ITU])\
+            -> Union[AstMod[ITU], ITU]:
+        ...
+
+    def __rmod__(self, other: Union[AstOperator[ITU], ITU])\
+            -> Union[AstMod[ITU], ITU]:
         ...
 
 
@@ -737,8 +710,7 @@ class KspRealVar(KspNumeric[RTU], metaclass=ABCMeta):
     def __rtruediv__(self, other: RTU) -> Union[AstDiv[RTU], RTU]:
         ...
 
-    def __itruediv__(self, other: RTU) -> Union[AstDiv[RTU],
-                                                'KspRealVar']:
+    def __itruediv__(self: T, other: RTU) -> Union[AstDiv[RTU], T]:
         ...
 
     def __floordiv__(self, other: RTU) -> NoReturn:
@@ -759,8 +731,7 @@ class KspRealVar(KspNumeric[RTU], metaclass=ABCMeta):
     def __rpow__(self, other: RTU) -> Union[AstPow[RTU], RTU]:
         ...
 
-    def __ipow__(self, other: RTU) -> Union[AstPow[RTU],
-                                            'KspRealVar']:
+    def __ipow__(self, other: RTU) -> Union[AstPow[RTU], T]:
         ...
 
     def __and__(self, other: RTU) -> Union[RTU, AstBinAnd[RTU]]:
@@ -776,7 +747,7 @@ class KspRealVar(KspNumeric[RTU], metaclass=ABCMeta):
         ...
 
 
-class KspArray(KspVar, Generic[GT], metaclass=ABCMeta):
+class KspArray(KspVar[GT], Generic[GT], metaclass=ABCMeta):
     '''abstract base class for making int str and real KSP arrays
     ref_type is values accepted for sequence input and items assignment
     item_type is single class reference for local object construction
@@ -841,7 +812,7 @@ class KspArray(KspVar, Generic[GT], metaclass=ABCMeta):
         '''extends array if size permits'''
         ...
 
-    def __getitem__(self, idx: IT) -> KspVar[GT]:
+    def __getitem__(self, idx: ITU) -> KspVar[GT]:
         '''returns item_type (KspVar instance) local objects with
         value from squence and name of array index ("array[idx]")
         resource-unefficient. cashes object for later usage, but
@@ -850,7 +821,7 @@ class KspArray(KspVar, Generic[GT], metaclass=ABCMeta):
         '''
         ...
 
-    def _getitem_full(self, idx: IT) -> KspVar[GT]:
+    def _getitem_full(self, idx: ITU) -> KspVar[GT]:
         ...
 
     def _getitem_fast(self, idx: ITU) -> Optional[GT]:
@@ -859,11 +830,11 @@ class KspArray(KspVar, Generic[GT], metaclass=ABCMeta):
         '''
         ...
 
-    def __setitem__(self, idx: ITU, val: IT) -> None:
+    def __setitem__(self, idx: ITU, val: ITU) -> None:
         '''calls self.set_at_idx(idx, val)'''
         ...
 
-    def set_at_idx(self, idx: ITU, val: IT) -> None:
+    def set_at_idx(self, idx: ITU, val: ITU) -> None:
         '''puts value to the cashed object at idx.
         Or makes one if not exists'''
         ...

@@ -3,6 +3,7 @@ from .abstract import KSP
 from .abstract import IName
 
 from .script import kScript
+from .functions import kLocals
 
 from typing import Union
 from typing import List
@@ -56,6 +57,27 @@ def scope(f):
         return ret_val
 
     return wrapper
+
+
+def scope_with_locals(local: kLocals):
+
+    def scope(f):
+        """Decorator for making all Ksp declarations 'local'
+        adds current scope to the declaration name"""
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            # print(dir(f))
+            scope = f'{f.__module__}_{f.__qualname__}_'
+            scope = sub(r'(__init__)|[<>]', '', scope)
+            scope = sub(r'\.', '_', scope)
+            IName.scope(scope)
+            ret_val = f(*args, **kwargs)
+            IName.scope('')
+            return ret_val
+
+        return wrapper
+    local.init_vars()
+    return scope
 
 
 def comment(comment: str):
