@@ -29,6 +29,9 @@ from .native_types import kArrReal
 from .k_built_ins import FunctionCallback
 
 
+from typing import Callable, cast, TypeVar, Any
+
+
 class kOut(KSP):
     '''special class designed to be function argument to return
         values from it.
@@ -317,6 +320,9 @@ class LocalParam:
         self.var_name = var_name
 
 
+LF = TypeVar('LF', bound=Callable[..., Any])
+
+
 class kLocals:
     """Collects local vars definitions and initialize them
 
@@ -344,12 +350,13 @@ class kLocals:
         self.funcs = dict()
         self.init: bool = False
 
-    def __call__(self, *local_names):
+    def __call__(self, *local_names: str) -> LF:
         """mark specified arguments be local"""
 
-        def decorator(func):
+        def decorator(func: LF) -> LF:
             IName.ignore_scope(True)
-            func_name = f'{func.__module__}_{func.__name__}'
+            func_name = f'{func.__module__}_{func.__qualname__}'
+            func_name = re.sub(r'\.', '_', func_name)
             sig = signature(func)
             self.funcs[func_name] = dict()
             for var_name in local_names:
@@ -367,14 +374,14 @@ class kLocals:
             IName.ignore_scope(False)
 
             @wraps(func)
-            def wrapper(*args, **kwargs):
+            def wrapper(*args: Any, **kwargs: Any) -> LF:
                 added = dict()
                 for name in self.funcs[func_name]:
                     added[name] = self.funcs[func_name][name].var
                 kwargs = {**kwargs, **added}
                 return func(*args, **kwargs)
-            return wrapper
-        return decorator
+            return cast(LF, wrapper)
+        return cast(LF, decorator)
 
     def init_vars(self) -> None:
         """initialize local vars"""
@@ -386,7 +393,7 @@ class kLocals:
             var_type = self.vars[name].var_type
             var_value = self.vars[name].var_value
             var_name = self.vars[name].var_name
-            # print('var: ', var, var.name(), var_type, var_value)
+            print('var: ', var, var.name(), var_type, var_value)
             var_type(var_value, name=var_name)
             try:
                 var_type(var_value, name=var_name)
