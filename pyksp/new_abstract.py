@@ -20,10 +20,9 @@ from typing import Sequence
 from typing import cast
 from typing import Union
 from typing import NewType
-# from typing import GenericMeta
 from typing import Generic
-from typing import Protocol
-from typing import runtime
+from typing_extensions import Protocol
+from typing_extensions import runtime
 
 T = TypeVar('T')
 
@@ -43,6 +42,8 @@ class KSP(metaclass=KSPBaseMeta):
     Takes part of singletone object durin compilicng.
     Has to be refreshed by script at the start of compilation.
     """
+
+    __slots__ = '__dict__'
 
     __script: Optional['ScriptBase'] = None
     __output: Optional['Output'] = None
@@ -207,6 +208,9 @@ OutputGot = NewType('OutputGot', List[Union['AstNull', str]])
 class Output(KSP):
     """Handles generation of code lines."""
 
+    __slots__ = '_queue', '_blocks', '_lines', '_block_in_queue', \
+        '_start_indent', 'indent_level', '_blocked'
+
     def __init__(self, indent_level: int) -> None:
         """Initialize.
 
@@ -348,6 +352,8 @@ class OutputBlock:
 
     blocks are equal if their open and close strings are equal"""
 
+    __slots__ = 'open_str', 'close_str', 'open', 'close'
+
     def __init__(self, open_str: str, close_str: str) -> None:
         """Initialize."""
         self.open_str = open_str
@@ -380,7 +386,7 @@ class AstBase(KSP, Generic[T]):
         ...
 
 
-class AstRootMeta(KSPBaseMeta):
+class AstRootMeta(KSPBaseMeta, ABCMeta):
     """AstRoot metaclass.
 
     wraps expand() method for setting expanded property to True
@@ -403,7 +409,7 @@ class AstRootMeta(KSPBaseMeta):
         return cls
 
 
-class AstRoot(AstBase, metaclass=AstRootMeta):
+class AstRoot(AstBase[T], Generic[T], metaclass=KSPBaseMeta):
     """Base class for AstRoot (e.g. potential starting of line)."""
 
     _queue_line: int
@@ -431,8 +437,13 @@ class AstRoot(AstBase, metaclass=AstRootMeta):
         """Return true, if expand() has been invocated."""
         return self._expanded
 
+    @abstractmethod
+    def get_value(self) -> T:
+        """Recursively get runtime value of ast."""
+        ...
 
-class AstString(AstRoot):
+
+class AstString(AstRoot[str]):
     """Basic string is put to Output."""
 
     def __init__(self, string: str) -> None:
@@ -463,44 +474,16 @@ class AstNull(AstRoot):
 class NameBase(KSP):
     """Simple name handler."""
 
+    __slots__ = 'name', 'prefix', 'postfix'
+
     def __init__(self,
                  name: str,
                  prefix: str='',
                  postfix: str='') -> None:
         """Make separate parts, van be modifyed independently."""
-        self._name = name
-        self._prefix = prefix
-        self._postfix = postfix
-
-    @property
-    def name(self) -> str:
-        """Return the main part of name."""
-        return self._name
-
-    @name.setter
-    def name(self, name: str) -> None:
-        """Name setter."""
-        self._name = name
-
-    @property
-    def prefix(self) -> str:
-        """Return prefix."""
-        return self._prefix
-
-    @prefix.setter
-    def prefix(self, prefix: str) -> None:
-        """Prefix setter."""
-        self._prefix = prefix
-
-    @property
-    def postfix(self) -> str:
-        """Postfix getter."""
-        return self._postfix
-
-    @postfix.setter
-    def postfix(self, postfix: str) -> None:
-        """Postfix setter."""
-        self._postfix = postfix
+        self.name = name
+        self.prefix = prefix
+        self.postfix = postfix
 
     def __call__(self) -> str:
         """Return concatenated prefix, name and postfix."""
@@ -584,10 +567,13 @@ class HasInit(Protocol):
 class KspObject(KSP):
     """Base class for all objects may appear in code."""
 
+    __slots__ = 'name'
+
     def __init__(self,
-                 name: NameBase) -> None:
+                 name: NameBase,
+                 *, has_init: bool) -> None:
         """Excluding Ast's."""
-        if isinstance(self, HasInit):
+        if isinstance(self, HasInit) and has_init:
             self.append_init(self)
         self.name = name
 
