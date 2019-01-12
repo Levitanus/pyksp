@@ -37,6 +37,28 @@ ATU = Union['KspVar[KT]', 'AstBase', KT]
 # STU = Union['KspVar[str]', 'AstConcatStr', ]
 
 
+def get_value(value: ATU[KT]) -> KT:
+    if isinstance(value, (int, str, float)):
+        return value
+    if isinstance(value, KspVar):
+        return value._value
+    if isinstance(value, AstBase):
+        return value.get_value()
+    raise TypeError(f"Can't infer type of {value}")
+
+
+def get_compiled(value: ATU[KT]) -> str:
+    if isinstance(value, (int, float)):
+        return f'{value}'
+    if isinstance(value, str):
+        return f'"{value}"'
+    if isinstance(value, KspVar):
+        return value.name()
+    if isinstance(value, AstBase):
+        return value.expand()
+    raise TypeError(f"Can't infer type of {value}")
+
+
 class KspVar(KspObject, Generic[KT]):
     names_count: int = 0
 
@@ -81,7 +103,7 @@ class KspVar(KspObject, Generic[KT]):
         return ret_obj
 
     def copy(self, name: str, prefix: str, postfix: str) -> 'KspVar[KT]':
-        obj = KspVar(self._value, name=name)
+        obj = KspVar(self._value, name=name, local=True)
         obj.name.prefix = prefix
         obj.name.postfix = postfix
         return obj
@@ -108,7 +130,7 @@ class AstAssign(AstRoot):
         return f'{to} := {from_str}'
 
     def get_value(self) -> NoReturn:
-        raise NotImplementedError
+        raise self.NullError
 
 
 a = KspVar('3')
