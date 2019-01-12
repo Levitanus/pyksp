@@ -4,6 +4,14 @@ from .abstract import IName
 
 from .script import kScript
 from .functions import kLocals
+from .functions import kLoc
+
+from .native_types import kInt
+from .native_types import kStr
+from .native_types import kReal
+from .native_types import kArrInt
+from .native_types import kArrStr
+from .native_types import kArrReal
 
 from typing import Union
 from typing import List
@@ -107,9 +115,34 @@ def quick_script(f: F) -> F:
     def wrapper(*args: Any, **kwargs: Any) -> None:
         script = kScript(kScript.clipboard,
                          compact=False,
-                         max_line_length=70,
+                         max_line_length=False,
                          indents=2)
         setattr(script, 'main', lambda: f(*args, **kwargs))
         script.compile()
 
     return cast(F, wrapper)
+
+
+# class Collection:
+
+#     def __init__(self, ref_type: Union[Type[int], Type[str], Type[float]],
+#                  **sizes: kLoc):
+#         if ref_type is int:
+#             self.array_type = kArrInt
+#             self.value_type = (int, kInt)
+#         elif ref_type is str:
+#             self.array_type = kArrStr
+#             self.value_type = (str, kStr)
+#         elif ref_type is float:
+#             self.array_type = kArrReal
+#             self.value_type = (float, kReal)
+#         else:
+#             raise TypeError(f'wrong type of the first arg: {ref_type}')
+#         self.
+#         for key, val in zip(items, items.values()):
+#             if val._size == 1:
+#                 i
+
+
+# a = kArg(int)
+# print(a.size())

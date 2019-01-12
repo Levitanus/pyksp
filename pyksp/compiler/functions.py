@@ -393,7 +393,6 @@ class kLocals:
             var_type = self.vars[name].var_type
             var_value = self.vars[name].var_value
             var_name = self.vars[name].var_name
-            print('var: ', var, var.name(), var_type, var_value)
             var_type(var_value, name=var_name)
             try:
                 var_type(var_value, name=var_name)
