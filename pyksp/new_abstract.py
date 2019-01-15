@@ -94,8 +94,9 @@ class KSP(metaclass=KSPBaseMeta):
 
         normally, should be used by any class wants to produce
         block of lines"""
-        if KSP.__script is None:
-            raise KSP.NoBaseError
+        # think of point to use
+        # if KSP.__script is None:
+        #     raise KSP.NoBaseError
         if KSP.__outputs:
             il = KSP.__outputs[-1].indent_level
         else:
@@ -107,6 +108,8 @@ class KSP(metaclass=KSPBaseMeta):
     @staticmethod
     def get_out() -> 'Output':
         """Return current Output object."""
+        # if not KSP.__is_compiled:
+        #     return Output(0)
         return KSP.__outputs[-1]
 
     @staticmethod
@@ -555,10 +558,10 @@ class NameVar(NameBase):
         NameVar.__names_comp = list()
 
 
-@runtime
-class HasInit(Protocol):
+class HasInit(metaclass=KSPBaseMeta):
     """Has method generate_init."""
 
+    @abstractmethod
     def generate_init(self) -> List[str]:
         """Return init lines in lint."""
         ...
