@@ -13,6 +13,19 @@ from .native_types import kArrInt
 from .native_types import kArrStr
 from .native_types import kArrReal
 
+from .bi_ui_controls import kWidget
+from .bi_ui_controls import KspNativeControl
+from .bi_ui_controls import set_control_par
+from .bi_ui_controls import get_control_par
+from .bi_ui_controls import CONTROL_PAR_HIDE
+from .bi_ui_controls import HIDE_WHOLE_CONTROL
+from .bi_ui_controls import HIDE_PART_NOTHING
+# from .bi_ui_controls import WidgetMeta
+
+from .conditions_loops import For
+from .conditions_loops import If
+from .conditions_loops import Else
+
 from typing import Union
 from typing import List
 from typing import Optional
@@ -23,6 +36,7 @@ from typing import TypeVar
 
 from functools import wraps
 from inspect import cleandoc
+from abc import abstractmethod
 
 from re import sub
 
@@ -112,11 +126,12 @@ F = TypeVar('F', bound=Callable[..., None])
 def quick_script(f: F) -> F:
 
     @wraps(f)
-    def wrapper(*args: Any, **kwargs: Any) -> None:
-        script = kScript(kScript.clipboard,
+    def wrapper(*args: Any, out=kScript.clipboard, **kwargs: Any) -> None:
+        script = kScript(out,
                          compact=False,
                          max_line_length=False,
-                         indents=2)
+                         indents=2,
+                         docs=True,)
         setattr(script, 'main', lambda: f(*args, **kwargs))
         script.compile()
 
@@ -146,3 +161,83 @@ def quick_script(f: F) -> F:
 
 # a = kArg(int)
 # print(a.size())
+
+
+class UiPage(kWidget):
+    local = kLocals()
+
+    # @scope
+    def __init__(self, name: str, parent: object=None,
+                 x: int=None, y: int=None,
+                 width: int=None, height: int=None) -> None:
+        super().__init__(parent=parent,
+                         x=x,
+                         y=y,
+                         width=width,
+                         height=height)
+        self.name = name
+        self.child_ids: kArrInt
+        self.child_hide_state: kArrInt
+        self._initialized: bool = False
+        self.local.init_vars()
+        self._is_hidden: kInt = kInt()
+
+    def get_childs(self, widget: kWidget) -> List[KspNativeControl]:
+        out = list()
+        for child in widget.childs:
+            if isinstance(child, KspNativeControl):
+                out.append(child)
+            out.extend(self.get_childs(child))
+        return out
+
+    def initialize(self) -> None:
+        childs = self.get_childs(self)
+        self.child_ids = kArrInt(name=f'{self.name}_child_ids')
+        for child in childs:
+            self.child_ids.append(child.id)
+        # print(childs)
+        if len(self.child_ids) == 0:
+            self.child_ids.append(-1)
+        self.child_hide_state = kArrInt([-1] * len(self.child_ids),
+                                        name=f'{self.name}_child_hides',
+                                        size=len(self.child_ids))
+
+        self._initialized = True
+
+    # @abstractmethod
+    def show(self) -> None:
+        ...
+
+    @local('hide')
+    def show_childs(self,
+                    hide: kInt=0
+                    ) -> None:
+        assert self._initialized, 'not initialized'
+        with If(self._is_hidden > 0):
+            with For(len(self.child_ids)) as seq:
+                for child in seq:
+                    with If(self.child_hide_state[child] == -1):
+                        hide <<= HIDE_PART_NOTHING
+                    with Else():
+                        hide <<= self.child_hide_state[child]
+                    set_control_par(self.child_ids[child],
+                                    CONTROL_PAR_HIDE,
+                                    hide)
+            self._is_hidden <<= -1
+
+    # @abstractmethod
+    def hide(self) -> None:
+        ...
+
+    def hide_childs(self) -> None:
+        assert self._initialized, 'not initialized'
+        with If(self._is_hidden <= 0):
+            with For(len(self.child_ids)) as seq:
+                for child in seq:
+                    self.child_hide_state[child] <<= \
+                        get_control_par(self.child_ids[child],
+                                        CONTROL_PAR_HIDE)
+                    set_control_par(self.child_ids[child],
+                                    CONTROL_PAR_HIDE,
+                                    HIDE_WHOLE_CONTROL)
+            self._is_hidden <<= 1

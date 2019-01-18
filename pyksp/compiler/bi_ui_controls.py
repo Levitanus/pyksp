@@ -274,13 +274,13 @@ class kWidget(metaclass=WidgetMeta):
             return get_self_par(self.height, '_def_height')
 
         def center_w():
-            out = ((p_x + p_w) / 2) - int((s_w() / 2))
+            out = (p_x + p_w / 2) - int((s_w() / 2))
             if isinstance(out, float):
                 out = int(out)
             return out
 
         def center_h():
-            out = ((p_y + p_h) / 2) - int((s_h() / 2))
+            out = (p_y + p_h / 2) - int((s_h() / 2))
             if isinstance(out, float):
                 out = int(out)
             return out
@@ -332,9 +332,9 @@ class kWidget(metaclass=WidgetMeta):
         self.width <<= ((r - l) * columnspan) - left_offset - right_offset
         self.height <<= ((b - t) * rowspan) - top_offset - bottom_offset
 
-    def place(self, x: Optional[int]=None, y: Optional[int]=0,
+    def place(self, x: Optional[int]=None, y: Optional[int]=None,
               width: Optional[int]=None, height: Optional[int]=None,
-              x_pct: Optional[int]=None, y_pct: Optional[int]=0,
+              x_pct: Optional[int]=None, y_pct: Optional[int]=None,
               width_pct: Optional[int]=None,
               height_pct: Optional[int]=None):
         '''place widget depends on parent position
@@ -373,6 +373,7 @@ class kWidget(metaclass=WidgetMeta):
             self.x <<= self._parent.x + x
         if y:
             self.y <<= self._parent.y + y
+            # print(self.y._get_runtime())
         if width:
             self.width <<= width
         if height:
@@ -419,8 +420,9 @@ class kWidget(metaclass=WidgetMeta):
         p_b = get_runtime_val(self._parent.y + self._parent.height)
         if s_b > p_b:
             raise RuntimeError(
-                f'the right side of control {s_b} out of ' +
+                f'the bottom side of control {s_b} out of ' +
                 f'bounds of parent {p_b}')
+        # print(self.y._get_runtime())
 
     def place_pct(self, x: Optional[int]=None, y: Optional[int]=None,
                   width: Optional[int]=None, height: Optional[int]=None):
@@ -830,7 +832,7 @@ class kParVar(KSP):
         self._bounded_var = None
         self._is_set = int()
 
-        if value:
+        if value is not None:
             self._is_set += 1
             # self._var <<= value
             self._var._set_runtime(value)
@@ -1836,7 +1838,7 @@ class KspNativeControlMeta(WidgetMeta):
                               set_control_par_str, get_control_par_str,
                               CONTROL_PAR_HELP)
         cls.hide = ControlPar('hide', cls, kArrInt,
-                              kParIntVar, bControlHideConst, 1,
+                              kParIntVar, int, 1,
                               set_control_par, get_control_par,
                               CONTROL_PAR_HIDE)
         cls.z_layer = ControlPar('z_layer', cls, kArrInt,
@@ -1915,7 +1917,7 @@ class KspNativeControlMeta(WidgetMeta):
         cls.grid_height._init_control(obj, None)
 
         cls.help._init_control(obj, None)
-        cls.hide._init_control(obj, None)
+        cls.hide._init_control(obj, 1)
         cls.z_layer._init_control(obj, None)
         cls.key_alt._init_control(obj, 1)
         cls.key_control._init_control(obj, 1)
