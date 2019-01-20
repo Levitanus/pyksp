@@ -231,14 +231,16 @@ class Output(KSP):
         """Block any addition to Output.
 
         Raises AssertionError if has been blocked earlier"""
-        assert self._blocked is False, 'blocked yet'
+        if self._blocked is True:
+            raise RuntimeError('blocked yet')
         self._blocked = True
 
     def release(self) -> None:
         """Allow to add things to code.
 
         Raises AssertionError if has not been blocked earlier"""
-        assert self._blocked is True, 'has not been blocked'
+        if self._blocked is False:
+            raise RuntimeError('has not been blocked')
         self._blocked = False
 
     def put_to_queue(self, ast: 'AstRoot') -> None:
@@ -298,7 +300,8 @@ class Output(KSP):
         if self._block_in_queue:
             opened = self._block_in_queue[0]
             nextb = self._block_in_queue[1]
-            assert block == nextb, f'block {nextb} is waited by {opened}'
+            if block != nextb:
+                raise RuntimeError(f'block {nextb} is waited by {opened}')
             block_line = self._block_in_queue[2]
             self._block_in_queue = None
             self.indent_level -= 1
@@ -546,11 +549,6 @@ class NameVar(NameBase):
         NameVar.__scope.append(name)
         return None
 
-    @property
-    def full(self) -> str:
-        """Return full name even if it was compacted."""
-        return self._full
-
     @staticmethod
     def refresh() -> None:
         """Set all class variables to defaults."""
@@ -630,21 +628,24 @@ class CallbackBase(KSP):
         ...
 
 
+ListenerEventType = TypeVar('ListenerEventType', bound='ListenerEventBase')
+
+
 class EventListener(KSP):
     """Handle events and invocates functions at them."""
 
     _event_funcs: \
         Dict[Type['ListenerEventBase'],
-             Callable[['ListenerEventBase'], None]]
+             Callable[[ListenerEventType], None]]
 
     def __init__(self) -> None:
         """Initialize."""
         self._event_funcs: \
             Dict[Type['ListenerEventBase'],
-                 Callable[['ListenerEventBase'], None]] = dict()
+                 Callable[[ListenerEventType], None]] = dict()
 
     def bind_to_event(self,
-                      func: Callable[['ListenerEventBase'], None],
+                      func: Callable[[ListenerEventType], None],
                       event: Type['ListenerEventBase']) -> None:
         """Bind function to event type.
 

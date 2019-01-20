@@ -12,3 +12,9 @@ pyksp/compiler2/tests/__pycache__/
 *.pyc
 
 \.ropeproject/
+
+tests/
+
+old/
+
+cover/

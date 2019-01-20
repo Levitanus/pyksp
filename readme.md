@@ -2,6 +2,8 @@
 
 package, provides API to compilation, testing and maintaining of KSP (NI KONTAKT) code from Python.
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/af2970c7afb14904a9e4425ebe4dc55f)](https://www.codacy.com/app/Levitanus/pyksp?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Levitanus/pyksp&amp;utm_campaign=Badge_Grade)
+
 ## what is pyksp
 
 It provides API for generating code from python source to NI Kontakt language: KSP.
