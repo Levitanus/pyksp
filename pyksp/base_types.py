@@ -23,15 +23,14 @@ from abc import abstractmethod
 if __name__ == '__main__':
     __name__ = 'pyksp.new_base_types'
 
-from .new_abstract import KspObject
-from .new_abstract import NameBase
-from .new_abstract import NameVar
-from .new_abstract import AstRoot
-from .new_abstract import AstString
-from .new_abstract import AstBase
-from .new_abstract import HasInit
-
-from .new_abstract import KSP
+from .abstract import KspObject
+from .abstract import NameBase
+from .abstract import NameVar
+from .abstract import AstRoot
+from .abstract import AstString
+from .abstract import AstBase
+from .abstract import HasInit
+from .abstract import KSP
 
 
 T = TypeVar('T')

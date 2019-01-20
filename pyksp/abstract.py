@@ -316,11 +316,13 @@ class Output(KSP):
             return
         self.indent_level -= 1
         self.put_immediatly(block.close)
-        assert self._blocks, 'all blocks are closed'
-        assert self._blocks[-1] is block, \
-            f'block {self._blocks[-1]} on the top of stack'
-        assert self.indent_level >= self._start_indent,\
-            f'indent level below stert. line: {block.close.expand()}'
+        if not self._blocks:
+            raise RuntimeError('all blocks are closed')
+        if self._blocks[-1] is not block:
+            raise RuntimeError(f'block {self._blocks[-1]} on the top of stack')
+        if self.indent_level < self._start_indent:
+            raise RuntimeError(
+                f'indent level below stert. line: {block.close.expand()}')
         self._blocks.pop()
 
     def wait_for_block(self, opened: 'OutputBlock',
