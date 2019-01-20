@@ -10,3 +10,5 @@ pyksp/compiler2/__pycache__/
 pyksp/compiler2/tests/__pycache__/
 
 *.pyc
+
+\.ropeproject/
