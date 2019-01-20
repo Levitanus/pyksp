@@ -1,5 +1,8 @@
 # pyksp
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/17d13dd7e2b6447c9947c5ef59324f08)](https://app.codacy.com/app/Levitanus/pyksp?utm_source=github.com&utm_medium=referral&utm_content=Levitanus/pyksp&utm_campaign=Badge_Grade_Settings)
+
+
 package, provides API to compilation, testing and maintaining of KSP (NI KONTAKT) code from Python.
 
 ## what is pyksp
