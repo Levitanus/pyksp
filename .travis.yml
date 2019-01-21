@@ -1,5 +1,12 @@
 language: python
 python:
   - "3.7-dev"
+install:
+  - pip install pytest-cov
+  - pip install pytest-xdist
+  - pip install codacy-coverage
 script:
+  - export CODACY_PROJECT_TOKEN=62f659419ef84f4cb09a104902e40664
   - pytest
+  - pytest --cov-report xml --cov=pyksp/tests
+  - python-codacy-coverage -r coverage.xml
