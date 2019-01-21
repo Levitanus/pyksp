@@ -256,13 +256,7 @@ class Output(KSP):
         from queue."""
         if self._blocked:
             return
-        if self._block_in_queue:
-            block = self._block_in_queue[0]
-            block_line = self._block_in_queue[2]
-            self._lines[block_line].line = block.close.expand()
-            self.indent_level -= 1
-            self._block_in_queue = None
-            self._blocks.pop()
+        self._check_block_in_queue()
         if not isinstance(ast, AstRoot):
             raise TypeError(
                 f'ast arg has to be of type AstRoot, passed: {ast}')
@@ -271,6 +265,15 @@ class Output(KSP):
             if ast.expanded is True:
                 del self._queue[idx]
         self.put_line(line)
+
+    def _check_block_in_queue(self) -> None:
+        if self._block_in_queue:
+            block = self._block_in_queue[0]
+            block_line = self._block_in_queue[2]
+            self._lines[block_line].line = block.close.expand()
+            self.indent_level -= 1
+            self._block_in_queue = None
+            self._blocks.pop()
 
     def put_line(self, line: ty.Union['AstNull', str],
                  idx: ty.Optional[int]=None,

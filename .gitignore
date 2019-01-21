@@ -18,3 +18,5 @@ tests/
 old/
 
 cover/
+
+htmlcov/
