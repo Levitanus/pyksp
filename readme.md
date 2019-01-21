@@ -11,12 +11,12 @@ This version of documentation asserts users familiar with KSP and Nills SublimeK
 
 The key features of pyksp are:
 
-*  support of unit tests
-*  support of gui tests
-*  no language restrictions and much more bad-syntax architecture safety (still SublimeKSP is parse source and interprets every line, pyksp responds only for the "real KSP" part, the rest You cad do, whatever Python allows)
-*  intelligent compilation (while SublimeKSP can expand source to 200-300K or MUCH more lines of code, before optimize it, pyksp compiles exactly what it needs)
-*  pretty amount of functions are well-documented and coder has to look into the KSP reference a little bit more rarely
-*  gui programming becomes a little bit funnier :)
+* support of unit tests
+* support of gui tests
+* no language restrictions and much more bad-syntax architecture safety (still SublimeKSP is parse source and interprets every line, pyksp responds only for the "real KSP" part, the rest You cad do, whatever Python allows)
+* intelligent compilation (while SublimeKSP can expand source to 200-300K or MUCH more lines of code, before optimize it, pyksp compiles exactly what it needs)
+* pretty amount of functions are well-documented and coder has to look into the KSP reference a little bit more rarely
+* gui programming becomes a little bit funnier :)
   
 Full list of SublimeKSP vs pyksp (I like SublimeKSP) You can find in the respective section.
 

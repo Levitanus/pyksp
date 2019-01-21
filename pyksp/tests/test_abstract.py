@@ -45,8 +45,8 @@ class TestKspObject(ut.TestCase):
             super().__init__(name, has_init=True)
 
     def runTest(self) -> None:
-        with_init = self.WithInit()
-        without_init = self.WithoutInit()
+        self.WithInit()
+        self.WithoutInit()
         self.assertEqual(self.WithInit.generate_inits(),
                          ['init of test_object'])
 

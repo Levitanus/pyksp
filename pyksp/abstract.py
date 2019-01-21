@@ -3,10 +3,7 @@ from abc import ABCMeta
 from abc import abstractmethod
 import hashlib
 
-from types import MethodType
-
 import typing as ty
-import typing_extensions as te
 
 T = ty.TypeVar('T')
 # OutputGot = ty.NewType('OutputGot', ty.List[ty.Union['AstNull', str]])
@@ -308,7 +305,6 @@ class Output(KSP):
             nextb = self._block_in_queue[1]
             if block != nextb:
                 raise RuntimeError(f'block {nextb} is waited by {opened}')
-            block_line = self._block_in_queue[2]
             self._block_in_queue = None
             self.indent_level -= 1
             self._blocks.pop()
@@ -382,8 +378,8 @@ class OutputBlock:
         for string in (open_str, close_str):
             if not isinstance(string, str):
                 raise TypeError(
-                    'arguments have to be strings, pasted:%s' % (open_str,
-                                                                 close_str))
+                    'arguments have to be strings, pasted:%s%s' % (open_str,
+                                                                   close_str))
         self.open_str = open_str
         self.close_str = close_str
         self.open = AstString(open_str)
