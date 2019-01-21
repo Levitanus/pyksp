@@ -7,5 +7,5 @@ install:
   - pip install codacy-coverage
 script:
   - export CODACY_PROJECT_TOKEN=62f659419ef84f4cb09a104902e40664
-  - pytest --cov-report xml --cov=pyksp/tests
+  - pytest --cov-report xml 
   - python-codacy-coverage -r coverage.xml
