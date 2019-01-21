@@ -252,6 +252,7 @@ class TestOutput(ut.TestCase):
         self.assertEqual(out.get_str(), 'line')
 
 
+# @ut.skip
 class TestKSP(ut.TestCase):
 
     def tearDown(self) -> None:
