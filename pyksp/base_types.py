@@ -1,27 +1,9 @@
-from typing import TypeVar
-from typing import Type
-from typing import List
-from typing import Dict
-from typing import Optional
-from typing import Tuple
-from typing import Any
-from typing import NoReturn
-from typing import Callable
-from typing import ClassVar
-from typing import Set
-from typing import Sequence
-from typing import cast
-from typing import Union
-from typing import NewType
-from typing import Generic
-from typing import overload
-# from typing import Protocol
-# from typing import runtime
+import typing as ty
 from abc import ABCMeta
 from abc import abstractmethod
 
 if __name__ == '__main__':
-    __name__ = 'pyksp.new_base_types'
+    __name__ = 'pyksp.base_types'
 
 from .abstract import KspObject
 from .abstract import NameBase
@@ -33,29 +15,29 @@ from .abstract import HasInit
 from .abstract import KSP
 
 
-T = TypeVar('T')
-KT = TypeVar('KT', int, float, str)
-KVT = TypeVar('KVT', bound='KspVar')
-NT = TypeVar('NT', int, float)
-# AT = TypeVar('AT', bound='KspVar[KT]')
+T = ty.TypeVar('T')
+KT = ty.TypeVar('KT', int, float, str)
+KVT = ty.TypeVar('KVT', bound='KspVar')
+NT = ty.TypeVar('NT', int, float)
+# AT = ty.TypeVar('AT', bound='KspVar[KT]')
 
-ATU = Union['KspVar[KT]', 'AstBase[KT]', 'Magic[KT]', KT]
-STU = Union['KspVar[KT]', 'AstBase[KT]', 'Magic[KT]', str]
-NTU = Union['KspVar[NT]', 'AstBase[NT]', 'ProcessNum[NT]', NT]
-NotVarNTU = Union['AstBase[NT]', 'ProcessNum[NT]', NT]
+ATU = ty.Union['KspVar[KT]', 'AstBase[KT]', 'Magic[KT]', KT]
+STU = ty.Union['KspVar[KT]', 'AstBase[KT]', 'Magic[KT]', str]
+NTU = ty.Union['KspVar[NT]', 'AstBase[NT]', 'ProcessNum[NT]', NT]
+NotVarNTU = ty.Union['AstBase[NT]', 'ProcessNum[NT]', NT]
 
 
-@overload
+@ty.overload
 def get_value(value: ATU[int]) -> int:
     ...
 
 
-@overload
+@ty.overload
 def get_value(value: ATU[str]) -> str:
     ...
 
 
-@overload
+@ty.overload
 def get_value(value: ATU[float]) -> float:
     ...
 
@@ -70,17 +52,17 @@ def get_value(value: ATU[KT]) -> KT:
     raise TypeError(f"Can't infer type of {value}")
 
 
-@overload
+@ty.overload
 def get_compiled(value: ATU[int]) -> str:
     ...
 
 
-@overload
+@ty.overload
 def get_compiled(value: ATU[str]) -> str:
     ...
 
 
-@overload
+@ty.overload
 def get_compiled(value: ATU[float]) -> str:
     ...
 
@@ -97,14 +79,15 @@ def get_compiled(value: ATU[KT]) -> str:
     raise TypeError(f"Can't infer type of {value}")
 
 
-def get_value_type(value: ATU[KT]) -> Type[KT]:
+def get_value_type(value: ATU[KT]) -> ty.Type[KT]:
     checked = get_value(value)
     c_type = type(checked)
-    assert c_type in (int, str, float), f'can not infer type of {value}'
+    if c_type not in (int, str, float):
+        raise TypeError(f'can not infer type of {value}')
     return c_type
 
 
-class Magic(KSP, Generic[KT]):
+class Magic(KSP, ty.Generic[KT]):
     ...
 
 
@@ -131,12 +114,12 @@ class AstConcatString(AstBase[str], ConcatsStrings):
         return str(get_value(self.arg1)) + str(get_value(self.arg2))
 
 
-FT = TypeVar('FT', bound=Callable[..., Any])
+FT = ty.TypeVar('FT', bound=ty.Callable[..., ty.Any])
 
 
 def ducktype_num_magic(method: FT) -> FT:
 
-    def wrpapper(self: 'ProcessNum[NT]', other: NTU[NT]) -> Any:
+    def wrpapper(self: 'ProcessNum[NT]', other: NTU[NT]) -> ty.Any:
         other = self._check_for_int(other)  # type: ignore
         value = get_value(other)
         if not isinstance(value, self._ref_type):
@@ -144,13 +127,13 @@ def ducktype_num_magic(method: FT) -> FT:
                 f'incompatible type: {type(other)}' +
                 f'-> {NTU[self._ref_type]}')   # type: ignore
         return method(self, other)
-    return cast(FT, wrpapper)
+    return ty.cast(FT, wrpapper)
 
 
-class ProcessNum(Magic[NT], Generic[NT]):
-    _ref_type: Type[NT]
+class ProcessNum(Magic[NT], ty.Generic[NT]):
+    _ref_type: ty.Type[NT]
 
-    def _check_for_int(self, other: NTU[NT]) -> Union[NTU[NT], float]:
+    def _check_for_int(self, other: NTU[NT]) -> ty.Union[NTU[NT], float]:
         if isinstance(other, int) and issubclass(self._ref_type, float):
             return float(other)
         return other
@@ -290,7 +273,7 @@ class ProcessNum(Magic[NT], Generic[NT]):
         return AstRshift(other, self)
 
 
-class KspVar(KspObject, HasInit, Generic[KT]):
+class KspVar(KspObject, HasInit, ty.Generic[KT]):
     names_count: int = 0
 
     class Persist:
@@ -305,10 +288,10 @@ class KspVar(KspObject, HasInit, Generic[KT]):
         def __init__(self, line: str='') -> None:
             self.line = line
 
-    not_persistent: ClassVar[Persist] = Persist()
-    persistent: ClassVar[Persist] = Persist('make_persistent')
-    inst_persistent: ClassVar[Persist] = Persist('make_instr_persistent')
-    read_persistent: ClassVar[Persist] = Persist('make_persistent')
+    not_persistent: ty.ClassVar[Persist] = Persist()
+    persistent: ty.ClassVar[Persist] = Persist('make_persistent')
+    inst_persistent: ty.ClassVar[Persist] = Persist('make_instr_persistent')
+    read_persistent: ty.ClassVar[Persist] = Persist('make_persistent')
 
     def __init__(self,
                  value: KT,
@@ -317,7 +300,8 @@ class KspVar(KspObject, HasInit, Generic[KT]):
                  preserve_name: bool=False,
                  *, local: bool=False) -> None:
         if local:
-            assert name
+            if not name:
+                raise TypeError('local name can not be empty')
             sup_name = NameBase(name)
             has_init = False
         else:
@@ -336,15 +320,15 @@ class KspVar(KspObject, HasInit, Generic[KT]):
             self.name.prefix = '~'
         else:
             raise TypeError(f"Can't infer type of value {value}")
-        self._ref_type: Type[KT] = type(value)
+        self._ref_type: ty.Type[KT] = type(value)
         self._init_val: KT = value
         self._persist: KspVar.Persist = persist
 
     @abstractmethod
-    def get_decl_line(self) -> List[str]:
+    def get_decl_line(self) -> ty.List[str]:
         ...
 
-    def generate_init(self) -> List[str]:
+    def generate_init(self) -> ty.List[str]:
         out = self.get_decl_line()
         if self._persist is not self.not_persistent:
             out.append(f'{self._persist.line}({self.name()})')
@@ -372,6 +356,23 @@ class KspVar(KspObject, HasInit, Generic[KT]):
         obj.name.postfix = postfix
         return obj
 
+    def _make_copy(self, other: 'KspVar[KT]',
+                   value: KT, new_type: ty.Type[KVT]) -> KVT:
+        name = self.name.name
+        prefix = self.name.prefix
+        postfix = self.name.postfix
+        if isinstance(other, new_type):
+            ret_obj = other.copy(name, prefix, postfix)
+            ret_obj._value = value
+        else:
+            ret_obj = new_type(value, name, local=True)
+            ret_obj.name.prefix = prefix
+            ret_obj.name.postfix = postfix
+
+        otpt = self.get_out()
+        otpt.put_immediatly(AstAssign(self, other))
+        return ret_obj
+
 
 class Str(KspVar[str], ConcatsStrings):
 
@@ -382,23 +383,11 @@ class Str(KspVar[str], ConcatsStrings):
         value = get_value(other)
         if not isinstance(value, str):
             value = f'{value}'
-        name = self.name.name
-        prefix = self.name.prefix
-        postfix = self.name.postfix
-        if isinstance(other, Str):
-            ret_obj = other.copy(name, prefix, postfix)
-            ret_obj._value = value
-        else:
-            ret_obj = Str(value, name, local=True)
-            ret_obj.name.prefix = prefix
-            ret_obj.name.postfix = postfix
-
-        otpt = self.get_out()
-        otpt.put_immediatly(AstAssign(self, other))
+        ret_obj = self._make_copy(other, value, Str)
 
         return ret_obj
 
-    def get_decl_line(self) -> List[str]:
+    def get_decl_line(self) -> ty.List[str]:
         out = [f'declare {self.name()}']
         if self._init_val:
             out.append(f'{self.name()} := {self._init_val}')
@@ -413,25 +402,13 @@ class Num(KspVar[NT], ProcessNum[NT]):
     def __ilshift__(self, other: ATU[NT]) -> 'Num[NT]':  # type: ignore
         other = self._check_for_int(other)  # type: ignore
         value = get_value(other)
-        assert isinstance(value, self._ref_type), \
-            f'assigned to a value of wrong type: {value}'
-        name = self.name.name
-        prefix = self.name.prefix
-        postfix = self.name.postfix
-        if isinstance(other, Num):
-            ret_obj = other.copy(name, prefix, postfix)
-            ret_obj._value = value
-        else:
-            ret_obj = Num(value, name, local=True)
-            ret_obj.name.prefix = prefix
-            ret_obj.name.postfix = postfix
-
-        otpt = self.get_out()
-        otpt.put_immediatly(AstAssign(self, other))
+        if not isinstance(value, self._ref_type):
+            raise TypeError(f'assigned to a value of wrong type: {value}')
+        ret_obj = self._make_copy(other, value, Num)
 
         return ret_obj
 
-    def get_decl_line(self) -> List[str]:
+    def get_decl_line(self) -> ty.List[str]:
         value = ''
         if self._init_val:
             value = f' := {self._init_val}'
@@ -466,28 +443,29 @@ class Num(KspVar[NT], ProcessNum[NT]):
             raise TypeError('availble only for KSP float expression')
         return self.__ilshift__(AstPow(self, other))  # type: ignore
 
-    def __iand__(self, other: NTU[NT]) -> NoReturn:
+    def __iand__(self, other: NTU[NT]) -> ty.NoReturn:
         raise NotImplementedError
 
-    def __ior__(self, other: NTU[NT]) -> NoReturn:
+    def __ior__(self, other: NTU[NT]) -> ty.NoReturn:
         raise NotImplementedError
 
 
-def inc(var: Num[int]) -> None:
+def _assert_Num_int(var):
     if not isinstance(var, Num):
         raise TypeError(f'can only be used with {Num[int]}')
     if not issubclass(get_value_type(var), int):
         raise TypeError(f'can only be used with {Num[int]}')
+
+
+def inc(var: Num[int]) -> None:
+    _assert_Num_int(var)
     out = var.get_out()
     out.put_immediatly(AstBuiltInBase(None, 'inc', var))
     var._value += 1
 
 
 def dec(var: Num[int]) -> None:
-    if not isinstance(var, Num):
-        raise TypeError(f'can only be used with {Num[int]}')
-    if not issubclass(get_value_type(var), int):
-        raise TypeError(f'can only be used with {Num[int]}')
+    _assert_Num_int(var)
     out = var.get_out()
     out.put_immediatly(AstBuiltInBase(None, 'dec', var))
     var._value -= 1
@@ -513,23 +491,26 @@ class AstAssign(AstRoot):
             raise TypeError(f"Can't infer type of value {self.from_arg}")
         return f'{to} := {from_str}'
 
-    def get_value(self) -> NoReturn:
+    def get_value(self) -> ty.NoReturn:
         raise self.NullError
 
 
 class AstBuiltInBase(AstRoot, AstBase[KT]):
-    _ref_type: Optional[Type[KT]]
-    _value: Optional[KT]
-    args: List[str]
+    _ref_type: ty.Optional[ty.Type[KT]]
+    _value: ty.Optional[KT]
+    args: ty.List[str]
     string: str
 
-    def __init__(self, ret_val: Optional[KT], string: str, *args: ATU) -> None:
+    def __init__(self,
+                 ret_val: ty.Optional[KT],
+                 string: str,
+                 *args: ATU) -> None:
         if ret_val is not None:
             self._ref_type = get_value_type(ret_val)
         else:
             self._ref_type = None
-        self._value: Optional[KT] = ret_val
-        self.args: List[str] = list(map(get_compiled, args))
+        self._value: ty.Optional[KT] = ret_val
+        self.args: ty.List[str] = list(map(get_compiled, args))
         self.string = string
 
     def expand(self) -> str:
@@ -543,8 +524,8 @@ class AstBuiltInBase(AstRoot, AstBase[KT]):
 
 class AstOperatorUnary(AstBase[NT], ProcessNum[NT]):
     arg1: NTU[NT]
-    string: ClassVar[str]
-    priority: ClassVar[int]
+    string: ty.ClassVar[str]
+    priority: ty.ClassVar[int]
 
     def __init__(self, arg1: NTU[NT]) -> None:
         self._ref_type = get_value_type(arg1)
@@ -572,7 +553,7 @@ class AstOperatorDouble(AstOperatorUnary[NT]):
 class AstOperatorDoubleStandart(AstOperatorDouble[NT]):
 
     def _expand_with_string(self, string: str) -> str:
-        pr: List[int] = list()
+        pr: ty.List[int] = list()
         for arg in (self.arg1, self.arg2):
             if isinstance(arg, AstOperatorUnary):
                 pr.append(arg.priority)
@@ -608,7 +589,7 @@ class AstBool(AstBase[NT]):
 
 
 class AstCanBeBool(AstOperatorDoubleStandart[NT], AstBool[NT]):
-    string_bool: ClassVar[str]
+    string_bool: ty.ClassVar[str]
 
     def expand_bool(self) -> str:
         return self._expand_with_string(self.string_bool)
@@ -627,7 +608,8 @@ class AstNot(AstOperatorUnaryStandart[int]):
     string = '.not.'
 
     def get_value(self) -> int:
-        assert issubclass(self._ref_type, int)
+        if not issubclass(self._ref_type, int):
+            raise TypeError('works only on ints')
         return ~self.arg1_pure
 
 
@@ -731,7 +713,8 @@ class AstAnd(AstCanBeBool[NT]):
     string_bool = 'and'
 
     def get_value(self) -> NT:
-        assert issubclass(self._ref_type, int)
+        if not issubclass(self._ref_type, int):
+            raise TypeError('waorks only on ints')
         return self.arg1_pure & self.arg2_pure
 
     def __bool__(self) -> bool:
@@ -746,7 +729,8 @@ class AstOr(AstCanBeBool[NT]):
     string_bool = 'or'
 
     def get_value(self) -> NT:
-        assert issubclass(self._ref_type, int)
+        if not issubclass(self._ref_type, int):
+            raise TypeError('waorks only on ints')
         return self.arg1_pure | self.arg2_pure
 
     def __bool__(self) -> bool:
@@ -757,7 +741,7 @@ class AstOr(AstCanBeBool[NT]):
 
 class OperatorComparisson(AstOperatorDoubleStandart[NT], AstBool[NT]):
 
-    def get_value(self) -> NoReturn:
+    def get_value(self) -> ty.NoReturn:
         raise NotImplementedError
 
 
@@ -821,44 +805,44 @@ class AstGe(OperatorComparisson[NT]):
         return False
 
 
-out = KSP.new_out()
-a = Str('3')
-# get_value(1)
-# get_value('s')
+if __name__ == '__main__':
+    out = KSP.new_out()
+    a = Str('3')
+    # get_value(1)
+    # get_value('s')
 
+    b = Num(4, name='b', local=True)
+    get_value(b)
+    c = Num(5)
+    print(b.name())
+    b <<= c
+    print(b, b.val, b.name())
+    b <<= 15
+    # a <<= 3
 
-b = Num(4, name='b', local=True)
-get_value(b)
-c = Num(5)
-print(b.name())
-b <<= c
-print(b, b.val, b.name())
-b <<= 15
-# a <<= 3
+    if b == c:
+        print('True')
+    else:
+        print(False)
 
-if b == c:
-    print('True')
-else:
-    print(False)
+    d = Num(4.1, 'd')
+    # reveal_type(d)
+    d <<= 3
+    print(d.val)
+    get_value(d)
+    # reveal_type(d)
+    # b <<= 3.1
+    # d <<= b
+    d <<= -d
+    # reveal_type(-d)
+    inc(b)
+    # inc(d)
+    dec(b)
 
-d = Num(4.1, 'd')
-# reveal_type(d)
-d <<= 3
-print(d.val)
-get_value(d)
-# reveal_type(d)
-# b <<= 3.1
-# d <<= b
-d <<= -d
-# reveal_type(-d)
-inc(b)
-# inc(d)
-dec(b)
+    c += b
+    c <<= b / (2 + b)
+    c <<= b << 2 * (15 / b)
+    print(f'c = {c.val}')
+    # c <<= b // c
 
-c += b
-c <<= b / (2 + b)
-c <<= b << 2 * (15 / b)
-print(f'c = {c.val}')
-# c <<= b // c
-
-print(str(out))
+    print(str(out))

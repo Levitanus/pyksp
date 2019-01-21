@@ -1,9 +1,6 @@
 import unittest as ut
 import typing as ty
 
-if __name__ == '__main__':
-    __name__ = 'pyksp.tests.test_abstract'
-
 from .. import abstract as ab
 from textwrap import dedent
 
@@ -187,18 +184,10 @@ class TestOutput(ut.TestCase):
         with self.assertRaises(RuntimeError):
             out.close_block(ab.OutputBlock('if', 'end if'))
         out.open_block(ab.OutputBlock('on init', 'end on'))
-        out.put_immediatly(self.ast)
-        out.open_block(ab.OutputBlock('if', 'end if'))
-        out.put_immediatly(self.ast)
-        out.wait_for_block(ab.OutputBlock('if', 'end if'),
-                           ab.OutputBlock('else', 'end if'))
+        self.if_elif(out)
         with self.assertRaises(RuntimeError):
             out.open_block(ab.OutputBlock('if', 'end if'))
-        out.put_immediatly(self.ast)
-        out.open_block(ab.OutputBlock('if', 'end if'))
-        out.put_immediatly(self.ast)
-        out.wait_for_block(ab.OutputBlock('if', 'end if'),
-                           ab.OutputBlock('else', 'end if'))
+        self.if_elif(out)
         out.open_block(ab.OutputBlock('else', 'end if'))
         out.put_immediatly(self.ast)
         out.put_to_queue(ab.AstString('queued_line'))
@@ -233,6 +222,13 @@ class TestOutput(ut.TestCase):
         newOut = ab.Output(0)
         newOut.put_lines(got)
         self.assertEqual(newOut.get_str(), out_str)
+
+    def if_elif(self, out: ab.Output) -> None:
+        out.put_immediatly(self.ast)
+        out.open_block(ab.OutputBlock('if', 'end if'))
+        out.put_immediatly(self.ast)
+        out.wait_for_block(ab.OutputBlock('if', 'end if'),
+                           ab.OutputBlock('else', 'end if'))
 
     def test_blocking(self) -> None:
         out = ab.Output(0)

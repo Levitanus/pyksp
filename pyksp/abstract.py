@@ -10,6 +10,8 @@ T = ty.TypeVar('T')
 
 
 class OutputGot(ty.List['OutputLine']):
+    """List subclass handling output lines."""
+
     pass
 
 
@@ -351,6 +353,7 @@ class Output(KSP):
         return OutputGot(self._lines)
 
     def get_str(self) -> str:
+        """Get only lines of output, without wraped lines."""
         out = ''
         for line in self.get():
             if isinstance(line.line, AstNull):
@@ -396,6 +399,7 @@ class OutputBlock:
             return False
 
     def __str__(self) -> str:
+        """Human-readable string representation."""
         return f'OutputBlock ({self.open_str}, {self.close_str})'
 
 
@@ -436,6 +440,7 @@ class AstRootMeta(KSPBaseMeta, ABCMeta):
         return cls
 
     def __call__(cls, *args: ty.Any, **kwargs: ty.Any) -> 'AstRoot':
+        """Set _expanded attribute to False at object construction."""
         obj = super().__call__(*args, **kwargs)
         obj._expanded = False
         return obj
