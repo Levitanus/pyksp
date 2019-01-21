@@ -5,26 +5,27 @@ import hashlib
 
 from types import MethodType
 
-from typing import TypeVar
-from typing import Type
-from typing import List
-from typing import Dict
-from typing import Optional
-from typing import Tuple
-from typing import Any
-from typing import NoReturn
-from typing import Callable
-from typing import ClassVar
-from typing import Set
-from typing import Sequence
-from typing import cast
-from typing import Union
-from typing import NewType
-from typing import Generic
-from typing_extensions import Protocol
-from typing_extensions import runtime
+import typing as ty
+import typing_extensions as te
 
-T = TypeVar('T')
+T = ty.TypeVar('T')
+# OutputGot = ty.NewType('OutputGot', ty.List[ty.Union['AstNull', str]])
+
+
+class OutputGot(ty.List['OutputLine']):
+    pass
+
+
+class OutputLine:
+    """Handle line content and indent level."""
+
+    __slots__ = 'line', 'indent'
+
+    def __init__(self, line: ty.Union['AstNull', str],
+                 indent: int) -> None:
+        """Initialize."""
+        self.line = line
+        self.indent = indent
 
 
 class KSPBaseMeta(ABCMeta):
@@ -45,16 +46,16 @@ class KSP(metaclass=KSPBaseMeta):
 
     __slots__ = '__dict__'
 
-    __script: Optional['ScriptBase'] = None
-    __output: Optional['Output'] = None
-    __outputs: List['Output'] = list()
-    __listener: Optional['EventListener'] = None
+    __script: ty.Optional['ScriptBase'] = None
+    __output: ty.Optional['Output'] = None
+    __outputs: ty.List['Output'] = list()
+    __listener: ty.Optional['EventListener'] = None
     __is_compiled: bool = False
-    __callback: Optional['CallbackBase'] = None
+    __callback: ty.Optional['CallbackBase'] = None
     __is_bool: bool = False
-    __inits: List['HasInit'] = list()
+    __inits: ty.List['HasInit'] = list()
     docs: bool = False
-    indents: int = 0
+    indents: int = 4
     compacted_names: bool = False
 
     @staticmethod
@@ -69,7 +70,7 @@ class KSP(metaclass=KSPBaseMeta):
         KSP.__inits = list()
         KSP.__outputs = list()
         KSP.docs = False
-        KSP.indents = 0
+        KSP.indents = 4
 
     class NoBaseError(Exception):
         """NoBaseError."""
@@ -84,7 +85,7 @@ class KSP(metaclass=KSPBaseMeta):
         KSP.__inits.append(init)
 
     @staticmethod
-    def get_inits() -> List['HasInit']:
+    def get_inits() -> ty.List['HasInit']:
         """Return all objects with inits."""
         return KSP.__inits
 
@@ -110,12 +111,14 @@ class KSP(metaclass=KSPBaseMeta):
         """Return current Output object."""
         # if not KSP.__is_compiled:
         #     return Output(0)
+        if not KSP.__outputs:
+            raise RuntimeError('No Output availble')
         return KSP.__outputs[-1]
 
     @staticmethod
     def pop_out() -> 'OutputGot':
         """Return lines from the current Output and delete it."""
-        out = KSP.__outputs[-1].get()
+        out: 'OutputGot' = KSP.__outputs[-1].get()
         KSP.__outputs.pop()
         return out
 
@@ -160,7 +163,7 @@ class KSP(metaclass=KSPBaseMeta):
         KSP.__callback = obj
 
     @staticmethod
-    def callback() -> Optional[object]:
+    def callback() -> ty.Optional[object]:
         """Retrieve current callback.
 
         Return CallbackBase object or None"""
@@ -190,22 +193,12 @@ class ScriptBase(KSP):
     @abstractmethod
     def main(self) -> None:
         """Has to be overloaded by the main compilation function."""
-        ...
+        pass
 
     @abstractmethod
     def compile(self) -> None:
         """Compile the script."""
-        ...
-
-
-OutputGot = NewType('OutputGot', List[Union['AstNull', str]])
-# class OutputGot:
-#     """Handles return from Output."""
-
-#     def __init__(self, lines: str, queue: List['AstRoot']) -> None:
-#         """Keep asrgs."""
-#         self.lines = lines
-#         self.queue = queue
+        pass
 
 
 class Output(KSP):
@@ -218,11 +211,14 @@ class Output(KSP):
         """Initialize.
 
         indent level has to be 0 or been taken from the last used Output"""
-        self._queue: List['AstRoot'] = list()
-        self._blocks: List['OutputBlock'] = list()
-        self._lines: List[Union['AstNull', str]] = list()
+        if not isinstance(indent_level, int) or indent_level < 0:
+            raise TypeError(
+                f'ident_level has to be int >= 0, pasted {indent_level}')
+        self._queue: ty.List['AstRoot'] = list()
+        self._blocks: ty.List['OutputBlock'] = list()
+        self._lines: ty.List[OutputLine] = list()
         self._block_in_queue: \
-            Optional[Tuple['OutputBlock', 'OutputBlock', int]] = None
+            ty.Optional[ty.Tuple['OutputBlock', 'OutputBlock', int]] = None
         self._start_indent = indent_level
         self.indent_level = indent_level
         self._blocked = False
@@ -264,29 +260,39 @@ class Output(KSP):
         if self._block_in_queue:
             block = self._block_in_queue[0]
             block_line = self._block_in_queue[2]
-            self._lines[block_line] = block.close.expand()
+            self._lines[block_line].line = block.close.expand()
+            self.indent_level -= 1
             self._block_in_queue = None
             self._blocks.pop()
+        if not isinstance(ast, AstRoot):
+            raise TypeError(
+                f'ast arg has to be of type AstRoot, passed: {ast}')
         line = ast.expand()
         for idx, ast in enumerate(self._queue):
             if ast.expanded is True:
                 del self._queue[idx]
         self.put_line(line)
 
-    def put_line(self, line: Union['AstNull', str]) -> None:
+    def put_line(self, line: ty.Union['AstNull', str],
+                 idx: ty.Optional[int]=None,
+                 indent: int=0) -> None:
         """Put expanded line or AstNull to list with correct indent."""
         if self._blocked:
             return
         if isinstance(line, AstNull):
-            self._lines.append(line)
+            if not idx:
+                self._lines.append(OutputLine(line,
+                                              self.indent_level + indent))
+            else:
+                self._lines[idx].line = line
             return
-        newline: str = ' ' * KSP.indents * self.indent_level + line
-        self._lines.append(newline)
+        # newline: str = ' ' * KSP.indents * self.indent_level + line
+        self._lines.append(OutputLine(line, self.indent_level + indent))
 
     def put_lines(self, lines: OutputGot) -> None:
         """Put lines from another Output object to list."""
         for line in lines:
-            self.put_line(line)
+            self.put_line(line.line, indent=line.indent)
 
     def open_block(self, block: 'OutputBlock') -> None:
         """Open block, increase indent level.
@@ -314,15 +320,17 @@ class Output(KSP):
         """Close block and decrease indent level."""
         if self._blocked:
             return
-        self.indent_level -= 1
-        self.put_immediatly(block.close)
         if not self._blocks:
             raise RuntimeError('all blocks are closed')
-        if self._blocks[-1] is not block:
+        if self._blocks[-1] != block:
             raise RuntimeError(f'block {self._blocks[-1]} on the top of stack')
+        # if self._block_in_queue and self._block_in_queue[0] == block:
+        #     self._block_in_queue = None
         if self.indent_level < self._start_indent:
             raise RuntimeError(
                 f'indent level below stert. line: {block.close.expand()}')
+        self.indent_level -= 1
+        self.put_immediatly(block.close)
         self._blocks.pop()
 
     def wait_for_block(self, opened: 'OutputBlock',
@@ -331,6 +339,7 @@ class Output(KSP):
         if self._blocked:
             return
         self._block_in_queue = (opened, next_block, len(self._lines))
+        self._lines.append(OutputLine(AstNull(), self.indent_level - 1))
         return
 
     def get(self) -> OutputGot:
@@ -342,16 +351,22 @@ class Output(KSP):
             if i.expanded:
                 del self._queue[idx]
             else:
-                self._lines[i.queue_line] = i.expand()
-        return cast(OutputGot, self._lines)
+                self._lines[i.queue_line].line = i.expand()
+        return OutputGot(self._lines)
+
+    def get_str(self) -> str:
+        out = ''
+        for line in self.get():
+            if isinstance(line.line, AstNull):
+                continue
+            out += '\n' + ' ' * (line.indent * KSP.indents) + line.line
+        return out[1:]
 
     def __str__(self) -> str:
         """Return header line and all lines in readable format."""
-        out = f'Output from {self.__repr__()}'
-        for line in self._lines:
-            if isinstance(line, AstNull):
-                continue
-            out += '\n' + line
+        out = f'----------Output from {self.__repr__()}----------'
+        out += self.get_str()
+        out += '\n----------END----------'
         return out
 
 
@@ -364,12 +379,17 @@ class OutputBlock:
 
     def __init__(self, open_str: str, close_str: str) -> None:
         """Initialize."""
+        for string in (open_str, close_str):
+            if not isinstance(string, str):
+                raise TypeError(
+                    'arguments have to be strings, pasted:%s' % (open_str,
+                                                                 close_str))
         self.open_str = open_str
         self.close_str = close_str
         self.open = AstString(open_str)
         self.close = AstString(close_str)
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: ty.Any) -> bool:
         """Return True if both strings of blocks are equal."""
         if not isinstance(other, OutputBlock):
             return False
@@ -379,19 +399,22 @@ class OutputBlock:
         else:
             return False
 
+    def __str__(self) -> str:
+        return f'OutputBlock ({self.open_str}, {self.close_str})'
 
-class AstBase(KSP, Generic[T]):
+
+class AstBase(KSP, ty.Generic[T]):
     """Abstract base class for all Ast objects."""
 
     @abstractmethod
     def expand(self) -> str:
         """Recursively expand ast and return summary string."""
-        ...
+        pass
 
     @abstractmethod
     def get_value(self) -> T:
         """Recursively get runtime value of ast."""
-        ...
+        pass
 
 
 class AstRootMeta(KSPBaseMeta, ABCMeta):
@@ -401,8 +424,8 @@ class AstRootMeta(KSPBaseMeta, ABCMeta):
     at invocation"""
 
     def __new__(mcls, name: str,
-                bases: Tuple[type, ...],
-                namespace: Dict[str, Any]) -> Type['AstRoot']:
+                bases: ty.Tuple[type, ...],
+                namespace: ty.Dict[str, ty.Any]) -> ty.Type['AstRoot']:
         """Wrap expand() method for setting expanded to True."""
         cls = super().__new__(mcls, name, bases, namespace)
 
@@ -416,8 +439,13 @@ class AstRootMeta(KSPBaseMeta, ABCMeta):
 
         return cls
 
+    def __call__(cls, *args: ty.Any, **kwargs: ty.Any) -> 'AstRoot':
+        obj = super().__call__(*args, **kwargs)
+        obj._expanded = False
+        return obj
 
-class AstRoot(AstBase[T], Generic[T], metaclass=KSPBaseMeta):
+
+class AstRoot(AstBase[T], ty.Generic[T], metaclass=AstRootMeta):
     """Base class for AstRoot (e.g. potential starting of line)."""
 
     _queue_line: int
@@ -438,6 +466,8 @@ class AstRoot(AstBase[T], Generic[T], metaclass=KSPBaseMeta):
     @queue_line.setter
     def queue_line(self, line: int) -> None:
         """Set line of pasting to queue."""
+        if not isinstance(line, int):
+            raise TypeError(f'line argument has to be int, pasted: {line}')
         self._queue_line = line
 
     @property
@@ -448,7 +478,7 @@ class AstRoot(AstBase[T], Generic[T], metaclass=KSPBaseMeta):
     @abstractmethod
     def get_value(self) -> T:
         """Recursively get runtime value of ast."""
-        ...
+        pass
 
 
 class AstString(AstRoot[str]):
@@ -456,13 +486,15 @@ class AstString(AstRoot[str]):
 
     def __init__(self, string: str) -> None:
         """Initialize."""
+        if not isinstance(string, str):
+            raise TypeError(f'accepts only strings, pasted: {string}')
         self.string = string
 
     def expand(self) -> str:
         """Return stored string."""
         return self.string
 
-    def get_value(self) -> NoReturn:
+    def get_value(self) -> ty.NoReturn:
         """Raise NullError."""
         raise self.NullError
 
@@ -470,11 +502,11 @@ class AstString(AstRoot[str]):
 class AstNull(AstRoot):
     """Placeholder for queued Ast's."""
 
-    def expand(self) -> NoReturn:
+    def expand(self) -> ty.NoReturn:
         """Raise NullError."""
         raise self.NullError
 
-    def get_value(self) -> NoReturn:
+    def get_value(self) -> ty.NoReturn:
         """Raise NullError."""
         raise self.NullError
 
@@ -501,9 +533,9 @@ class NameBase(KSP):
 class NameVar(NameBase):
     """Variable name, can be hashed."""
 
-    __scope: List[str] = ['']
-    __names_full: List[str] = list()
-    __names_comp: List[str] = list()
+    __scope: ty.List[str] = ['']
+    __names_full: ty.List[str] = list()
+    __names_comp: ty.List[str] = list()
 
     def __init__(self,
                  name: str,
@@ -535,20 +567,20 @@ class NameVar(NameBase):
     def _hash_name(name: str) -> str:
         """Hashing function."""
         symbols = 'abcdefghijklmnopqrstuvwxyz012345'
-        hash = hashlib.new('sha1')
-        hash.update(name.encode('utf-8'))
+        hname = hashlib.new('sha1')
+        hname.update(name.encode('utf-8'))
         compact = ''.join((symbols[ch & 0x1F] for ch
-                           in hash.digest()[:5]))
+                           in hname.digest()[:5]))
         return compact
 
     @staticmethod
-    def scope(name: str='') -> Optional[str]:
+    def scope(name: str='') -> ty.Optional[str]:
         """Wrap all new declarations within the last put scope.
 
         if name is not passed, the last scope is removed from list"""
         if not name:
             return NameVar.__scope.pop()
-        NameVar.__scope.append(name)
+        NameVar.__scope.append(f'{name}_')
         return None
 
     @staticmethod
@@ -562,9 +594,9 @@ class HasInit(metaclass=KSPBaseMeta):
     """Has method generate_init."""
 
     @abstractmethod
-    def generate_init(self) -> List[str]:
+    def generate_init(self) -> ty.List[str]:
         """Return init lines in lint."""
-        ...
+        pass
 
 
 class KspObject(KSP):
@@ -581,10 +613,10 @@ class KspObject(KSP):
         self.name = name
 
     @staticmethod
-    def generate_inits() -> List[str]:
+    def generate_inits() -> ty.List[str]:
         """Return all init lines of declared instances."""
         inits = KSP.get_inits()
-        lines: List[str] = list()
+        lines: ty.List[str] = list()
         for init in inits:
             lines.extend(init.generate_init())
         return lines
@@ -593,62 +625,62 @@ class KspObject(KSP):
 class CallbackBase(KSP):
     """Abstract base class for Callbacks."""
 
-    __callbacks: List['CallbackBase']
+    __callbacks: ty.List['CallbackBase']
     __current: 'CallbackBase'
     __id: int
 
     @abstractmethod
-    def add_function(self, function: Callable[[], None]) -> None:
+    def add_function(self, function: ty.Callable[[], None]) -> None:
         """Add function to calling queue."""
-        ...
+        pass
 
     @abstractmethod
     def open(self) -> None:
         """Open callback block and set NI variables to it's values."""
-        ...
+        pass
 
     @abstractmethod
     def close(self, keep_type: bool=None) -> None:
         """Close callback block and make it init again."""
-        ...
+        pass
 
     @abstractmethod
-    def generate_body(self) -> List[OutputGot]:
+    def generate_body(self) -> ty.List[OutputGot]:
         """Return Output lines of invocated functions."""
-        ...
+        pass
 
     @staticmethod
     @abstractmethod
-    def get_all_bodies() -> List[OutputGot]:
+    def get_all_bodies() -> ty.List[OutputGot]:
         """Collect all bodies of all instantiated callbacks."""
-        ...
+        pass
 
     @staticmethod
     @abstractmethod
     def refresh() -> None:
         """Set class variables to defaults."""
-        ...
+        pass
 
 
-ListenerEventType = TypeVar('ListenerEventType', bound='ListenerEventBase')
+ListenerEventType = ty.TypeVar('ListenerEventType', bound='ListenerEventBase')
 
 
 class EventListener(KSP):
     """Handle events and invocates functions at them."""
 
     _event_funcs: \
-        Dict[Type['ListenerEventBase'],
-             Callable[[ListenerEventType], None]]
+        ty.Dict[ty.Type['ListenerEventBase'],
+                ty.Callable[[ListenerEventType], None]]
 
     def __init__(self) -> None:
         """Initialize."""
         self._event_funcs: \
-            Dict[Type['ListenerEventBase'],
-                 Callable[[ListenerEventType], None]] = dict()
+            ty.Dict[ty.Type['ListenerEventBase'],
+                    ty.Callable[[ListenerEventType], None]] = dict()
 
     def bind_to_event(self,
-                      func: Callable[[ListenerEventType], None],
-                      event: Type['ListenerEventBase']) -> None:
+                      func: ty.Callable[[ListenerEventType], None],
+                      event: ty.Type['ListenerEventBase']) -> None:
         """Bind function to event type.
 
         function will be invocated at every event of the type."""
