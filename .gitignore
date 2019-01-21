@@ -13,10 +13,10 @@ pyksp/compiler2/tests/__pycache__/
 
 \.ropeproject/
 
-tests/
-
 old/
 
 cover/
 
 htmlcov/
+
+tests_old/
