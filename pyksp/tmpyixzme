@@ -1,0 +1,15 @@
+
+import rope.base.project
+from rope.base import libutils
+
+myproject = rope.base.project.Project(
+    'E:/packages/pyksp')
+#myproject.validate('E:/packages/pyksp/pyksp/base_types.py')
+myproject.validate()
+ropy = libutils.path_to_resource(myproject, 'E:/packages/pyksp/pyksp/base_types.py')
+
+from rope.refactor.rename import Rename
+changes = Rename(myproject, ropy, 450).get_changes('KVrT', docs=True)
+myproject.do(changes)
+
+myproject.close()

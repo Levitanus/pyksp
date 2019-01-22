@@ -8,7 +8,7 @@ class TestBase(ut.TestCase):
     def tearDown(self) -> None:
         ab.KSP.refresh()
         ab.NameVar.refresh()
-        bt.KspVar.refresh()
+        bt.Var.refresh()
 
 
 class TestService(ut.TestCase):
@@ -257,3 +257,12 @@ class TestInts(TestBase):
         self.assertEqual(bt.get_compiled(abs(n)), 'abs($n)')
         self.assertEqual(bt.get_value(abs(n - 1)), 4)
         self.assertEqual(bt.get_compiled(abs(n - 1)), 'abs($n - 1)')
+
+
+class TestArray(TestBase):
+
+    def test_init(self) -> None:
+        with self.assertRaises(TypeError):
+            bt.Arr[int]('s')
+        a = bt.Arr[int]('s')
+        assert False

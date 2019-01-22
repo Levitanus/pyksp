@@ -1,6 +1,9 @@
 import typing as ty
 from abc import abstractmethod
 
+if __name__ == '__main__':
+    __name__ = 'pyksp.base_types'
+
 from .abstract import KspObject
 from .abstract import NameBase
 from .abstract import NameVar
@@ -9,17 +12,18 @@ from .abstract import AstString
 from .abstract import AstBase
 from .abstract import HasInit
 from .abstract import KSP
+from .abstract import KSPBaseMeta
 
 
 T = ty.TypeVar('T')
 KT = ty.TypeVar('KT', int, float, str)
-KVT = ty.TypeVar('KVT', bound='KspVar')
+KVT = ty.TypeVar('KVT', bound='kVar')
 NT = ty.TypeVar('NT', int, float)
-# AT = ty.TypeVar('AT', bound='KspVar[KT]')
+# AT = ty.TypeVar('AT', bound='kVar[KT]')
 
-ATU = ty.Union['KspVar[KT]', 'AstBase[KT]', 'Magic[KT]', KT]
-STU = ty.Union['KspVar[KT]', 'AstBase[KT]', 'Magic[KT]', str]
-NTU = ty.Union['KspVar[NT]', 'AstBase[NT]', 'ProcessNum[NT]', NT]
+ATU = ty.Union['kVar[KT]', 'AstBase[KT]', 'Magic[KT]', KT]
+STU = ty.Union['kVar[KT]', 'AstBase[KT]', 'Magic[KT]', str]
+NTU = ty.Union['kVar[NT]', 'AstBase[NT]', 'ProcessNum[NT]', NT]
 NotVarNTU = ty.Union['AstBase[NT]', 'ProcessNum[NT]', NT]
 
 
@@ -41,7 +45,7 @@ def get_value(value: ATU[float]) -> float:
 def get_value(value: ATU[KT]) -> KT:
     if isinstance(value, (int, str, float)):
         return value
-    if isinstance(value, KspVar):
+    if isinstance(value, kVar):
         return value._value
     if isinstance(value, AstBase):
         return value.get_value()
@@ -68,7 +72,7 @@ def get_compiled(value: ATU[KT]) -> str:
         return f'{value}'
     if isinstance(value, str):
         return f'"{value}"'
-    if isinstance(value, KspVar):
+    if isinstance(value, kVar):
         return value.name()
     if isinstance(value, AstBase):
         return value.expand()
@@ -101,7 +105,8 @@ class AstConcatString(AstBase[str], ConcatsStrings):
     def __init__(self, arg1: STU, arg2: STU) -> None:
         for idx, arg in enumerate((arg1, arg2)):
             if not isinstance(arg, STT):
-                raise TypeError(f'arg {idx} ({arg}) has to be of type {STU}')
+                raise TypeError(f'arg {idx} ({arg}) has ' +
+                                f'to be of type {STU}')  # type: ignore
         self._ref_type = str
         self.arg1 = arg1
         self.arg2 = arg2
@@ -126,7 +131,7 @@ def ducktype_num_magic(method: FT) -> FT:
         value = get_value(other)
         if not isinstance(value, self._ref_type):
             raise TypeError(
-                f'incompatible type: {type(other)}'
+                f'incompatible type: {type(other)}'   # type: ignore
                 f' -> NT = {self._ref_type}:'
                 f' {NTU[self._ref_type]}')   # type: ignore
         return method(self, other)
@@ -276,7 +281,7 @@ class ProcessNum(Magic[NT], ty.Generic[NT]):
         return AstRshift(other, self)
 
 
-def to_int(value: ProcessNum) -> 'AstFloat':
+def to_int(value: ProcessNum) -> 'AstInt':
     return value.to_int()
 
 
@@ -284,17 +289,59 @@ def to_float(value: ProcessNum) -> 'AstFloat':
     return value.to_float()
 
 
-class KspVar(KspObject, HasInit, ty.Generic[KT]):
+# class VarMeta(KSPBaseMeta):
+
+#     def __call__(cls, value: ty.Optional[KT]=None,
+#                  *args: ty.Any, **kwargs: ty.Any) -> 'kVar[KT]':
+#         if issubclass(cls, Str):
+#             cls._arg = str   # type: ignore
+#         if value is None and cls._arg is None:
+#             raise TypeError('kVar type has to be specified or' +
+#                             ' value has to be initialized')
+#         if cls._arg:
+#             cls._ref = cls._arg
+#             if value is None:
+#                 # value =
+#                 value = ty.cast(KT, cls._ref())
+#             elif not isinstance(value, cls._ref):
+#                 raise TypeError(
+#                     'value has to be of type {ref}, pasted: {val}'.format(
+#                         ref=cls._ref, val=value))
+#         else:
+#             # value = ty.cast(KT, value)
+#             cls._ref = get_value_type(value)  # type: ignore
+#         if cls is kVar:
+#             if cls._ref is str:
+#                 obj = Str(value, *args, **kwargs)  # type: ignore
+#             else:
+#                 obj = Num(value, *args, **kwargs)  # type: ignore
+#         else:
+#             obj = super().__call__(value, *args, **kwargs)  # type: ignore
+#         cls._arg = None   # type: ignore
+#         return obj   # type: ignore
+
+
+class kVar(KspObject, HasInit, ty.Generic[KT]):
     names_count: int = 0
+    _arg: ty.ClassVar[ty.Optional[ty.Type[KT]]] = None
+    _ref: ty.Type[KT]
+    _ref_type: ty.Type[KT]
+
+    # def __class_getitem__(cls,  # type: ignore
+    #                       *args: KT,   # type: ignore
+    #                       **kwargs: ty.Any   # type: ignore
+    #                       ) -> ty.Type['kVar[KT]']:  # type: ignore
+    #     cls._arg = args[0]  # type: ignore
+    #     return super().__class_getitem__(*args, **kwargs)  # type: ignore
 
     class Persist:
         """Class for mark persistence of variable.
 
         can be:
-        KspVar.not_persistent
-        KspVar.persistent
-        KspVar.inst_persistent
-        KspVar.read_persistent"""
+        kVar.not_persistent
+        kVar.persistent
+        kVar.inst_persistent
+        kVar.read_persistent"""
 
         def __init__(self, line: str='') -> None:
             self.line = line
@@ -317,27 +364,29 @@ class KspVar(KspObject, HasInit, ty.Generic[KT]):
             has_init = False
         else:
             if not name:
-                name = f'Var{KspVar.names_count}'
-                KspVar.names_count += 1
+                name = f'kVar{kVar.names_count}'
+                kVar.names_count += 1
             sup_name = NameVar(name, preserve=preserve_name)
             has_init = True
         super().__init__(sup_name, has_init=has_init)
+        self._ref_type: ty.Type[KT] = self._ref
+        self.name.prefix = self._get_type_prefix()
+        self._persist: kVar.Persist = persist
+        self._after_init(value)
+
+    def _after_init(self, value) -> None:
         self._value: KT = value
-        self.name.prefix = self._get_type_prefix(value)
-
-        self._ref_type: ty.Type[KT] = type(value)
         self._init_val: KT = value
-        self._persist: KspVar.Persist = persist
 
-    def _get_type_prefix(self, value: KT) -> str:
-        if isinstance(value, int):
+    def _get_type_prefix(self) -> str:
+        if issubclass(self._ref_type, int):
             return '$'
-        elif isinstance(value, str):
+        elif issubclass(self._ref_type, str):
             return '@'
-        elif isinstance(value, float):
+        elif issubclass(self._ref_type, float):
             return '~'
         else:
-            raise TypeError(f"Can't infer type of value {value}")
+            raise TypeError(f"Can't infer type of value")
 
     @abstractmethod
     def get_decl_line(self) -> ty.List[str]:
@@ -363,7 +412,7 @@ class KspVar(KspObject, HasInit, ty.Generic[KT]):
 
     @abstractmethod
     def __ilshift__(self: KVT, other: ATU) -> KVT:
-        ...
+        pass
 
     def copy(self: KVT, name: str, prefix: str, postfix: str) -> KVT:
         obj = self.__class__(self._value, name=name, local=True)
@@ -371,7 +420,7 @@ class KspVar(KspObject, HasInit, ty.Generic[KT]):
         obj.name.postfix = postfix
         return obj
 
-    def _make_copy(self, other: 'KspVar[KT]',
+    def _make_copy(self, other: 'kVar[KT]',
                    value: KT, new_type: ty.Type[KVT]) -> KVT:
         name = self.name.name
         prefix = self.name.prefix
@@ -391,18 +440,21 @@ class KspVar(KspObject, HasInit, ty.Generic[KT]):
 
     @staticmethod
     def refresh() -> None:
-        KspVar.names_count = 0
+        kVar.names_count = 0
 
 
-STT = (KspVar, str, ConcatsStrings)
+reveal_type(kVar)
+reveal_type(kVar[int])
+
+STT = (kVar, str, ConcatsStrings)
 
 
-class Str(KspVar[str], ConcatsStrings):
+class Str(kVar[str], ConcatsStrings):
 
     def __init__(self,
                  value: str='',
                  name: str='',
-                 persist: KspVar.Persist=KspVar.not_persistent,
+                 persist: kVar.Persist=kVar.not_persistent,
                  preserve_name: bool=False,
                  *, local: bool=False) -> None:
         if not isinstance(value, str):
@@ -434,12 +486,12 @@ class Str(KspVar[str], ConcatsStrings):
         return self.__ilshift__(AstConcatString(self, other))
 
 
-class Num(KspVar[NT], ProcessNum[NT]):
+class Num(kVar[NT], ProcessNum[NT]):
 
     def __init__(self,
                  value: NT,
                  name: str='',
-                 persist: KspVar.Persist=KspVar.not_persistent,
+                 persist: kVar.Persist=kVar.not_persistent,
                  preserve_name: bool=False,
                  *, local: bool=False) -> None:
         super().__init__(value=value,
@@ -522,8 +574,8 @@ def dec(var: Num[int]) -> None:
 
 class AstAssign(AstRoot):
 
-    def __init__(self, to_arg: 'KspVar', from_arg: ATU) -> None:
-        self.to_arg: 'KspVar' = to_arg
+    def __init__(self, to_arg: 'kVar', from_arg: ATU) -> None:
+        self.to_arg: 'kVar' = to_arg
         self.from_arg: ATU = from_arg
 
     def expand(self) -> str:
@@ -636,6 +688,8 @@ def _check_if_bool(arg: NTU[NT]) -> ty.Union[NT, bool]:
 
 class AstCanBeBool(AstOperatorDoubleStandart[NT], AstBool[NT]):
     string_bool: ty.ClassVar[str]
+    arg1_pure: ty.Union[NT, bool]
+    arg2_pure: ty.Union[NT, bool]
 
     def __init__(self, arg1: NTU[NT], arg2: NTU[NT]) -> None:
         if isinstance(arg1, AstBool):
@@ -643,7 +697,7 @@ class AstCanBeBool(AstOperatorDoubleStandart[NT], AstBool[NT]):
         else:
             self._ref_type = get_value_type(arg1)
         self.arg1 = arg1
-        self.arg1_pure: NT = _check_if_bool(arg1)
+        self.arg1_pure = _check_if_bool(arg1)
         if isinstance(self.arg1, AstCanBeBool):
             self.arg1_str: str = arg1.expand_bool()
         else:
@@ -693,11 +747,14 @@ class AstAbs(AstOperatorUnaryBracket[NT]):
 class AstInt(AstOperatorUnaryBracket[int]):
     priority = 2
     string = 'real_to_int'
+    arg1: NTU[float]
+    arg1_pure: int
+    arg1_str: str
 
     def __init__(self, arg1: NTU[float]) -> None:
         self._ref_type = int
-        self.arg1: NTU[NT] = arg1
-        self.arg1_pure: NT = int(get_value(arg1))
+        self.arg1: NTU[float] = arg1
+        self.arg1_pure: int = int(get_value(arg1))
         self.arg1_str: str = get_compiled(arg1)
 
     def get_value(self) -> int:  # type: ignore
@@ -707,11 +764,14 @@ class AstInt(AstOperatorUnaryBracket[int]):
 class AstFloat(AstOperatorUnaryBracket[float]):
     priority = 2
     string = 'int_to_real'
+    arg1: NTU[int]
+    arg1_pure: float
+    arg1_str: str
 
     def __init__(self, arg1: NTU[int]) -> None:
         self._ref_type = float
-        self.arg1: NTU[NT] = arg1
-        self.arg1_pure: NT = float(get_value(arg1))
+        self.arg1: NTU[int] = arg1
+        self.arg1_pure: float = float(get_value(arg1))
         self.arg1_str: str = get_compiled(arg1)
 
     def get_value(self) -> float:  # type: ignore
@@ -894,3 +954,45 @@ class AstGe(OperatorComparisson[NT]):
         if self.arg1_pure >= self.arg2_pure:
             return True
         return False
+
+
+class Arr(kVar, ty.Generic[KT]):
+
+    def __init__(self,
+                 value: ty.Union[KT, ty.List[KT]],
+                 name: str='',
+                 persist: kVar.Persist=kVar.not_persistent,
+                 preserve_name: bool=False,
+                 size: ty.Optional[int]=None, *,
+                 local: bool=False) -> None:
+        if not isinstance(value, ty.List):
+            if size is not None:
+                lth = size
+            else:
+                lth = 1
+            value = list([value] * lth)
+            self._init_seq = [value]
+        super().__init__(value=value,
+                         name=name,
+                         persist=persist,
+                         preserve_name=preserve_name,
+                         local=local)
+
+    def _get_type_prefix(self) -> str:
+        if issubclass(self._ref_type, int):
+            return '%'
+        if issubclass(self._ref_type, str):
+            return '!'
+        if issubclass(self._ref_type, float):
+            return '?'
+
+    def get_decl_line(self) -> ty.List[str]:
+        ...
+
+    def __ilshift__(self, other: ATU[KT]) -> ty.NoReturn:
+        raise NotImplementedError
+
+
+Num[int](value=0.0)
+a: int
+a = 's'
