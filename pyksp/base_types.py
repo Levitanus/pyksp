@@ -1128,18 +1128,18 @@ class Arr(Var, ty.Generic[KT]):
         else:
             raise TypeError("can't infer type")
 
+    def _gen_decl_seq_item(self, idx: int, i: KT) -> str:
+        if i is None:
+            return str(self._ref_type())
+        if not isinstance(i, self._ref_type):
+            raise TypeError(f'value at idx {idx} of a wrong type: {i}')
+        return str(i)
+
     def get_decl_line(self) -> ty.List[str]:
-        out: ty.List[str] = list()
         value = ''
 
-        def gen(idx: int, i: KT) -> str:
-            if i is None:
-                return str(self._ref_type())
-            if not isinstance(i, self._ref_type):
-                raise TypeError(f'value at idx {idx} of a wrong type: {i}')
-            return str(i)
         if len(self._init_seq) != 1 or self._init_seq[0]:
-            value = ', '.join([gen(idx, i)
+            value = ', '.join([self._gen_decl_seq_item(idx, i)
                                for idx, i in enumerate(self._init_seq)])
         if value:
             value = f' := ({value})'
