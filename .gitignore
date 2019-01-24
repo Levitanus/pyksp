@@ -20,3 +20,9 @@ cover/
 htmlcov/
 
 tests_old/
+
+\.idea/
+
+\.mypy_cache/
+
+tmp*

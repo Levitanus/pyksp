@@ -1,5 +1,7 @@
 import unittest as ut
 
+if __name__ == '__main__':
+    __name__ = 'pyksp.tests.test_base_types'
 from .. import abstract as ab
 from .. import base_types as bt
 
@@ -81,6 +83,7 @@ class TestInts(TestBase):
 
     def test_type_errors(self) -> None:
         n = self.n
+        self.assertIsInstance(n, bt.Num)
         self.assertEqual(n.name(), '$n')
         self.assertEqual(n.val, 0)
         with self.assertRaises(TypeError):
@@ -264,5 +267,107 @@ class TestArray(TestBase):
     def test_init(self) -> None:
         with self.assertRaises(TypeError):
             bt.Arr[int]('s')
-        a = bt.Arr[int]('s')
-        assert False
+        a = bt.Arr[int]([5, 6], name='a')
+        with self.assertRaises(NotImplementedError):
+            a <<= 1
+        self.assertTrue(issubclass(a._ref_type, int))
+        self.assertEqual(a.val, [5, 6])
+        self.assertEqual(a.get_decl_line(),
+                         ['declare %a[2] := (5, 6)'])
+        self.assertEqual(len(a), 2)
+        self.assertIsInstance(a[0], bt.Type[int])
+        self.assertEqual(a[0].val, 5)
+        self.assertEqual(a[0].name(), '%a[0]')
+        out = ab.KSP.new_out()
+        a[0] <<= bt.Var[int](2, name='intvar')
+        self.assertEqual(a[0].val, 2)
+        self.assertEqual(a[0].name(), '%a[0]')
+        self.assertEqual(out.get()[-1].line, '%a[0] := $intvar')
+
+        a[0] <<= 8
+        self.assertEqual(a[0].val, 8)
+        self.assertEqual(a[0].name(), '%a[0]')
+        self.assertEqual(out.get()[-1].line, '%a[0] := 8')
+        # with self.assertRaises(TypeError):
+        #     a.append(3.0)
+
+
+class TestTypes(ut.TestCase):
+
+    def runTest(self) -> None:
+        n = 'local'
+        iv = bt.Var[int](name=n, local=True)
+        sv = bt.Var[str](name=n, local=True)
+        fv = bt.Var[float](name=n, local=True)
+
+        i = bt.Num[int](name=n, local=True)
+        f = bt.Num[float](name=n, local=True)
+        s = bt.Str(name=n, local=True)
+
+        ia = bt.Arr[int](name=n, local=True, size=6)
+        sa = bt.Arr[str](name=n, local=True, size=6)
+        fa = bt.Arr[float](name=n, local=True, size=6)
+
+        self.assertIsInstance(iv, bt.Type[int])
+        self.assertIsInstance(sv, bt.Type[str])
+        self.assertIsInstance(fv, bt.Type[float])
+        self.assertIsInstance(iv, bt.Num)
+        self.assertIsInstance(sv, bt.Str)
+        self.assertIsInstance(fv, bt.Num)
+        self.assertIsInstance(iv, bt.Var)
+        self.assertIsInstance(sv, bt.Var)
+        self.assertIsInstance(fv, bt.Var)
+        self.assertNotIsInstance(iv, bt.Type[str])
+        self.assertNotIsInstance(sv, bt.Type[float])
+        self.assertNotIsInstance(fv, bt.Type[int])
+        self.assertNotIsInstance(5, bt.Type[str])
+
+        self.assertIsInstance(i, bt.Type[int])
+        self.assertIsInstance(s, bt.Type[str])
+        self.assertIsInstance(f, bt.Type[float])
+        self.assertNotIsInstance(i, bt.Type[str])
+        self.assertNotIsInstance(s, bt.Type[float])
+        self.assertNotIsInstance(f, bt.Type[int])
+
+        self.assertNotIsInstance(ia, bt.Type[int])
+        self.assertNotIsInstance(sa, bt.Type[str])
+        self.assertNotIsInstance(fa, bt.Type[float])
+
+        self.assertIsInstance(ia, bt.Type[int, 0])
+        self.assertIsInstance(sa, bt.Type[str, 0])
+        self.assertIsInstance(fa, bt.Type[float, 0])
+
+        self.assertIsInstance(ia, bt.Type[int, 4])
+        self.assertIsInstance(sa, bt.Type[str, 2])
+        self.assertIsInstance(fa, bt.Type[float, 1])
+
+        self.assertIsInstance(ia, bt.Type[int, 6])
+        self.assertIsInstance(sa, bt.Type[str, 6])
+        self.assertIsInstance(fa, bt.Type[float, 6])
+
+        self.assertNotIsInstance(ia, bt.Type[int, 7])
+        self.assertNotIsInstance(sa, bt.Type[str, 7])
+        self.assertNotIsInstance(fa, bt.Type[float, 7])
+
+        self.assertNotIsInstance(ia, bt.Type[str, 0])
+        self.assertNotIsInstance(sa, bt.Type[float, 0])
+        self.assertNotIsInstance(fa, bt.Type[int, 0])
+
+        with self.assertRaises(TypeError):
+            self.assertNotIsInstance(fa, bt.Type[object()])
+        with self.assertRaises(TypeError):
+            self.assertNotIsInstance(fa, bt.Type[float, -1])
+
+        self.assertIsInstance(bt.Var(2, name=n, local=True),
+                              bt.Type[int])
+        self.assertIsInstance(bt.Var('2', name=n, local=True),
+                              bt.Type[str])
+        self.assertIsInstance(bt.Var(2.0, name=n, local=True),
+                              bt.Type[float])
+
+        self.assertNotIsInstance(bt.Var(2, name=n, local=True),
+                                 bt.Type[float])
+        self.assertNotIsInstance(bt.Var('2', name=n, local=True),
+                                 bt.Type[float])
+        self.assertNotIsInstance(bt.Var(2.0, name=n, local=True),
+                                 bt.Type[int])

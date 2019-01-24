@@ -1,9 +1,6 @@
 import typing as ty
 from abc import abstractmethod
 
-if __name__ == '__main__':
-    __name__ = 'pyksp.base_types'
-
 from .abstract import KspObject
 from .abstract import NameBase
 from .abstract import NameVar
@@ -17,13 +14,14 @@ from .abstract import KSPBaseMeta
 
 T = ty.TypeVar('T')
 KT = ty.TypeVar('KT', int, float, str)
-KVT = ty.TypeVar('KVT', bound='kVar')
+KVT = ty.TypeVar('KVT', bound='Var')
 NT = ty.TypeVar('NT', int, float)
-# AT = ty.TypeVar('AT', bound='kVar[KT]')
+KTT = (int, str, float)
+# AT = ty.TypeVar('AT', bound='Var[KT]')
 
-ATU = ty.Union['kVar[KT]', 'AstBase[KT]', 'Magic[KT]', KT]
-STU = ty.Union['kVar[KT]', 'AstBase[KT]', 'Magic[KT]', str]
-NTU = ty.Union['kVar[NT]', 'AstBase[NT]', 'ProcessNum[NT]', NT]
+ATU = ty.Union['Var[KT]', 'AstBase[KT]', 'Magic[KT]', KT]
+STU = ty.Union['Var[KT]', 'AstBase[KT]', 'Magic[KT]', str]
+NTU = ty.Union['Var[NT]', 'AstBase[NT]', 'ProcessNum[NT]', NT]
 NotVarNTU = ty.Union['AstBase[NT]', 'ProcessNum[NT]', NT]
 
 
@@ -45,7 +43,7 @@ def get_value(value: ATU[float]) -> float:
 def get_value(value: ATU[KT]) -> KT:
     if isinstance(value, (int, str, float)):
         return value
-    if isinstance(value, kVar):
+    if isinstance(value, Var):
         return value._value
     if isinstance(value, AstBase):
         return value.get_value()
@@ -72,7 +70,7 @@ def get_compiled(value: ATU[KT]) -> str:
         return f'{value}'
     if isinstance(value, str):
         return f'"{value}"'
-    if isinstance(value, kVar):
+    if isinstance(value, Var):
         return value.name()
     if isinstance(value, AstBase):
         return value.expand()
@@ -153,7 +151,7 @@ class ProcessNum(Magic[NT], ty.Generic[NT]):
         if not issubclass(self._ref_type, int):
             raise TypeError('can only be apllied to int expression' +
                             f'pasted {self} ({type(self)})')
-        return AstNot(self)
+        return AstNot(ty.cast(ProcessNum[int], self))
 
     @ducktype_num_magic
     def __add__(self, other: NTU[NT]) -> 'AstAdd[NT]':
@@ -191,13 +189,13 @@ class ProcessNum(Magic[NT], ty.Generic[NT]):
         if not issubclass(self._ref_type, int):
             raise TypeError('can only be apllied to int expression' +
                             f'pasted {other} ({type(other)})')
-        return AstMod(self, other)
+        return AstMod(ty.cast(ProcessNum[int], self), other)
 
     def __rmod__(self, other: NTU[int]) -> 'AstMod':
         if not issubclass(self._ref_type, int):
             raise TypeError('can only be apllied to int expression' +
                             f'pasted {other} ({type(other)})')
-        return AstMod(other, self)
+        return AstMod(other, ty.cast(ProcessNum[int], self))
 
     def __pow__(self, other: NTU[float]) -> 'AstPow':
         if not issubclass(self._ref_type, float):
@@ -253,32 +251,32 @@ class ProcessNum(Magic[NT], ty.Generic[NT]):
     def to_int(self) -> 'AstInt':
         if not issubclass(self._ref_type, float):
             raise TypeError('availble only for KSP float expression')
-        return AstInt(self)  # type: ignore
+        return AstInt(ty.cast(ProcessNum[float], self))
 
     def to_float(self) -> 'AstFloat':
         if not issubclass(self._ref_type, int):
             raise TypeError('availble only for KSP int expression')
-        return AstFloat(self)
+        return AstFloat(ty.cast(ProcessNum[int], self))
 
     def __lshift__(self, other: NTU[int]) -> 'AstLshift':
         if not issubclass(self._ref_type, int):
             raise TypeError('availble only for KSP int expression')
-        return AstLshift(self, other)
+        return AstLshift(ty.cast(ProcessNum[int], self), other)
 
     def __rlshift__(self, other: NTU[int]) -> 'AstLshift':
         if not issubclass(self._ref_type, int):
             raise TypeError('availble only for KSP int expression')
-        return AstLshift(other, self)
+        return AstLshift(other, ty.cast(ProcessNum[int], self))
 
     def __rshift__(self, other: NTU[int]) -> 'AstRshift':
         if not issubclass(self._ref_type, int):
             raise TypeError('availble only for KSP int expression')
-        return AstRshift(self, other)
+        return AstRshift(ty.cast(ProcessNum[int], self), other)
 
     def __rrshift__(self, other: NTU[int]) -> 'AstRshift':
         if not issubclass(self._ref_type, int):
             raise TypeError('availble only for KSP int expression')
-        return AstRshift(other, self)
+        return AstRshift(other, ty.cast(ProcessNum[int], self))
 
 
 def to_int(value: ProcessNum) -> 'AstInt':
@@ -289,59 +287,154 @@ def to_float(value: ProcessNum) -> 'AstFloat':
     return value.to_float()
 
 
-# class VarMeta(KSPBaseMeta):
+class VarMeta(KSPBaseMeta):
 
-#     def __call__(cls, value: ty.Optional[KT]=None,
-#                  *args: ty.Any, **kwargs: ty.Any) -> 'kVar[KT]':
-#         if issubclass(cls, Str):
-#             cls._arg = str   # type: ignore
-#         if value is None and cls._arg is None:
-#             raise TypeError('kVar type has to be specified or' +
-#                             ' value has to be initialized')
-#         if cls._arg:
-#             cls._ref = cls._arg
-#             if value is None:
-#                 # value =
-#                 value = ty.cast(KT, cls._ref())
-#             elif not isinstance(value, cls._ref):
-#                 raise TypeError(
-#                     'value has to be of type {ref}, pasted: {val}'.format(
-#                         ref=cls._ref, val=value))
-#         else:
-#             # value = ty.cast(KT, value)
-#             cls._ref = get_value_type(value)  # type: ignore
-#         if cls is kVar:
-#             if cls._ref is str:
-#                 obj = Str(value, *args, **kwargs)  # type: ignore
-#             else:
-#                 obj = Num(value, *args, **kwargs)  # type: ignore
-#         else:
-#             obj = super().__call__(value, *args, **kwargs)  # type: ignore
-#         cls._arg = None   # type: ignore
-#         return obj   # type: ignore
+    def __call__(cls, value: ty.Optional[KT]=None,
+                 *args: ty.Any, **kwargs: ty.Any) -> 'Var[KT]':
+        _arg = cls._KSPTYPE  # type: ignore
+        if cls is Var and _arg is KT:  # type: ignore
+            _arg = None
+
+        if issubclass(cls, Str):
+            _arg = str   # type: ignore
+        if value is None and _arg is None:
+            raise TypeError('Var type has to be specified or' +
+                            ' value has to be initialized')
+        if _arg:
+            cls._ref = _arg  # type: ignore
+            _ref = _arg
+            if value is None:
+                value = _ref()  # type: ignore
+            else:
+                if issubclass(cls, Arr) and isinstance(value, ty.List):
+                    _value = value[0]
+                else:
+                    _value = value
+                if not isinstance(_value, _ref):
+                    raise TypeError(
+                        'value has to be of type {r}, pasted: {v}'.format(
+                            r=cls._ref, v=value))
+        else:
+            # value = ty.cast(KT, value)
+            cls._ref = get_value_type(value)  # type: ignore
+            _ref = cls._ref  # type: ignore
+        if cls is Var:
+            if _ref is str:
+                Str._ref = _ref  # type: ignore
+                obj = super(VarMeta, Str).__call__(
+                    value, *args, **kwargs)  # type: ignore
+            else:
+                Num._ref = _ref  # type: ignore
+                obj = super(VarMeta, Num).__call__(
+                    value, *args, **kwargs)  # type: ignore
+                Num._ref = None  # type: ignore
+        else:
+            obj = super().__call__(value, *args, **kwargs)  # type: ignore
+        cls._KSPTYPE = None   # type: ignore
+        cls._ref = None
+        return obj   # type: ignore
+
+    def __getitem__(cls,  # type: ignore
+                          *args: ty.Type[KT],   # type: ignore
+                          **kwargs: ty.Any   # type: ignore
+                    ) -> ty.Type['Var[KT]']:  # type: ignore
+        cls._KSPTYPE = args[0]  # type: ignore
+        return cls  # type: ignore
 
 
-class kVar(KspObject, HasInit, ty.Generic[KT]):
+class TypeMeta(type):
+
+    def __instancecheck__(cls, instance: 'Var') -> bool:
+        if isinstance(instance, Arr):
+            if not issubclass(cls, TypeArr):
+                return False
+            if issubclass(instance._ref_type, cls._ref_type):  # type: ignore
+                if cls._size is False or len(  # type: ignore
+                        instance) >= cls._size:  # type: ignore
+                    return True
+            return False
+        if not isinstance(instance, Var):
+            return False
+        if issubclass(instance._ref_type, cls._ref_type):  # type: ignore
+            return True
+        return super().__instancecheck__(instance)
+
+    def __getitem__(cls, ref: ty.Union[ty.Type[KT],
+                                       ty.Tuple[ty.Type[KT],
+                                                ty.Union[int, bool]]]
+                    ) -> ty.Type['Type']:
+        if ref is int:
+            return TypeInt
+        if ref is str:
+            return TypeStr
+        if ref is float:
+            return TypeFloat
+        if not isinstance(ref, tuple):
+            raise TypeError(f"can't infer type of {ref}")
+        if ref[1] is True or ref[1] is None or ref[1] < 0:
+            raise TypeError('size par can be only False or positive int')
+        if ref[0] is int:
+            TypeArrInt._size = ref[1]
+            return TypeArrInt
+        if ref[0] is str:
+            TypeArrStr._size = ref[1]
+            return TypeArrStr
+        if ref[0] is float:
+            TypeArrFloat._size = ref[1]
+            return TypeArrFloat
+        raise TypeError(f"can't infer type of {ref}")
+
+
+class Type(metaclass=TypeMeta):
+    _ref_type: ty.Type[ty.Union[int, str, float]]
+
+
+class TypeInt(Type):
+    _ref_type = int
+
+
+class TypeStr(Type):
+    _ref_type = str
+
+
+class TypeFloat(Type):
+    _ref_type = float
+
+
+class TypeArr(Type):
+    _ref_type: ty.Type[ty.Union[int, str, float]]
+    _size: ty.Optional[int]
+
+
+class TypeArrInt(TypeArr):
+    _ref_type = int
+    _size: ty.Optional[int] = None
+
+
+class TypeArrStr(TypeArr):
+    _ref_type = str
+    _size: ty.Optional[int] = None
+
+
+class TypeArrFloat(TypeArr):
+    _ref_type = float
+    _size: ty.Optional[int] = None
+
+
+class Var(KspObject, HasInit, ty.Generic[KT], metaclass=VarMeta):
     names_count: int = 0
-    _arg: ty.ClassVar[ty.Optional[ty.Type[KT]]] = None
+    _KSPTYPE: ty.ClassVar[ty.Optional[ty.Type[KT]]] = None
     _ref: ty.Type[KT]
     _ref_type: ty.Type[KT]
-
-    # def __class_getitem__(cls,  # type: ignore
-    #                       *args: KT,   # type: ignore
-    #                       **kwargs: ty.Any   # type: ignore
-    #                       ) -> ty.Type['kVar[KT]']:  # type: ignore
-    #     cls._arg = args[0]  # type: ignore
-    #     return super().__class_getitem__(*args, **kwargs)  # type: ignore
 
     class Persist:
         """Class for mark persistence of variable.
 
         can be:
-        kVar.not_persistent
-        kVar.persistent
-        kVar.inst_persistent
-        kVar.read_persistent"""
+        Var.not_persistent
+        Var.persistent
+        Var.inst_persistent
+        Var.read_persistent"""
 
         def __init__(self, line: str='') -> None:
             self.line = line
@@ -352,7 +445,7 @@ class kVar(KspObject, HasInit, ty.Generic[KT]):
     read_persistent: ty.ClassVar[Persist] = Persist('make_persistent')
 
     def __init__(self,
-                 value: KT,
+                 value: ty.Optional[KT]=None,
                  name: str='',
                  persist: Persist=not_persistent,
                  preserve_name: bool=False,
@@ -364,17 +457,17 @@ class kVar(KspObject, HasInit, ty.Generic[KT]):
             has_init = False
         else:
             if not name:
-                name = f'kVar{kVar.names_count}'
-                kVar.names_count += 1
+                name = f'Var{Var.names_count}'
+                Var.names_count += 1
             sup_name = NameVar(name, preserve=preserve_name)
             has_init = True
         super().__init__(sup_name, has_init=has_init)
         self._ref_type: ty.Type[KT] = self._ref
         self.name.prefix = self._get_type_prefix()
-        self._persist: kVar.Persist = persist
-        self._after_init(value)
+        self._persist: Var.Persist = persist
+        self._after_init(ty.cast(KT, value))
 
-    def _after_init(self, value) -> None:
+    def _after_init(self, value: KT) -> None:
         self._value: KT = value
         self._init_val: KT = value
 
@@ -388,9 +481,9 @@ class kVar(KspObject, HasInit, ty.Generic[KT]):
         else:
             raise TypeError(f"Can't infer type of value")
 
-    @abstractmethod
+    # @abstractmethod
     def get_decl_line(self) -> ty.List[str]:
-        pass
+        raise NotImplementedError
 
     def generate_init(self) -> ty.List[str]:
         out = self.get_decl_line()
@@ -410,23 +503,24 @@ class kVar(KspObject, HasInit, ty.Generic[KT]):
         out = self.get_out()
         out.put_immediatly(AstString(f'read_persistent_var({self.name()})'))
 
-    @abstractmethod
-    def __ilshift__(self: KVT, other: ATU) -> KVT:
-        pass
+    # @abstractmethod
+    def __ilshift__(self: T, other: ATU) -> T:
+        raise NotImplementedError
 
-    def copy(self: KVT, name: str, prefix: str, postfix: str) -> KVT:
-        obj = self.__class__(self._value, name=name, local=True)
-        obj.name.prefix = prefix
-        obj.name.postfix = postfix
+    def copy(self: T, name: str, prefix: str, postfix: str) -> T:
+        obj = self.__class__(self._value,  # type: ignore
+                             name=name, local=True)  # type: ignore
+        obj.name.prefix = prefix  # type: ignore
+        obj.name.postfix = postfix  # type: ignore
         return obj
 
-    def _make_copy(self, other: 'kVar[KT]',
+    def _make_copy(self, other: ATU[KT],
                    value: KT, new_type: ty.Type[KVT]) -> KVT:
         name = self.name.name
         prefix = self.name.prefix
         postfix = self.name.postfix
         if isinstance(other, new_type):
-            ret_obj = other.copy(name, prefix, postfix)
+            ret_obj = other.copy(name, prefix, postfix)  # type: ignore
             ret_obj._value = value
         else:
             ret_obj = new_type(value, name, local=True)
@@ -440,21 +534,21 @@ class kVar(KspObject, HasInit, ty.Generic[KT]):
 
     @staticmethod
     def refresh() -> None:
-        kVar.names_count = 0
+        Var.names_count = 0
 
 
-reveal_type(kVar)
-reveal_type(kVar[int])
+# reveal_type(Var)
+# reveal_type(Var[int])
 
-STT = (kVar, str, ConcatsStrings)
+STT = (Var, str, ConcatsStrings)
 
 
-class Str(kVar[str], ConcatsStrings):
+class Str(Var[str], ConcatsStrings):
 
     def __init__(self,
                  value: str='',
                  name: str='',
-                 persist: kVar.Persist=kVar.not_persistent,
+                 persist: Var.Persist=Var.not_persistent,
                  preserve_name: bool=False,
                  *, local: bool=False) -> None:
         if not isinstance(value, str):
@@ -486,15 +580,15 @@ class Str(kVar[str], ConcatsStrings):
         return self.__ilshift__(AstConcatString(self, other))
 
 
-class Num(kVar[NT], ProcessNum[NT]):
+class Num(Var[NT], ProcessNum[NT]):
 
     def __init__(self,
-                 value: NT,
+                 value: ty.Optional[NT]=None,
                  name: str='',
-                 persist: kVar.Persist=kVar.not_persistent,
+                 persist: Var.Persist=Var.not_persistent,
                  preserve_name: bool=False,
                  *, local: bool=False) -> None:
-        super().__init__(value=value,
+        super().__init__(value=value,  # type: ignore
                          name=name,
                          persist=persist,
                          preserve_name=preserve_name,
@@ -536,7 +630,7 @@ class Num(kVar[NT], ProcessNum[NT]):
     def __imod__(self, other: NTU[int]) -> 'Num[int]':  # type: ignore
         if not issubclass(self._ref_type, int):
             raise TypeError('availble only for KSP int expression')
-        return self.__ilshift__(AstMod(self, other))
+        return self.__ilshift__(AstMod(self, other))  # type: ignore
 
     @ducktype_num_magic
     def __ipow__(self, other: NTU[float]) -> 'Num[float]':  # type: ignore
@@ -551,7 +645,7 @@ class Num(kVar[NT], ProcessNum[NT]):
         raise NotImplementedError
 
 
-def _assert_Num_int(var):
+def _assert_Num_int(var: NTU[int]) -> None:
     if not isinstance(var, Num):
         raise TypeError(f'can only be used with {Num[int]}')
     if not issubclass(get_value_type(var), int):
@@ -574,8 +668,8 @@ def dec(var: Num[int]) -> None:
 
 class AstAssign(AstRoot):
 
-    def __init__(self, to_arg: 'kVar', from_arg: ATU) -> None:
-        self.to_arg: 'kVar' = to_arg
+    def __init__(self, to_arg: 'Var', from_arg: ATU) -> None:
+        self.to_arg: 'Var' = to_arg
         self.from_arg: ATU = from_arg
 
     def expand(self) -> str:
@@ -688,8 +782,8 @@ def _check_if_bool(arg: NTU[NT]) -> ty.Union[NT, bool]:
 
 class AstCanBeBool(AstOperatorDoubleStandart[NT], AstBool[NT]):
     string_bool: ty.ClassVar[str]
-    arg1_pure: ty.Union[NT, bool]
-    arg2_pure: ty.Union[NT, bool]
+    arg1_pure: ty.Union[NT, bool]  # type: ignore
+    arg2_pure: ty.Union[NT, bool]  # type: ignore
 
     def __init__(self, arg1: NTU[NT], arg2: NTU[NT]) -> None:
         if isinstance(arg1, AstBool):
@@ -698,13 +792,13 @@ class AstCanBeBool(AstOperatorDoubleStandart[NT], AstBool[NT]):
             self._ref_type = get_value_type(arg1)
         self.arg1 = arg1
         self.arg1_pure = _check_if_bool(arg1)
-        if isinstance(self.arg1, AstCanBeBool):
+        if isinstance(arg1, AstCanBeBool):
             self.arg1_str: str = arg1.expand_bool()
         else:
             self.arg1_str = get_compiled(arg1)
         self.arg2 = arg2
         self.arg2_pure: NT = _check_if_bool(arg2)
-        if isinstance(self.arg2, AstCanBeBool):
+        if isinstance(arg2, AstCanBeBool):
             self.arg2_str: str = arg2.expand_bool()
         else:
             self.arg2_str = get_compiled(arg2)
@@ -747,7 +841,7 @@ class AstAbs(AstOperatorUnaryBracket[NT]):
 class AstInt(AstOperatorUnaryBracket[int]):
     priority = 2
     string = 'real_to_int'
-    arg1: NTU[float]
+    arg1: NTU[float]  # type: ignore
     arg1_pure: int
     arg1_str: str
 
@@ -764,7 +858,7 @@ class AstInt(AstOperatorUnaryBracket[int]):
 class AstFloat(AstOperatorUnaryBracket[float]):
     priority = 2
     string = 'int_to_real'
-    arg1: NTU[int]
+    arg1: NTU[int]  # type: ignore
     arg1_pure: float
     arg1_str: str
 
@@ -856,7 +950,7 @@ class AstAnd(AstCanBeBool[NT]):
     def get_value(self) -> NT:
         if not issubclass(self._ref_type, int):
             raise TypeError('waorks only on ints')
-        return self.arg1_pure & self.arg2_pure
+        return self.arg1_pure & self.arg2_pure  # type: ignore
 
     def __bool__(self) -> bool:
         if self.arg1 and self.arg2:
@@ -872,7 +966,7 @@ class AstOr(AstCanBeBool[NT]):
     def get_value(self) -> NT:
         if not issubclass(self._ref_type, int):
             raise TypeError('waorks only on ints')
-        return self.arg1_pure | self.arg2_pure
+        return self.arg1_pure | self.arg2_pure  # type: ignore
 
     def __bool__(self) -> bool:
         if self.arg1 or self.arg2:
@@ -956,27 +1050,73 @@ class AstGe(OperatorComparisson[NT]):
         return False
 
 
-class Arr(kVar, ty.Generic[KT]):
+class Arr(Var, ty.Generic[KT]):
 
     def __init__(self,
-                 value: ty.Union[KT, ty.List[KT]],
+                 value: ty.Optional[ty.Union[KT, ty.List[KT]]]=None,
                  name: str='',
-                 persist: kVar.Persist=kVar.not_persistent,
+                 persist: Var.Persist=Var.not_persistent,
                  preserve_name: bool=False,
                  size: ty.Optional[int]=None, *,
                  local: bool=False) -> None:
+        value = ty.cast(ty.Union[KT, ty.List[KT]], value)
+        self._init_size = size
+        self._size = 0
         if not isinstance(value, ty.List):
-            if size is not None:
-                lth = size
-            else:
-                lth = 1
-            value = list([value] * lth)
-            self._init_seq = [value]
+            self._size = 1
+            self._init_seq: ty.List[KT] = [value]
+            _size = size
+            if size is None:
+                _size = 1
+            _value = [value] * ty.cast(int, _size)
+            self._default: KT = value
+        else:
+            self._default = self._ref()
+            self._size = len(value)
+            self._init_seq = value
+            _value = value
+            value = value[0]
         super().__init__(value=value,
                          name=name,
                          persist=persist,
                          preserve_name=preserve_name,
                          local=local)
+        self._value = _value
+        self._recieved_rt: bool = False
+
+    def _after_init(self, value: ty.List[KT]) -> None:
+        return
+
+    def _resolve_idx(self, idx: NTU[int]) -> ty.Tuple[str, int]:
+        c_idx = get_compiled(idx)
+        r_idx = get_value(idx)
+        if not isinstance(r_idx, int):
+            raise IndexError(
+                f'index has to be resolved to int, pasted: {idx}')
+        if r_idx < 0:
+            r_idx = self.__len__() - r_idx
+        return c_idx, r_idx
+
+    def __getitem__(self, idx: NTU[int]) -> Var[KT]:
+        c_idx, r_idx = self._resolve_idx(idx)
+        return self._get_cashed_item(c_idx, r_idx)
+
+    def __setitem__(self, idx: NTU[int], value: Var[KT]) -> None:
+        c_idx, r_idx = self._resolve_idx(idx)
+        self._value[r_idx] = value
+
+    def _get_cashed_item(self, c_idx: str, r_idx: int) -> Var[KT]:
+        if isinstance(self._value[r_idx], Var):
+            obj = self._value[r_idx]
+        else:
+            self._value[r_idx] = Var[self._ref_type](  # type: ignore
+                self._value[r_idx],
+                self.name.name,
+                local=True)
+            obj = self._value[r_idx]
+        obj.name.postfix = f'[{c_idx}]'
+        obj.name.prefix = self.name.prefix
+        return obj
 
     def _get_type_prefix(self) -> str:
         if issubclass(self._ref_type, int):
@@ -985,14 +1125,51 @@ class Arr(kVar, ty.Generic[KT]):
             return '!'
         if issubclass(self._ref_type, float):
             return '?'
+        else:
+            raise TypeError("can't infer type")
 
     def get_decl_line(self) -> ty.List[str]:
-        ...
+        out: ty.List[str] = list()
+        value = ''
+
+        def gen(idx: int, i: KT) -> str:
+            if i is None:
+                return str(self._ref_type())
+            if not isinstance(i, self._ref_type):
+                raise TypeError(f'value at idx {idx} of a wrong type: {i}')
+            return str(i)
+        if len(self._init_seq) != 1 or self._init_seq[0]:
+            value = ', '.join([gen(idx, i)
+                               for idx, i in enumerate(self._init_seq)])
+        if value:
+            value = f' := ({value})'
+        return [f'declare {self.name()}[{self._size}]{value}']
 
     def __ilshift__(self, other: ATU[KT]) -> ty.NoReturn:
         raise NotImplementedError
 
+    def __len__(self) -> int:
+        return len(self._value)
 
-Num[int](value=0.0)
-a: int
-a = 's'
+    def _append_is_possible(self) -> bool:
+        if not self.in_init():
+            raise RuntimeError('can append only outside callbacks')
+        if not self._init_size or self._size < self._init_size:
+            return True
+        raise RuntimeError("can't append, Array is full")
+
+    def append(self, value: KT) -> None:
+        # TODO
+        self._append_is_possible()
+        if not isinstance(get_value_type(value), self._ref_type):
+            raise TypeError(
+                'pasted value of wront type: {v}, expected {r}'.format(
+                    v=value, r=self._ref_type))
+        if isinstance(value, self._ref_type) and self._recieved_rt:
+            self._init_seq.append(value)
+        _value = get_value(value)
+        try:
+            self._value[self._size] = value
+        except IndexError:
+            self._value.append(value)
+        self._size += 1
