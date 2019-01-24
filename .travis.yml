@@ -5,7 +5,9 @@ install:
   - pip install pytest-cov
   - pip install pytest-xdist
   - pip install codacy-coverage
+  - pip install mypy
 script:
   - export CODACY_PROJECT_TOKEN=62f659419ef84f4cb09a104902e40664
   - pytest pyksp --cov=pyksp --cov-report xml --cov-config .coveragerc
   - python-codacy-coverage -r coverage.xml
+  - mypy pyksp --disallow-untyped-calls  --disallow-untyped-defs --disallow-incomplete-defs

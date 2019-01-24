@@ -1,3 +1,4 @@
+""""""  # type: ignore
 import typing as ty
 from abc import abstractmethod
 
@@ -251,32 +252,32 @@ class ProcessNum(Magic[NT], ty.Generic[NT]):
     def to_int(self) -> 'AstInt':
         if not issubclass(self._ref_type, float):
             raise TypeError('availble only for KSP float expression')
-        return AstInt(ty.cast(ProcessNum[float], self))
+        return AstInt(self)  # type: ignore
 
     def to_float(self) -> 'AstFloat':
         if not issubclass(self._ref_type, int):
             raise TypeError('availble only for KSP int expression')
-        return AstFloat(ty.cast(ProcessNum[int], self))
+        return AstFloat(self)  # type: ignore
 
     def __lshift__(self, other: NTU[int]) -> 'AstLshift':
         if not issubclass(self._ref_type, int):
             raise TypeError('availble only for KSP int expression')
-        return AstLshift(ty.cast(ProcessNum[int], self), other)
+        return AstLshift(self, other)  # type: ignore
 
     def __rlshift__(self, other: NTU[int]) -> 'AstLshift':
         if not issubclass(self._ref_type, int):
             raise TypeError('availble only for KSP int expression')
-        return AstLshift(other, ty.cast(ProcessNum[int], self))
+        return AstLshift(other, self)  # type: ignore
 
     def __rshift__(self, other: NTU[int]) -> 'AstRshift':
         if not issubclass(self._ref_type, int):
             raise TypeError('availble only for KSP int expression')
-        return AstRshift(ty.cast(ProcessNum[int], self), other)
+        return AstRshift(self, other)  # type: ignore
 
     def __rrshift__(self, other: NTU[int]) -> 'AstRshift':
         if not issubclass(self._ref_type, int):
             raise TypeError('availble only for KSP int expression')
-        return AstRshift(other, ty.cast(ProcessNum[int], self))
+        return AstRshift(other, self)  # type: ignore
 
 
 def to_int(value: ProcessNum) -> 'AstInt':
