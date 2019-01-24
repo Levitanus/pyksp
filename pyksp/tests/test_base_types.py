@@ -132,6 +132,18 @@ class TestInts(TestBase):
         self.assertEqual(bt.to_float(n).expand(), 'int_to_real($n)')
         with self.assertRaises(TypeError):
             n <<= n.to_float()
+        bt.inc(n)
+        self.assertEqual(n.val, 2)
+        self.assertEqual(out.get()[-1].line, 'inc($n)')
+        bt.dec(n)
+        self.assertEqual(n.val, 1)
+        self.assertEqual(out.get()[-1].line, 'dec($n)')
+        n.inc()
+        self.assertEqual(n.val, 2)
+        self.assertEqual(out.get()[-1].line, 'inc($n)')
+        n.dec()
+        self.assertEqual(n.val, 1)
+        self.assertEqual(out.get()[-1].line, 'dec($n)')
 
     def test_magic(self) -> None:
         n = self.n
@@ -288,8 +300,53 @@ class TestArray(TestBase):
         self.assertEqual(a[0].val, 8)
         self.assertEqual(a[0].name(), '%a[0]')
         self.assertEqual(out.get()[-1].line, '%a[0] := 8')
-        # with self.assertRaises(TypeError):
-        #     a.append(3.0)
+
+        test = bt.Var[int](5, 'test', local=True)
+        test1 = bt.Var[int](1, 'test1', local=True)
+
+        a[0] <<= test
+        self.assertEqual(a[0].val, 5)
+        self.assertEqual(a[0].name(), '%a[0]')
+        self.assertEqual(out.get()[-1].line, '%a[0] := $test')
+
+        with self.assertRaises(IndexError):
+            a[2]
+        with self.assertRaises(TypeError):
+            a[1] = 3
+        a.append(4)
+        self.assertEqual(len(a), 3)
+        self.assertIsInstance(a[2], bt.Type[int])
+        self.assertEqual(a[2].val, 4)
+        with self.assertRaises(TypeError):
+            a.append(4.9)
+        a.append(test)
+        self.assertEqual(out.get()[-1].line, '%a[3] := $test')
+        self.assertEqual(len(a), 4)
+        self.assertEqual(a.get_decl_line(),
+                         ['declare %a[4] := (5, 6, 4)'])
+        ab.KSP.set_callback(True)
+        with self.assertRaises(RuntimeError):
+            a.append(2)
+        ab.KSP.set_callback(None)
+        with self.assertRaises(TypeError):
+            a.append(3.0)
+
+        a[test1] <<= test
+        self.assertEqual(a[1].val, 5)
+        self.assertEqual(a[test1].name(), '%a[$test1]')
+        self.assertEqual(out.get()[-1].line, '%a[$test1] := $test')
+
+        a_sized = bt.Arr[int](2, name='a_sized', size=3)
+        self.assertEqual(len(a_sized), 3)
+        self.assertEqual(a_sized[2].val, 2)
+        a_sized.append(3)
+        a_sized.append(4)
+        with self.assertRaises(RuntimeError):
+            a_sized.append(5)
+
+        a_bad = bt.Arr([1, test])
+        with self.assertRaises(TypeError):
+            a_bad.get_decl_line()
 
 
 class TestTypes(ut.TestCase):

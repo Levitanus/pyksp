@@ -315,8 +315,11 @@ class VarMeta(KSPBaseMeta):
                         'value has to be of type {r}, pasted: {v}'.format(
                             r=cls._ref, v=value))
         else:
-            # value = ty.cast(KT, value)
-            cls._ref = get_value_type(value)  # type: ignore
+            if issubclass(cls, Arr) and isinstance(value, ty.List):
+                _value = value[0]
+            else:
+                _value = value  # type: ignore
+            cls._ref = get_value_type(_value)  # type: ignore
             _ref = cls._ref  # type: ignore
         if cls is Var:
             if _ref is str:
@@ -643,6 +646,16 @@ class Num(Var[NT], ProcessNum[NT]):
 
     def __ior__(self, other: NTU[NT]) -> ty.NoReturn:
         raise NotImplementedError
+
+    def inc(self) -> None:
+        if not issubclass(self._ref_type, int):
+            raise NotImplementedError
+        inc(self)  # type: ignore
+
+    def dec(self) -> None:
+        if not issubclass(self._ref_type, int):
+            raise NotImplementedError
+        dec(self)  # type: ignore
 
 
 def _assert_Num_int(var: NTU[int]) -> None:
@@ -1063,7 +1076,10 @@ class Arr(Var, ty.Generic[KT]):
         self._init_size = size
         self._size = 0
         if not isinstance(value, ty.List):
-            self._size = 1
+            if not value:
+                self._size = 0
+            else:
+                self._size = 1
             self._init_seq: ty.List[KT] = [value]
             _size = size
             if size is None:
@@ -1073,7 +1089,7 @@ class Arr(Var, ty.Generic[KT]):
         else:
             self._default = self._ref()
             self._size = len(value)
-            self._init_seq = value
+            self._init_seq = value.copy()
             _value = value
             value = value[0]
         super().__init__(value=value,
@@ -1102,6 +1118,10 @@ class Arr(Var, ty.Generic[KT]):
         return self._get_cashed_item(c_idx, r_idx)
 
     def __setitem__(self, idx: NTU[int], value: Var[KT]) -> None:
+        if not isinstance(value, Type[self._ref_type]):
+            raise TypeError(
+                'has to be of type {T}[{r}], pasted: {v}'.format(
+                    T=Var, r=self._ref_type, v=value))
         c_idx, r_idx = self._resolve_idx(idx)
         self._value[r_idx] = value
 
@@ -1132,7 +1152,7 @@ class Arr(Var, ty.Generic[KT]):
         if i is None:
             return str(self._ref_type())
         if not isinstance(i, self._ref_type):
-            raise TypeError(f'value at idx {idx} of a wrong type: {i}')
+            raise TypeError(f'value ({i}) at idx {idx} of a wrong type: {i}')
         return str(i)
 
     def get_decl_line(self) -> ty.List[str]:
@@ -1158,18 +1178,21 @@ class Arr(Var, ty.Generic[KT]):
             return True
         raise RuntimeError("can't append, Array is full")
 
-    def append(self, value: KT) -> None:
-        # TODO
+    def append(self, value: ATU[KT]) -> None:
         self._append_is_possible()
-        if not isinstance(get_value_type(value), self._ref_type):
+        if not isinstance(get_value(value), self._ref_type):
             raise TypeError(
                 'pasted value of wront type: {v}, expected {r}'.format(
                     v=value, r=self._ref_type))
-        if isinstance(value, self._ref_type) and self._recieved_rt:
-            self._init_seq.append(value)
+        if isinstance(value, Type[self._ref_type]):
+            self._recieved_rt = True
         _value = get_value(value)
         try:
-            self._value[self._size] = value
+            self._value[self._size] = _value
         except IndexError:
-            self._value.append(value)
+            self._value.append(_value)
+        if not self._recieved_rt:
+            self._init_seq.append(value)  # type: ignore
+        else:
+            self[self._size] <<= value
         self._size += 1

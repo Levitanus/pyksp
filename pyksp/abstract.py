@@ -151,7 +151,7 @@ class KSP(metaclass=KSPBaseMeta):
         KSP.__is_compiled = val
 
     @staticmethod
-    def set_callback(obj: 'CallbackBase') -> None:
+    def set_callback(obj: ty.Optional['CallbackBase']) -> None:
         """Set callback to be counted by built-ins."""
         if obj is None:
             KSP.__callback = obj
