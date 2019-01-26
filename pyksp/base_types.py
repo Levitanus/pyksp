@@ -15,14 +15,14 @@ from .abstract import KSPBaseMeta
 
 T = ty.TypeVar('T')
 KT = ty.TypeVar('KT', int, float, str)
-KVT = ty.TypeVar('KVT', bound='Var')
+KVT = ty.TypeVar('KVT', bound='VarParent')
 NT = ty.TypeVar('NT', int, float)
 KTT = (int, str, float)
-# AT = ty.TypeVar('AT', bound='Var[KT]')
+# AT = ty.TypeVar('AT', bound='VarParent[KT]')
 
-ATU = ty.Union['Var[KT]', 'AstBase[KT]', 'Magic[KT]', KT]
-STU = ty.Union['Var[KT]', 'AstBase[KT]', 'Magic[KT]', str]
-NTU = ty.Union['Var[NT]', 'AstBase[NT]', 'ProcessNum[NT]', NT]
+ATU = ty.Union['VarParent[KT]', 'AstBase[KT]', 'Magic[KT]', KT]
+STU = ty.Union['VarParent[KT]', 'AstBase[KT]', 'Magic[KT]', str]
+NTU = ty.Union['VarParent[NT]', 'AstBase[NT]', 'ProcessNum[NT]', NT]
 NotVarNTU = ty.Union['AstBase[NT]', 'ProcessNum[NT]', NT]
 
 
@@ -44,7 +44,7 @@ def get_value(value: ATU[float]) -> float:
 def get_value(value: ATU[KT]) -> KT:
     if isinstance(value, (int, str, float)):
         return value
-    if isinstance(value, Var):
+    if isinstance(value, VarParent):
         return value._value
     if isinstance(value, AstBase):
         return value.get_value()
@@ -71,7 +71,7 @@ def get_compiled(value: ATU[KT]) -> str:
         return f'{value}'
     if isinstance(value, str):
         return f'"{value}"'
-    if isinstance(value, Var):
+    if isinstance(value, VarParent):
         return value.name()
     if isinstance(value, AstBase):
         return value.expand()
@@ -291,15 +291,15 @@ def to_float(value: ProcessNum) -> 'AstFloat':
 class VarMeta(KSPBaseMeta):
 
     def __call__(cls, value: ty.Optional[KT]=None,
-                 *args: ty.Any, **kwargs: ty.Any) -> 'Var[KT]':
+                 *args: ty.Any, **kwargs: ty.Any) -> 'VarParent[KT]':
         _arg = cls._KSPTYPE  # type: ignore
-        if cls is Var and _arg is KT:  # type: ignore
+        if cls is VarParent and _arg is KT:  # type: ignore
             _arg = None
 
         if issubclass(cls, Str):
             _arg = str   # type: ignore
         if value is None and _arg is None:
-            raise TypeError('Var type has to be specified or' +
+            raise TypeError('VarParent type has to be specified or' +
                             ' value has to be initialized')
         if _arg:
             cls._ref = _arg  # type: ignore
@@ -322,7 +322,7 @@ class VarMeta(KSPBaseMeta):
                 _value = value  # type: ignore
             cls._ref = get_value_type(_value)  # type: ignore
             _ref = cls._ref  # type: ignore
-        if cls is Var:
+        if cls is VarParent:
             if _ref is str:
                 Str._ref = _ref  # type: ignore
                 obj = super(VarMeta, Str).__call__(
@@ -341,14 +341,14 @@ class VarMeta(KSPBaseMeta):
     def __getitem__(cls,  # type: ignore
                           *args: ty.Type[KT],   # type: ignore
                           **kwargs: ty.Any   # type: ignore
-                    ) -> ty.Type['Var[KT]']:  # type: ignore
+                    ) -> ty.Type['VarParent[KT]']:  # type: ignore
         cls._KSPTYPE = args[0]  # type: ignore
         return cls  # type: ignore
 
 
 class TypeMeta(type):
 
-    def __instancecheck__(cls, instance: 'Var') -> bool:
+    def __instancecheck__(cls, instance: 'VarParent') -> bool:
         if isinstance(instance, Arr):
             if not issubclass(cls, TypeArr):
                 return False
@@ -357,7 +357,7 @@ class TypeMeta(type):
                         instance) >= cls._size:  # type: ignore
                     return True
             return False
-        if not isinstance(instance, Var):
+        if not isinstance(instance, VarParent):
             return False
         if issubclass(instance._ref_type, cls._ref_type):  # type: ignore
             return True
@@ -425,7 +425,7 @@ class TypeArrFloat(TypeArr):
     _size: ty.Optional[int] = None
 
 
-class Var(KspObject, HasInit, ty.Generic[KT], metaclass=VarMeta):
+class VarParent(KspObject, HasInit, ty.Generic[KT], metaclass=VarMeta):
     names_count: int = 0
     _KSPTYPE: ty.ClassVar[ty.Optional[ty.Type[KT]]] = None
     _ref: ty.Type[KT]
@@ -435,10 +435,10 @@ class Var(KspObject, HasInit, ty.Generic[KT], metaclass=VarMeta):
         """Class for mark persistence of variable.
 
         can be:
-        Var.not_persistent
-        Var.persistent
-        Var.inst_persistent
-        Var.read_persistent"""
+        VarParent.not_persistent
+        VarParent.persistent
+        VarParent.inst_persistent
+        VarParent.read_persistent"""
 
         def __init__(self, line: str='') -> None:
             self.line = line
@@ -461,14 +461,14 @@ class Var(KspObject, HasInit, ty.Generic[KT], metaclass=VarMeta):
             has_init = False
         else:
             if not name:
-                name = f'Var{Var.names_count}'
-                Var.names_count += 1
+                name = f'VarParent{VarParent.names_count}'
+                VarParent.names_count += 1
             sup_name = NameVar(name, preserve=preserve_name)
             has_init = True
         super().__init__(sup_name, has_init=has_init)
         self._ref_type: ty.Type[KT] = self._ref
         self.name.prefix = self._get_type_prefix()
-        self._persist: Var.Persist = persist
+        self._persist: VarParent.Persist = persist
         self._after_init(ty.cast(KT, value))
 
     def _after_init(self, value: KT) -> None:
@@ -520,6 +520,10 @@ class Var(KspObject, HasInit, ty.Generic[KT], metaclass=VarMeta):
 
     def _make_copy(self, other: ATU[KT],
                    value: KT, new_type: ty.Type[KVT]) -> KVT:
+        otpt = self.get_out()
+        otpt.put_immediatly(AstAssign(self, other))
+        if self.is_compiled():
+            return self  # type: ignore
         name = self.name.name
         prefix = self.name.prefix
         postfix = self.name.postfix
@@ -532,27 +536,77 @@ class Var(KspObject, HasInit, ty.Generic[KT], metaclass=VarMeta):
             ret_obj.name.postfix = postfix
         ret_obj._init_val = self._init_val
 
-        otpt = self.get_out()
-        otpt.put_immediatly(AstAssign(self, other))
         return ret_obj
 
     @staticmethod
     def refresh() -> None:
-        Var.names_count = 0
+        VarParent.names_count = 0
 
 
-# reveal_type(Var)
-# reveal_type(Var[int])
-
-STT = (Var, str, ConcatsStrings)
+VarRU = ty.Union['Num[int]', 'Num[float]', 'Str']
+VarIU = ty.Union[int, str, float]
 
 
-class Str(Var[str], ConcatsStrings):
+class VarWrapperMeta(type):
+
+    @ty.overload
+    def __getitem__(cls, ref: ty.Type[int]) -> ty.Type['Num[int]']:
+        ...
+
+    @ty.overload
+    def __getitem__(cls, ref: ty.Type[float]) -> ty.Type['Num[float]']:
+        ...
+
+    @ty.overload
+    def __getitem__(cls, ref: ty.Type[str]) -> ty.Type['Str']:
+        ...
+
+    def __getitem__(cls, ref: ty.Type[VarIU]) -> ty.Type[VarRU]:
+        return VarParent[ref]  # type: ignore
+
+    def __instancecheck__(cls, instance: object) -> bool:
+        return isinstance(instance, VarParent)
+
+
+class Var(metaclass=VarWrapperMeta):
+
+    def __new__(cls,
+                value: VarIU,
+                name: str='',
+                persist: VarParent.Persist=VarParent.not_persistent,
+                preserve_name: bool=False,
+                *, local: bool=False
+                ) -> VarRU:
+        if isinstance(value, int):
+            return Num(value=value,
+                       name=name,
+                       persist=persist,
+                       preserve_name=preserve_name,
+                       local=local)
+        if isinstance(value, float):
+            return Num(value=value,
+                       name=name,
+                       persist=persist,
+                       preserve_name=preserve_name,
+                       local=local)
+        if isinstance(value, str):
+            return Str(value=value,
+                       name=name,
+                       persist=persist,
+                       preserve_name=preserve_name,
+                       local=local)
+        raise TypeError("can't infer type of value")
+
+
+STT = (VarParent, str, ConcatsStrings)
+
+
+class Str(VarParent[str], ConcatsStrings):
 
     def __init__(self,
                  value: str='',
                  name: str='',
-                 persist: Var.Persist=Var.not_persistent,
+                 persist: VarParent.Persist=VarParent.not_persistent,
                  preserve_name: bool=False,
                  *, local: bool=False) -> None:
         if not isinstance(value, str):
@@ -584,12 +638,12 @@ class Str(Var[str], ConcatsStrings):
         return self.__ilshift__(AstConcatString(self, other))
 
 
-class Num(Var[NT], ProcessNum[NT]):
+class Num(VarParent[NT], ProcessNum[NT]):
 
     def __init__(self,
                  value: ty.Optional[NT]=None,
                  name: str='',
-                 persist: Var.Persist=Var.not_persistent,
+                 persist: VarParent.Persist=VarParent.not_persistent,
                  preserve_name: bool=False,
                  *, local: bool=False) -> None:
         super().__init__(value=value,  # type: ignore
@@ -682,8 +736,8 @@ def dec(var: Num[int]) -> None:
 
 class AstAssign(AstRoot):
 
-    def __init__(self, to_arg: 'Var', from_arg: ATU) -> None:
-        self.to_arg: 'Var' = to_arg
+    def __init__(self, to_arg: 'VarParent', from_arg: ATU) -> None:
+        self.to_arg: 'VarParent' = to_arg
         self.from_arg: ATU = from_arg
 
     def expand(self) -> str:
@@ -786,6 +840,9 @@ class AstBool(AstBase[NT]):
     @abstractmethod
     def __bool__(self) -> bool:
         pass
+
+    def expand_bool(self) -> str:
+        return self.expand()
 
 
 def _check_if_bool(arg: NTU[NT]) -> ty.Union[NT, bool]:
@@ -1008,6 +1065,9 @@ class AstEq(OperatorComparisson[NT]):
     priority = 6
     string = '='
 
+    def __nonzero__(self) -> bool:
+        return self.__bool__()
+
     def __bool__(self) -> bool:
         if self.arg1_pure == self.arg2_pure:
             return True
@@ -1064,12 +1124,13 @@ class AstGe(OperatorComparisson[NT]):
         return False
 
 
-class Arr(Var, ty.Generic[KT]):
+class Arr(VarParent, ty.Generic[KT]):
+    _value: ty.List[ty.Union[KT, VarParent[KT]]]
 
     def __init__(self,
                  value: ty.Optional[ty.Union[KT, ty.List[KT]]]=None,
                  name: str='',
-                 persist: Var.Persist=Var.not_persistent,
+                 persist: VarParent.Persist=VarParent.not_persistent,
                  preserve_name: bool=False,
                  size: ty.Optional[int]=None, *,
                  local: bool=False) -> None:
@@ -1098,7 +1159,7 @@ class Arr(Var, ty.Generic[KT]):
                          persist=persist,
                          preserve_name=preserve_name,
                          local=local)
-        self._value = _value
+        self._value = _value  # type: ignore
         self._recieved_rt: bool = False
 
     def _after_init(self, value: ty.List[KT]) -> None:
@@ -1114,27 +1175,28 @@ class Arr(Var, ty.Generic[KT]):
             r_idx = self.__len__() - r_idx
         return c_idx, r_idx
 
-    def __getitem__(self, idx: NTU[int]) -> Var[KT]:
+    def __getitem__(self, idx: NTU[int]) -> VarParent[KT]:
         c_idx, r_idx = self._resolve_idx(idx)
         return self._get_cashed_item(c_idx, r_idx)
 
-    def __setitem__(self, idx: NTU[int], value: Var[KT]) -> None:
+    def __setitem__(self, idx: NTU[int], value: VarParent[KT]) -> None:
         if not isinstance(value, Type[self._ref_type]):
             raise TypeError(
                 'has to be of type {T}[{r}], pasted: {v}'.format(
-                    T=Var, r=self._ref_type, v=value))
+                    T=VarParent, r=self._ref_type, v=value))
         c_idx, r_idx = self._resolve_idx(idx)
         self._value[r_idx] = value
 
-    def _get_cashed_item(self, c_idx: str, r_idx: int) -> Var[KT]:
-        if isinstance(self._value[r_idx], Var):
+    def _get_cashed_item(self, c_idx: str, r_idx: int) -> VarParent[KT]:
+        if isinstance(self._value[r_idx], VarParent):
             obj = self._value[r_idx]
         else:
-            self._value[r_idx] = Var[self._ref_type](  # type: ignore
+            self._value[r_idx] = VarParent[self._ref_type](  # type: ignore
                 self._value[r_idx],
                 self.name.name,
                 local=True)
             obj = self._value[r_idx]
+        obj = ty.cast(VarParent, obj)
         obj.name.postfix = f'[{c_idx}]'
         obj.name.prefix = self.name.prefix
         return obj

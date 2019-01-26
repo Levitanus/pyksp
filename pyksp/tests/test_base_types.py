@@ -10,7 +10,7 @@ class TestBase(ut.TestCase):
     def tearDown(self) -> None:
         ab.KSP.refresh()
         ab.NameVar.refresh()
-        bt.Var.refresh()
+        bt.VarParent.refresh()
 
 
 class TestService(ut.TestCase):
@@ -41,6 +41,7 @@ class TestBasics(TestBase):
         self.assertEqual(c.expand(), '"zeroth" & "first" & "second"')
 
     def test_Str(self) -> None:
+        out = list()
         out = ab.KSP.new_out()
         with self.assertRaises(TypeError):
             bt.Str(2)
@@ -343,6 +344,10 @@ class TestArray(TestBase):
         a_sized.append(4)
         with self.assertRaises(RuntimeError):
             a_sized.append(5)
+        assigned = a_sized[0]
+        assigned <<= 8
+        print(assigned, a_sized[0])
+        self.assertEqual(a_sized[0].val, 8)
 
         a_bad = bt.Arr([1, test])
         with self.assertRaises(TypeError):

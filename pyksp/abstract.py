@@ -260,7 +260,10 @@ class Output(KSP):
         if not isinstance(ast, AstRoot):
             raise TypeError(
                 f'ast arg has to be of type AstRoot, passed: {ast}')
-        line = ast.expand()
+        if isinstance(ast, AstNull):
+            line = ast
+        else:
+            line = ast.expand()  # type: ignore
         for idx, ast in enumerate(self._queue):
             if ast.expanded is True:
                 del self._queue[idx]
@@ -366,7 +369,7 @@ class Output(KSP):
 
     def __str__(self) -> str:
         """Return header line and all lines in readable format."""
-        out = f'----------Output from {self.__repr__()}----------'
+        out = f'----------Output from {self.__repr__()}----------\n'
         out += self.get_str()
         out += '\n----------END----------'
         return out
@@ -377,9 +380,10 @@ class OutputBlock:
 
     blocks are equal if their open and close strings are equal"""
 
-    __slots__ = 'open_str', 'close_str', 'open', 'close'
+    __slots__ = 'open_str', 'close_str', 'addit_str', 'open', 'close'
 
-    def __init__(self, open_str: str, close_str: str) -> None:
+    def __init__(self, open_str: str, close_str: str,
+                 addit_str: str='') -> None:
         """Initialize."""
         for string in (open_str, close_str):
             if not isinstance(string, str):
@@ -388,7 +392,10 @@ class OutputBlock:
                                                                    close_str))
         self.open_str = open_str
         self.close_str = close_str
-        self.open = AstString(open_str)
+        if addit_str:
+            addit_str = f'({addit_str})'
+        self.addit_str = addit_str
+        self.open = AstString(open_str + addit_str)
         self.close = AstString(close_str)
 
     def __eq__(self, other: ty.Any) -> bool:
