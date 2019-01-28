@@ -389,7 +389,11 @@ class AstDiv(AstOperator):
                 except ZeroDivisionError:
                     return 0
             else:
-                return arg1 / arg2
+                try:
+                    return arg1 / arg2
+                except ZeroDivisionError:
+                    return 0.0
+
         return self.get_value_proxy(lambda arg1, arg2: division(arg1, arg2))
 
 

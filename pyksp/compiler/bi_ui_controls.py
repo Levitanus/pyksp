@@ -2160,9 +2160,9 @@ def value_min_max(obj: KspNativeControl, min_val: int, max_val: int):
     @wraps(f)
     def wrapper(val):
         val_rt = get_runtime_val(val)
-        if val_rt < obj._min or val > obj._max:
-            raise RuntimeError('value is out of bounds. has to be ' +
-                               f'between {obj._min} and {obj._max}')
+        # if val_rt < obj._min or val > obj._max:
+        #     raise RuntimeError(f'value {val_rt} is out of bounds. has to be ' +
+        #                        f'between {obj._min} and {obj._max}')
         return f(val)
     obj.var._set_runtime = wrapper
 
@@ -2713,6 +2713,8 @@ class kMenu(KspNativeControl, metaclass=kMenuMeta):
             raise RuntimeError('has to be inside init callback')
         if idx is None:
             idx = self._items_amount
+        if isinstance(text, str):
+            text = f'"{text}"'
         Output().put(
             f'add_menu_item({get_compiled(self.var)}, {get_compiled(text)}, {get_compiled(value)})')
         self._items.append(MenuItem(get_runtime_val(

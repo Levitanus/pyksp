@@ -12,3 +12,15 @@ pyksp/compiler2/tests/__pycache__/
 pyksp/compiler/__pycache__/
 
 pyksp/__pycache__/
+
+old/
+
+htmlcov/
+
+\.vscode/
+
+\.mypy_cache/
+
+tests_old/
+
+pyksp/tests/
