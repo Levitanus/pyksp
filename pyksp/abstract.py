@@ -13,8 +13,6 @@ T = ty.TypeVar('T')
 class OutputGot(ty.List['OutputLine']):
     """List subclass handling output lines."""
 
-    pass
-
 
 class OutputLine:
     """Handle line content and indent level."""
@@ -33,8 +31,6 @@ class KSPBaseMeta(ABCMeta):
     for being under united ABCMeta parent
     """
 
-    pass
-
 
 class KSP(metaclass=KSPBaseMeta):
     """Base class for all compiler objects.
@@ -43,7 +39,7 @@ class KSP(metaclass=KSPBaseMeta):
     Has to be refreshed by script at the start of compilation.
     """
 
-    __slots__ = '__dict__'
+    __slots__ = ['__dict__']
 
     __script: ty.Optional['ScriptBase'] = None
     __output: ty.Optional['Output'] = None
@@ -141,6 +137,13 @@ class KSP(metaclass=KSPBaseMeta):
         KSP.__listener = listener
 
     @staticmethod
+    def get_listener() -> 'EventListener':
+        """Return KSP listener or just placeholder."""
+        if KSP.__listener:
+            return KSP.__listener
+        return EventListener()
+
+    @staticmethod
     def is_compiled() -> bool:
         """Check state (changes returns of KSP objects)."""
         return KSP.__is_compiled
@@ -191,12 +194,10 @@ class ScriptBase(KSP):
     @abstractmethod
     def main(self) -> None:
         """Has to be overloaded by the main compilation function."""
-        pass
 
     @abstractmethod
     def compile(self) -> None:
         """Compile the script."""
-        pass
 
 
 class Output(KSP):
@@ -243,6 +244,7 @@ class Output(KSP):
         leaving empty line to be replaced by Ast, if it is not expanded"""
         if self._blocked:
             return
+        self.event(EventAddedToOutput(self, AstRoot, ast, True))
         ast.queue_line = len(self._lines)
         self._queue.append(ast)
         self.put_line(AstNull())
@@ -255,6 +257,7 @@ class Output(KSP):
         from queue."""
         if self._blocked:
             return
+        self.event(EventAddedToOutput(self, AstRoot, ast))
         self._check_block_in_queue()
         if not isinstance(ast, AstRoot):
             raise TypeError(
@@ -263,8 +266,8 @@ class Output(KSP):
             line = ast
         else:
             line = ast.expand()  # type: ignore
-        for idx, ast in enumerate(self._queue):
-            if ast.expanded is True:
+        for idx, ast2 in enumerate(self._queue):
+            if ast2.expanded is True:
                 del self._queue[idx]
         self.put_line(line)
 
@@ -296,6 +299,7 @@ class Output(KSP):
 
     def put_lines(self, lines: OutputGot) -> None:
         """Put lines from another Output object to list."""
+        self.event(EventAddedToOutput(self, OutputGot, lines))
         for line in lines:
             self.put_line(line.line, indent=line.indent)
 
@@ -306,6 +310,7 @@ class Output(KSP):
 
         Raises AssertionError if waiting block, and it is not
         the same block is recieved"""
+        self.event(EventAddedToOutput(self, OutputBlock, block))
         if self._blocked:
             return
         if self._block_in_queue:
@@ -337,8 +342,11 @@ class Output(KSP):
         self.put_immediatly(block.close)
         self._blocks.pop()
 
-    def wait_for_block(self, opened: 'OutputBlock',
-                       next_block: 'OutputBlock') -> None:
+    def wait_for_block(
+            self,
+            opened: 'OutputBlock',
+            next_block: 'OutputBlock',
+    ) -> None:
         """Put block to block_queue for closing with next event."""
         if self._blocked:
             return
@@ -381,6 +389,11 @@ class OutputBlock:
     blocks are equal if their open and close strings are equal"""
 
     __slots__ = 'open_str', 'close_str', 'addit_str', 'open', 'close'
+    open_str: str
+    close_str: str
+    addit_str: str
+    open: 'AstRoot'
+    close: 'AstRoot'
 
     def __init__(self, open_str: str, close_str: str,
                  addit_str: str = '') -> None:
@@ -395,7 +408,10 @@ class OutputBlock:
             addit_str = f'({addit_str})'
         self.addit_str = addit_str
         self.open = AstString(open_str + addit_str)
-        self.close = AstString(close_str)
+        if not close_str:
+            self.close = AstNull()
+        else:
+            self.close = AstString(close_str)
 
     def __eq__(self, other: ty.Any) -> bool:
         """Return True if both strings of blocks are equal."""
@@ -404,8 +420,7 @@ class OutputBlock:
         if self.open_str == other.open_str and\
                 self.close_str == other.close_str:
             return True
-        else:
-            return False
+        return False
 
     def __str__(self) -> str:
         """Human-readable string representation."""
@@ -418,12 +433,10 @@ class AstBase(KSP, ty.Generic[T]):
     @abstractmethod
     def expand(self) -> str:
         """Recursively expand ast and return summary string."""
-        pass
 
     @abstractmethod
     def get_value(self) -> T:
         """Recursively get runtime value of ast."""
-        pass
 
 
 class AstRootMeta(KSPBaseMeta, ABCMeta):
@@ -487,7 +500,6 @@ class AstRoot(AstBase[T], ty.Generic[T], metaclass=AstRootMeta):
     @abstractmethod
     def get_value(self) -> T:
         """Recursively get runtime value of ast."""
-        pass
 
 
 class AstString(AstRoot[str]):
@@ -600,13 +612,12 @@ class HasInit(metaclass=KSPBaseMeta):
     @abstractmethod
     def generate_init(self) -> ty.List[str]:
         """Return init lines in lint."""
-        pass
 
 
 class KspObject(KSP):
     """Base class for all objects may appear in code."""
 
-    __slots__ = 'name'
+    __slots__ = ['name']
 
     def __init__(self, name: NameBase, *, has_init: bool) -> None:
         """Excluding Ast's."""
@@ -634,34 +645,28 @@ class CallbackBase(KSP):
     @abstractmethod
     def add_function(self, function: ty.Callable[[], None]) -> None:
         """Add function to calling queue."""
-        pass
 
     @abstractmethod
     def open(self) -> None:
         """Open callback block and set NI variables to it's values."""
-        pass
 
     @abstractmethod
     def close(self, keep_type: bool = None) -> None:
         """Close callback block and make it init again."""
-        pass
 
     @abstractmethod
     def generate_body(self) -> ty.List[OutputGot]:
         """Return Output lines of invocated functions."""
-        pass
 
     @staticmethod
     @abstractmethod
     def get_all_bodies() -> ty.List[OutputGot]:
         """Collect all bodies of all instantiated callbacks."""
-        pass
 
     @staticmethod
     @abstractmethod
     def refresh() -> None:
         """Set class variables to defaults."""
-        pass
 
 
 ListenerEventType = ty.TypeVar('ListenerEventType', bound='ListenerEventBase')
@@ -670,32 +675,54 @@ ListenerEventType = ty.TypeVar('ListenerEventType', bound='ListenerEventBase')
 class EventListener(KSP):
     """Handle events and invocates functions at them."""
 
-    _event_funcs: \
-        ty.Dict[ty.Type['ListenerEventBase'],
-                ty.Callable[[ListenerEventType], None]]
+    _event_funcs: ty.Dict[ty.Type['ListenerEventBase'], ty.
+                          List[ty.Callable[[ListenerEventType], None]]]
 
     def __init__(self) -> None:
         """Initialize."""
-        self._event_funcs: \
-            ty.Dict[ty.Type['ListenerEventBase'],
-                    ty.Callable[[ListenerEventType], None]] = dict()
+        self._event_funcs = dict()
 
     def bind_to_event(self, func: ty.Callable[[ListenerEventType], None],
                       event: ty.Type['ListenerEventBase']) -> None:
         """Bind function to event type.
 
         function will be invocated at every event of the type."""
-        self._event_funcs[event] = func
+        if event not in self._event_funcs:
+            self._event_funcs[event] = [func]
+        else:
+            self._event_funcs[event].append(func)
+
+    def unbind(self, func: ty.Callable[[ListenerEventType], None],
+               event: ty.Type['ListenerEventBase']) -> None:
+        for idx, s_func in enumerate(self._event_funcs[event]):
+            if s_func is func:
+                del self._event_funcs[event][idx]
 
     def put_event(self, event: 'ListenerEventBase') -> None:
         """Invocate event function if any."""
-        for event_type in self._event_funcs:
-            if isinstance(event, event_type):
-                self._event_funcs[event_type](event)
-                return
+        if type(event) not in self._event_funcs:
+            return
+        for func in self._event_funcs[type(event)]:
+            func(event)
 
 
 class ListenerEventBase:
     """Placeholder."""
 
-    pass
+
+EADTOTU = ty.Union[ty.Type[AstBase], ty.Type[OutputBlock], ty.Type[OutputGot]]
+EADTOU = ty.Union[AstBase, OutputBlock, OutputGot]
+
+
+class EventAddedToOutput(ListenerEventBase):
+    """Event keeps object, out to Output."""
+
+    def __init__(self,
+                 output: Output,
+                 item_type: EADTOTU,
+                 item: EADTOU,
+                 to_queue: bool = False) -> None:
+        self.output = output
+        self.item_type = item_type
+        self.item = item
+        self.to_queue = to_queue

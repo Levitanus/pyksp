@@ -28,9 +28,9 @@ class TestBasics(TestBase):
         with self.assertRaises(RuntimeError):
             a += "third"
         with self.assertRaises(TypeError):
-            a + 2
+            a + 2  # type: ignore
         with self.assertRaises(TypeError):
-            2 + a
+            2 + a  # type: ignore
         b = a + "third"
         self.assertIsInstance(b, bt.AstConcatString)
         self.assertEqual(b.get_value(), "firstsecondthird")
@@ -130,7 +130,7 @@ class TestInts(TestBase):
         self.assertEqual(bt.to_float(n), 1.0)
         self.assertEqual(bt.to_float(n).expand(), "int_to_real($n)")
         with self.assertRaises(TypeError):
-            n <<= n.to_float()
+            n <<= n.to_float()  # type: ignore
         bt.inc(n)
         self.assertEqual(n.val, 2)
         self.assertEqual(out.get()[-1].line, "inc($n)")
@@ -143,6 +143,15 @@ class TestInts(TestBase):
         n.dec()
         self.assertEqual(n.val, 1)
         self.assertEqual(out.get()[-1].line, "dec($n)")
+        n.read()
+        self.assertEqual(out.get()[-1].line, "read_persistent_var($n)")
+        self.assertEqual(n.generate_init(),
+                         ['declare $n', 'make_persistent($n)'])
+        old = n
+        n += 1
+        new = n
+        self.assertEqual(old.val, new.val)
+        self.assertIs(old._value, new._value)
 
     def test_magic(self) -> None:
         n = self.n
@@ -210,7 +219,7 @@ class TestInts(TestBase):
         self.assertEqual(bt.get_value(2 >> n), 0)
         self.assertEqual(bt.get_compiled(2 >> n), "sh_right(2, $n)")
 
-    def test_comarisson(self) -> None:
+    def test_comparisson(self) -> None:
         n = self.n
         n <<= 3
         with self.assertRaises(NotImplementedError):
@@ -290,11 +299,7 @@ class TestArray(TestBase):
         self.assertEqual(a[0].val, 5)
         self.assertEqual(a[0].name(), "%a[0]")
         out = ab.KSP.new_out()
-        asgn = bt.Var[int](2, name="intvar")
-        print(str(a[0]), type(a[0]), a[0].val, a[0]._array, a[0]._idx)
-        a[0] <<= asgn
-        print(str(a[0]), type(a[0]), a[0].val, a[0]._array, a[0]._idx)
-        print(str(asgn), type(asgn), asgn.val, asgn._array, asgn._idx)
+        a[0] <<= bt.Var[int](2, name="intvar")
         self.assertEqual(a[0].val, 2)
         self.assertEqual(a[0].name(), "%a[0]")
         self.assertEqual(out.get()[-1].line, "%a[0] := $intvar")
@@ -341,6 +346,7 @@ class TestArray(TestBase):
         a_sized = bt.Arr[int](2, name="a_sized", size=3)
         self.assertEqual(len(a_sized), 3)
         self.assertEqual(a_sized[2].val, 2)
+        self.assertEqual(a_sized[2].val, a_sized[-1].val)
         a_sized.append(3)
         a_sized.append(4)
         with self.assertRaises(RuntimeError):
@@ -353,6 +359,25 @@ class TestArray(TestBase):
         a_bad = bt.Arr([1, test])  # type: ignore
         with self.assertRaises(TypeError):
             a_bad.get_decl_line()
+
+        with self.assertRaises(TypeError):
+            a_sized[0] = 4  # type: ignore
+        with self.assertRaises(RuntimeError):
+            a_sized[0] = bt.Var(4, name='local', local=True)  # type: ignore
+        with self.assertRaises(IndexError):
+            a_sized[0.4]  # type: ignore
+
+    def test_str(self) -> None:
+        a = bt.Arr[str](['a', 'b'], name='str_arr')
+        a.append('c')
+        self.assertEqual(a.get_decl_line(), [
+            'declare !str_arr[3]',
+            '!str_arr[0] := "a"',
+            '!str_arr[1] := "b"',
+            '!str_arr[2] := "c"',
+        ])
+        with self.assertRaises(RuntimeError):
+            a.read()
 
 
 class TestTypes(ut.TestCase):
@@ -385,8 +410,8 @@ class TestTypes(ut.TestCase):
         self.assertNotIsInstance(5, bt.Type[str])
 
         self.assertIsInstance(i, bt.Type[int])
-        self.assertIsInstance(s, bt.Type[str])
         self.assertIsInstance(f, bt.Type[float])
+        self.assertIsInstance(s, bt.Type[str])
         self.assertNotIsInstance(i, bt.Type[str])
         self.assertNotIsInstance(s, bt.Type[float])
         self.assertNotIsInstance(f, bt.Type[int])
@@ -416,7 +441,7 @@ class TestTypes(ut.TestCase):
         self.assertNotIsInstance(fa, bt.Type[int, 0])
 
         with self.assertRaises(TypeError):
-            self.assertNotIsInstance(fa, bt.Type[object()])
+            self.assertNotIsInstance(fa, bt.Type[object()])  # type: ignore
         with self.assertRaises(TypeError):
             self.assertNotIsInstance(fa, bt.Type[float, -1])
 
