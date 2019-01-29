@@ -12,18 +12,17 @@ from .abstract import HasInit
 from .abstract import KSP
 from .abstract import KSPBaseMeta
 
-
-T = ty.TypeVar('T')
-KT = ty.TypeVar('KT', int, float, str)
-KVT = ty.TypeVar('KVT', bound='VarParent')
-NT = ty.TypeVar('NT', int, float)
+T = ty.TypeVar("T")
+KT = ty.TypeVar("KT", int, float, str)
+KVT = ty.TypeVar("KVT", bound="VarParent")
+NT = ty.TypeVar("NT", int, float)
 KTT = (int, str, float)
 # AT = ty.TypeVar('AT', bound='VarParent[KT]')
 
-ATU = ty.Union['VarParent[KT]', 'AstBase[KT]', 'Magic[KT]', KT]
-STU = ty.Union['VarParent[KT]', 'AstBase[KT]', 'Magic[KT]', str]
-NTU = ty.Union['VarParent[NT]', 'AstBase[NT]', 'ProcessNum[NT]', NT]
-NotVarNTU = ty.Union['AstBase[NT]', 'ProcessNum[NT]', NT]
+ATU = ty.Union["VarParent[KT]", "AstBase[KT]", "Magic[KT]", KT]
+STU = ty.Union["VarParent[KT]", "AstBase[KT]", "Magic[KT]", str]
+NTU = ty.Union["VarParent[NT]", "AstBase[NT]", "ProcessNum[NT]", NT]
+NotVarNTU = ty.Union["AstBase[NT]", "ProcessNum[NT]", NT]
 
 
 @ty.overload
@@ -68,7 +67,7 @@ def get_compiled(value: ATU[float]) -> str:
 
 def get_compiled(value: ATU[KT]) -> str:
     if isinstance(value, (int, float)):
-        return f'{value}'
+        return f"{value}"
     if isinstance(value, str):
         return f'"{value}"'
     if isinstance(value, VarParent):
@@ -82,7 +81,7 @@ def get_value_type(value: ATU[KT]) -> ty.Type[KT]:
     checked = get_value(value)
     c_type = type(checked)
     if c_type not in (int, str, float):
-        raise TypeError(f'can not infer type of {value}')
+        raise TypeError(f"can not infer type of {value}")
     return c_type
 
 
@@ -91,49 +90,47 @@ class Magic(KSP, ty.Generic[KT]):
 
 
 class ConcatsStrings(Magic[str]):
-
-    def __add__(self, other: STU) -> 'AstConcatString':
+    def __add__(self, other: STU) -> "AstConcatString":
         return AstConcatString(self, other)
 
-    def __radd__(self, other: STU) -> 'AstConcatString':
+    def __radd__(self, other: STU) -> "AstConcatString":
         return AstConcatString(other, self)
 
 
 class AstConcatString(AstBase[str], ConcatsStrings):
-
     def __init__(self, arg1: STU, arg2: STU) -> None:
         for idx, arg in enumerate((arg1, arg2)):
             if not isinstance(arg, STT):
-                raise TypeError(f'arg {idx} ({arg}) has ' +
-                                f'to be of type {STU}')  # type: ignore
+                raise TypeError(f"arg {idx} ({arg}) has " +
+                                f"to be of type {STU}"  # type: ignore
+                                )
         self._ref_type = str
         self.arg1 = arg1
         self.arg2 = arg2
 
     def expand(self) -> str:
-        return f'{get_compiled(self.arg1)} & {get_compiled(self.arg2)}'
+        return f"{get_compiled(self.arg1)} & {get_compiled(self.arg2)}"
 
     def get_value(self) -> str:
         return str(get_value(self.arg1)) + str(get_value(self.arg2))
 
     def __iadd__(self, other: STU) -> ty.NoReturn:
-        raise RuntimeError('can not assign to AST object')
+        raise RuntimeError("can not assign to AST object")
 
 
-FT = ty.TypeVar('FT', bound=ty.Callable[..., ty.Any])
+FT = ty.TypeVar("FT", bound=ty.Callable[..., ty.Any])
 
 
 def ducktype_num_magic(method: FT) -> FT:
-
-    def wrpapper(self: 'ProcessNum[NT]', other: NTU[NT]) -> ty.Any:
+    def wrpapper(self: "ProcessNum[NT]", other: NTU[NT]) -> ty.Any:
         other = self._check_for_int(other)  # type: ignore
         value = get_value(other)
         if not isinstance(value, self._ref_type):
-            raise TypeError(
-                f'incompatible type: {type(other)}'   # type: ignore
-                f' -> NT = {self._ref_type}:'
-                f' {NTU[self._ref_type]}')   # type: ignore
+            raise TypeError(f"incompatible type: {type(other)}"  # type: ignore
+                            f" -> NT = {self._ref_type}:"
+                            f" {NTU[self._ref_type]}")
         return method(self, other)
+
     return ty.cast(FT, wrpapper)
 
 
@@ -145,162 +142,163 @@ class ProcessNum(Magic[NT], ty.Generic[NT]):
             return float(other)
         return other
 
-    def __neg__(self) -> 'AstNeg[NT]':
+    def __neg__(self) -> "AstNeg[NT]":
         return AstNeg(self)
 
-    def __invert__(self) -> 'AstNot':
+    def __invert__(self) -> "AstNot":
         if not issubclass(self._ref_type, int):
-            raise TypeError('can only be apllied to int expression' +
-                            f'pasted {self} ({type(self)})')
-        return AstNot(ty.cast(ProcessNum[int], self))
+            raise TypeError("can only be apllied to int expression" +
+                            f"pasted {self} ({type(self)})")
+        return AstNot(self)  # type: ignore
 
     @ducktype_num_magic
-    def __add__(self, other: NTU[NT]) -> 'AstAdd[NT]':
+    def __add__(self, other: NTU[NT]) -> "AstAdd[NT]":
         return AstAdd(self, other)
 
     @ducktype_num_magic
-    def __radd__(self, other: NTU[NT]) -> 'AstAdd[NT]':
+    def __radd__(self, other: NTU[NT]) -> "AstAdd[NT]":
         return AstAdd(other, self)
 
     @ducktype_num_magic
-    def __sub__(self, other: NTU[NT]) -> 'AstSub[NT]':
+    def __sub__(self, other: NTU[NT]) -> "AstSub[NT]":
         return AstSub(self, other)
 
     @ducktype_num_magic
-    def __rsub__(self, other: NTU[NT]) -> 'AstSub[NT]':
+    def __rsub__(self, other: NTU[NT]) -> "AstSub[NT]":
         return AstSub(other, self)
 
     @ducktype_num_magic
-    def __mul__(self, other: NTU[NT]) -> 'AstMul[NT]':
+    def __mul__(self, other: NTU[NT]) -> "AstMul[NT]":
         return AstMul(self, other)
 
     @ducktype_num_magic
-    def __rmul__(self, other: NTU[NT]) -> 'AstMul[NT]':
+    def __rmul__(self, other: NTU[NT]) -> "AstMul[NT]":
         return AstMul(other, self)
 
     @ducktype_num_magic
-    def __truediv__(self, other: NTU[NT]) -> 'AstDiv[NT]':
+    def __truediv__(self, other: NTU[NT]) -> "AstDiv[NT]":
         return AstDiv(self, other)
 
     @ducktype_num_magic
-    def __rtruediv__(self, other: NTU[NT]) -> 'AstDiv[NT]':
+    def __rtruediv__(self, other: NTU[NT]) -> "AstDiv[NT]":
         return AstDiv(other, self)
 
-    def __mod__(self, other: NTU[int]) -> 'AstMod':
+    def __mod__(self, other: NTU[int]) -> "AstMod":
         if not issubclass(self._ref_type, int):
-            raise TypeError('can only be apllied to int expression' +
-                            f'pasted {other} ({type(other)})')
-        return AstMod(ty.cast(ProcessNum[int], self), other)
+            raise TypeError("can only be apllied to int expression" +
+                            f"pasted {other} ({type(other)})")
+        return AstMod(self, other)  # type: ignore
 
-    def __rmod__(self, other: NTU[int]) -> 'AstMod':
+    def __rmod__(self, other: NTU[int]) -> "AstMod":
         if not issubclass(self._ref_type, int):
-            raise TypeError('can only be apllied to int expression' +
-                            f'pasted {other} ({type(other)})')
-        return AstMod(other, ty.cast(ProcessNum[int], self))
+            raise TypeError("can only be apllied to int expression" +
+                            f"pasted {other} ({type(other)})")
+        return AstMod(other, self)  # type: ignore
 
-    def __pow__(self, other: NTU[float]) -> 'AstPow':
+    def __pow__(self, other: NTU[float]) -> "AstPow":
         if not issubclass(self._ref_type, float):
-            raise TypeError('can only be apllied to float expression' +
-                            f'pasted {other} ({type(other)})')
+            raise TypeError("can only be apllied to float expression" +
+                            f"pasted {other} ({type(other)})")
         return AstPow(self, other)  # type: ignore
 
-    def __rpow__(self, other: NTU[float]) -> 'AstPow':
+    def __rpow__(self, other: NTU[float]) -> "AstPow":
         if not issubclass(self._ref_type, float):
-            raise TypeError('can only be apllied to float expression' +
-                            f'pasted {other} ({type(other)})')
+            raise TypeError("can only be apllied to float expression" +
+                            f"pasted {other} ({type(other)})")
         return AstPow(other, self)  # type: ignore
 
-    def __and__(self, other: NTU[NT]) -> 'AstAnd[NT]':
+    def __and__(self, other: NTU[NT]) -> "AstAnd[NT]":
         return AstAnd(self, other)
 
-    def __rand__(self, other: NTU[NT]) -> 'AstAnd[NT]':
+    def __rand__(self, other: NTU[NT]) -> "AstAnd[NT]":
         return AstAnd(other, self)
 
-    def __or__(self, other: NTU[NT]) -> 'AstOr[NT]':
+    def __or__(self, other: NTU[NT]) -> "AstOr[NT]":
         return AstOr(self, other)
 
-    def __ror__(self, other: NTU[NT]) -> 'AstOr[NT]':
+    def __ror__(self, other: NTU[NT]) -> "AstOr[NT]":
         return AstOr(other, self)
 
     @ducktype_num_magic
-    def __eq__(self, other: NTU[NT]) -> 'AstEq[NT]':  # type: ignore
+    def __eq__(self, other: NTU[NT]) -> "AstEq[NT]":  # type: ignore
         return AstEq(self, other)
 
     @ducktype_num_magic
-    def __ne__(self, other: NTU[NT]) -> 'AstNe[NT]':  # type: ignore
+    def __ne__(self, other: NTU[NT]) -> "AstNe[NT]":  # type: ignore
         return AstNe(self, other)
 
     @ducktype_num_magic
-    def __lt__(self, other: NTU[NT]) -> 'AstLt[NT]':
+    def __lt__(self, other: NTU[NT]) -> "AstLt[NT]":
         return AstLt(self, other)
 
     @ducktype_num_magic
-    def __gt__(self, other: NTU[NT]) -> 'AstGt[NT]':
+    def __gt__(self, other: NTU[NT]) -> "AstGt[NT]":
         return AstGt(self, other)
 
     @ducktype_num_magic
-    def __le__(self, other: NTU[NT]) -> 'AstLe[NT]':
+    def __le__(self, other: NTU[NT]) -> "AstLe[NT]":
         return AstLe(self, other)
 
     @ducktype_num_magic
-    def __ge__(self, other: NTU[NT]) -> 'AstGe[NT]':
+    def __ge__(self, other: NTU[NT]) -> "AstGe[NT]":
         return AstGe(self, other)
 
-    def __abs__(self) -> 'AstAbs[NT]':
+    def __abs__(self) -> "AstAbs[NT]":
         return AstAbs(self)
 
-    def to_int(self) -> 'AstInt':
+    def to_int(self) -> "AstInt":
         if not issubclass(self._ref_type, float):
-            raise TypeError('availble only for KSP float expression')
+            raise TypeError("availble only for KSP float expression")
         return AstInt(self)  # type: ignore
 
-    def to_float(self) -> 'AstFloat':
+    def to_float(self) -> "AstFloat":
         if not issubclass(self._ref_type, int):
-            raise TypeError('availble only for KSP int expression')
+            raise TypeError("availble only for KSP int expression")
         return AstFloat(self)  # type: ignore
 
-    def __lshift__(self, other: NTU[int]) -> 'AstLshift':
+    def __lshift__(self, other: NTU[int]) -> "AstLshift":
         if not issubclass(self._ref_type, int):
-            raise TypeError('availble only for KSP int expression')
+            raise TypeError("availble only for KSP int expression")
         return AstLshift(self, other)  # type: ignore
 
-    def __rlshift__(self, other: NTU[int]) -> 'AstLshift':
+    def __rlshift__(self, other: NTU[int]) -> "AstLshift":
         if not issubclass(self._ref_type, int):
-            raise TypeError('availble only for KSP int expression')
+            raise TypeError("availble only for KSP int expression")
         return AstLshift(other, self)  # type: ignore
 
-    def __rshift__(self, other: NTU[int]) -> 'AstRshift':
+    def __rshift__(self, other: NTU[int]) -> "AstRshift":
         if not issubclass(self._ref_type, int):
-            raise TypeError('availble only for KSP int expression')
+            raise TypeError("availble only for KSP int expression")
         return AstRshift(self, other)  # type: ignore
 
-    def __rrshift__(self, other: NTU[int]) -> 'AstRshift':
+    def __rrshift__(self, other: NTU[int]) -> "AstRshift":
         if not issubclass(self._ref_type, int):
-            raise TypeError('availble only for KSP int expression')
+            raise TypeError("availble only for KSP int expression")
         return AstRshift(other, self)  # type: ignore
 
 
-def to_int(value: ProcessNum) -> 'AstInt':
+def to_int(value: ProcessNum) -> "AstInt":
     return value.to_int()
 
 
-def to_float(value: ProcessNum) -> 'AstFloat':
+def to_float(value: ProcessNum) -> "AstFloat":
     return value.to_float()
 
 
 class VarMeta(KSPBaseMeta):
-
-    def __call__(cls, value: ty.Optional[KT]=None,
-                 *args: ty.Any, **kwargs: ty.Any) -> 'VarParent[KT]':
+    def __call__(cls,
+                 value: ty.Optional[KT] = None,
+                 *args: ty.Any,
+                 **kwargs: ty.Any) -> "VarParent[KT]":
         _arg = cls._KSPTYPE  # type: ignore
         if cls is VarParent and _arg is KT:  # type: ignore
             _arg = None
 
         if issubclass(cls, Str):
-            _arg = str   # type: ignore
+            _arg = str
         if value is None and _arg is None:
-            raise TypeError('VarParent type has to be specified or' +
-                            ' value has to be initialized')
+            raise TypeError("VarParent type has to be specified or" +
+                            " value has to be initialized")
         if _arg:
             cls._ref = _arg  # type: ignore
             _ref = _arg
@@ -313,48 +311,43 @@ class VarMeta(KSPBaseMeta):
                     _value = value
                 if not isinstance(_value, _ref):
                     raise TypeError(
-                        'value has to be of type {r}, pasted: {v}'.format(
+                        "value has to be of type {r}, pasted: {v}".format(
                             r=cls._ref, v=value))
         else:
             if issubclass(cls, Arr) and isinstance(value, ty.List):
                 _value = value[0]
             else:
                 _value = value  # type: ignore
-            cls._ref = get_value_type(_value)  # type: ignore
+            cls._ref = get_value_type(_value)
             _ref = cls._ref  # type: ignore
         if cls is VarParent:
             if _ref is str:
                 Str._ref = _ref  # type: ignore
-                obj = super(VarMeta, Str).__call__(
-                    value, *args, **kwargs)  # type: ignore
+                obj = super(VarMeta, Str).__call__(value, *args, **kwargs)
             else:
                 Num._ref = _ref  # type: ignore
-                obj = super(VarMeta, Num).__call__(
-                    value, *args, **kwargs)  # type: ignore
+                obj = super(VarMeta, Num).__call__(value, *args, **kwargs)
                 Num._ref = None  # type: ignore
         else:
-            obj = super().__call__(value, *args, **kwargs)  # type: ignore
-        cls._KSPTYPE = None   # type: ignore
+            obj = super().__call__(value, *args, **kwargs)
+        cls._KSPTYPE = None
         cls._ref = None
-        return obj   # type: ignore
+        return obj
 
-    def __getitem__(cls,  # type: ignore
-                          *args: ty.Type[KT],   # type: ignore
-                          **kwargs: ty.Any   # type: ignore
-                    ) -> ty.Type['VarParent[KT]']:  # type: ignore
+    def __getitem__(cls, *args: ty.Type[KT],
+                    **kwargs: ty.Any) -> ty.Type["VarParent[KT]"]:
         cls._KSPTYPE = args[0]  # type: ignore
         return cls  # type: ignore
 
 
 class TypeMeta(type):
-
-    def __instancecheck__(cls, instance: 'VarParent') -> bool:
+    def __instancecheck__(cls, instance: "VarParent") -> bool:
         if isinstance(instance, Arr):
             if not issubclass(cls, TypeArr):
                 return False
             if issubclass(instance._ref_type, cls._ref_type):  # type: ignore
-                if cls._size is False or len(  # type: ignore
-                        instance) >= cls._size:  # type: ignore
+                if (cls._size is False or  # type: ignore
+                        len(instance) >= cls._size):  # type: ignore
                     return True
             return False
         if not isinstance(instance, VarParent):
@@ -363,10 +356,11 @@ class TypeMeta(type):
             return True
         return super().__instancecheck__(instance)
 
-    def __getitem__(cls, ref: ty.Union[ty.Type[KT],
-                                       ty.Tuple[ty.Type[KT],
-                                                ty.Union[int, bool]]]
-                    ) -> ty.Type['Type']:
+    def __getitem__(
+            cls,
+            ref: ty.Union[ty.Type[KT], ty.Tuple[ty.Type[KT], ty.
+                                                Union[int, bool]]],
+    ) -> ty.Type["Type"]:
         if ref is int:
             return TypeInt
         if ref is str:
@@ -376,7 +370,7 @@ class TypeMeta(type):
         if not isinstance(ref, tuple):
             raise TypeError(f"can't infer type of {ref}")
         if ref[1] is True or ref[1] is None or ref[1] < 0:
-            raise TypeError('size par can be only False or positive int')
+            raise TypeError("size par can be only False or positive int")
         if ref[0] is int:
             TypeArrInt._size = ref[1]
             return TypeArrInt
@@ -440,28 +434,31 @@ class VarParent(KspObject, HasInit, ty.Generic[KT], metaclass=VarMeta):
         VarParent.inst_persistent
         VarParent.read_persistent"""
 
-        def __init__(self, line: str='') -> None:
+        def __init__(self, line: str = "") -> None:
             self.line = line
 
     not_persistent: ty.ClassVar[Persist] = Persist()
-    persistent: ty.ClassVar[Persist] = Persist('make_persistent')
-    inst_persistent: ty.ClassVar[Persist] = Persist('make_instr_persistent')
-    read_persistent: ty.ClassVar[Persist] = Persist('make_persistent')
+    persistent: ty.ClassVar[Persist] = Persist("make_persistent")
+    inst_persistent: ty.ClassVar[Persist] = Persist("make_instr_persistent")
+    read_persistent: ty.ClassVar[Persist] = Persist("make_persistent")
 
-    def __init__(self,
-                 value: ty.Optional[KT]=None,
-                 name: str='',
-                 persist: Persist=not_persistent,
-                 preserve_name: bool=False,
-                 *, local: bool=False) -> None:
+    def __init__(
+            self,
+            value: ty.Optional[KT] = None,
+            name: str = "",
+            persist: Persist = not_persistent,
+            preserve_name: bool = False,
+            *,
+            local: bool = False,
+    ) -> None:
         if local:
             if not name:
-                raise TypeError('local name can not be empty')
+                raise TypeError("local name can not be empty")
             sup_name = NameBase(name)
             has_init = False
         else:
             if not name:
-                name = f'VarParent{VarParent.names_count}'
+                name = f"VarParent{VarParent.names_count}"
                 VarParent.names_count += 1
             sup_name = NameVar(name, preserve=preserve_name)
             has_init = True
@@ -477,11 +474,11 @@ class VarParent(KspObject, HasInit, ty.Generic[KT], metaclass=VarMeta):
 
     def _get_type_prefix(self) -> str:
         if issubclass(self._ref_type, int):
-            return '$'
+            return "$"
         elif issubclass(self._ref_type, str):
-            return '@'
+            return "@"
         elif issubclass(self._ref_type, float):
-            return '~'
+            return "~"
         else:
             raise TypeError(f"Can't infer type of value")
 
@@ -492,9 +489,9 @@ class VarParent(KspObject, HasInit, ty.Generic[KT], metaclass=VarMeta):
     def generate_init(self) -> ty.List[str]:
         out = self.get_decl_line()
         if self._persist is not self.not_persistent:
-            out.append(f'{self._persist.line}({self.name()})')
+            out.append(f"{self._persist.line}({self.name()})")
         if self._persist is self.read_persistent:
-            out.append(f'read_persistent_var({self.name()})')
+            out.append(f"read_persistent_var({self.name()})")
 
         return out
 
@@ -505,21 +502,21 @@ class VarParent(KspObject, HasInit, ty.Generic[KT], metaclass=VarMeta):
     def read(self) -> None:
         self._persist = self.persistent
         out = self.get_out()
-        out.put_immediatly(AstString(f'read_persistent_var({self.name()})'))
+        out.put_immediatly(AstString(f"read_persistent_var({self.name()})"))
 
     # @abstractmethod
     def __ilshift__(self: T, other: ATU) -> T:
         raise NotImplementedError
 
     def copy(self: T, name: str, prefix: str, postfix: str) -> T:
-        obj = self.__class__(self._value,  # type: ignore
-                             name=name, local=True)  # type: ignore
+        obj = self.__class__(  # type: ignore
+            self._value, name=name, local=True)  # type: ignore
         obj.name.prefix = prefix  # type: ignore
         obj.name.postfix = postfix  # type: ignore
         return obj
 
-    def _make_copy(self, other: ATU[KT],
-                   value: KT, new_type: ty.Type[KVT]) -> KVT:
+    def _make_copy(self, other: ATU[KT], value: KT,
+                   new_type: ty.Type[KVT]) -> KVT:
         otpt = self.get_out()
         otpt.put_immediatly(AstAssign(self, other))
         if self.is_compiled():
@@ -543,22 +540,21 @@ class VarParent(KspObject, HasInit, ty.Generic[KT], metaclass=VarMeta):
         VarParent.names_count = 0
 
 
-VarRU = ty.Union['Num[int]', 'Num[float]', 'Str']
+VarRU = ty.Union["Num[int]", "Num[float]", "Str"]
 VarIU = ty.Union[int, str, float]
 
 
 class VarWrapperMeta(type):
-
     @ty.overload
-    def __getitem__(cls, ref: ty.Type[int]) -> ty.Type['Num[int]']:
+    def __getitem__(cls, ref: ty.Type[int]) -> ty.Type["Num[int]"]:
         ...
 
     @ty.overload
-    def __getitem__(cls, ref: ty.Type[float]) -> ty.Type['Num[float]']:
+    def __getitem__(cls, ref: ty.Type[float]) -> ty.Type["Num[float]"]:
         ...
 
     @ty.overload
-    def __getitem__(cls, ref: ty.Type[str]) -> ty.Type['Str']:
+    def __getitem__(cls, ref: ty.Type[str]) -> ty.Type["Str"]:
         ...
 
     def __getitem__(cls, ref: ty.Type[VarIU]) -> ty.Type[VarRU]:
@@ -569,32 +565,39 @@ class VarWrapperMeta(type):
 
 
 class Var(metaclass=VarWrapperMeta):
-
-    def __new__(cls,
-                value: VarIU,
-                name: str='',
-                persist: VarParent.Persist=VarParent.not_persistent,
-                preserve_name: bool=False,
-                *, local: bool=False
-                ) -> VarRU:
+    def __new__(
+            cls,
+            value: VarIU,
+            name: str = "",
+            persist: VarParent.Persist = VarParent.not_persistent,
+            preserve_name: bool = False,
+            *,
+            local: bool = False,
+    ) -> VarRU:
         if isinstance(value, int):
-            return Num(value=value,
-                       name=name,
-                       persist=persist,
-                       preserve_name=preserve_name,
-                       local=local)
+            return Num(
+                value=value,
+                name=name,
+                persist=persist,
+                preserve_name=preserve_name,
+                local=local,
+            )
         if isinstance(value, float):
-            return Num(value=value,
-                       name=name,
-                       persist=persist,
-                       preserve_name=preserve_name,
-                       local=local)
+            return Num(
+                value=value,
+                name=name,
+                persist=persist,
+                preserve_name=preserve_name,
+                local=local,
+            )
         if isinstance(value, str):
-            return Str(value=value,
-                       name=name,
-                       persist=persist,
-                       preserve_name=preserve_name,
-                       local=local)
+            return Str(
+                value=value,
+                name=name,
+                persist=persist,
+                preserve_name=preserve_name,
+                local=local,
+            )
         raise TypeError("can't infer type of value")
 
 
@@ -602,98 +605,107 @@ STT = (VarParent, str, ConcatsStrings)
 
 
 class Str(VarParent[str], ConcatsStrings):
-
-    def __init__(self,
-                 value: str='',
-                 name: str='',
-                 persist: VarParent.Persist=VarParent.not_persistent,
-                 preserve_name: bool=False,
-                 *, local: bool=False) -> None:
+    def __init__(
+            self,
+            value: str = "",
+            name: str = "",
+            persist: VarParent.Persist = VarParent.not_persistent,
+            preserve_name: bool = False,
+            *,
+            local: bool = False,
+    ) -> None:
         if not isinstance(value, str):
-            raise TypeError(f'value has to be of str type. Pasted: {value}')
-        super().__init__(value=value,
-                         name=name,
-                         persist=persist,
-                         preserve_name=preserve_name,
-                         local=local)
+            raise TypeError(f"value has to be of str type. Pasted: {value}")
+        super().__init__(
+            value=value,
+            name=name,
+            persist=persist,
+            preserve_name=preserve_name,
+            local=local,
+        )
 
-    def __ilshift__(self, other: STU) -> 'Str':
+    def __ilshift__(self, other: STU) -> "Str":
         if not isinstance(other, STT):
-            raise TypeError('incompatible type for assignement: ' +
-                            f'{type(other)} -> {STU}')  # type: ignore
+            raise TypeError("incompatible type for assignement: " +
+                            f"{type(other)} -> {STU}"  # type: ignore
+                            )
         value = get_value(other)
         if not isinstance(value, str):
-            value = f'{value}'
+            value = f"{value}"
         ret_obj = self._make_copy(other, value, Str)
 
         return ret_obj
 
     def get_decl_line(self) -> ty.List[str]:
-        out = [f'declare {self.name()}']
+        out = [f"declare {self.name()}"]
         if self._init_val:
             out.append(f'{self.name()} := "{self._init_val}"')
         return out
 
-    def __iadd__(self, other: STU) -> 'Str':  # type: ignore
+    def __iadd__(self, other: STU) -> "Str":  # type: ignore
         return self.__ilshift__(AstConcatString(self, other))
 
 
 class Num(VarParent[NT], ProcessNum[NT]):
+    def __init__(
+            self,
+            value: ty.Optional[NT] = None,
+            name: str = "",
+            persist: VarParent.Persist = VarParent.not_persistent,
+            preserve_name: bool = False,
+            *,
+            local: bool = False,
+    ) -> None:
+        super().__init__(  # type: ignore
+            value=value,
+            name=name,
+            persist=persist,
+            preserve_name=preserve_name,
+            local=local,
+        )
 
-    def __init__(self,
-                 value: ty.Optional[NT]=None,
-                 name: str='',
-                 persist: VarParent.Persist=VarParent.not_persistent,
-                 preserve_name: bool=False,
-                 *, local: bool=False) -> None:
-        super().__init__(value=value,  # type: ignore
-                         name=name,
-                         persist=persist,
-                         preserve_name=preserve_name,
-                         local=local)
-
-    def __ilshift__(self, other: ATU[NT]) -> 'Num[NT]':  # type: ignore
+    def __ilshift__(self, other: ATU[NT]) -> "Num[NT]":  # type: ignore
         other = self._check_for_int(other)  # type: ignore
         value = get_value(other)
         if not isinstance(value, self._ref_type):
-            raise TypeError(f'assigned to a value of wrong type: {value}')
+            raise TypeError(f"assigned to a value of wrong type: {value}")
         ret_obj = self._make_copy(other, value, Num)
 
         return ret_obj
 
     def get_decl_line(self) -> ty.List[str]:
-        value = ''
+        value = ""
         if self._init_val:
-            value = f' := {self._init_val}'
-        out = [f'declare {self.name()}{value}']
+            value = f" := {self._init_val}"
+        out = [f"declare {self.name()}{value}"]
         return out
 
     @ducktype_num_magic
-    def __iadd__(self, other: NTU[NT]) -> 'Num[NT]':  # type: ignore
+    def __iadd__(self, other: NTU[NT]) -> "Num[NT]":  # type: ignore
         return self.__ilshift__(AstAdd(self, other))
 
     @ducktype_num_magic
-    def __isub__(self, other: NTU[NT]) -> 'Num[NT]':  # type: ignore
+    def __isub__(self, other: NTU[NT]) -> "Num[NT]":  # type: ignore
         return self.__ilshift__(AstSub(self, other))
 
     @ducktype_num_magic
-    def __imul__(self, other: NTU[NT]) -> 'Num[NT]':  # type: ignore
+    def __imul__(self, other: NTU[NT]) -> "Num[NT]":  # type: ignore
         return self.__ilshift__(AstMul(self, other))
 
     @ducktype_num_magic
-    def __itruediv__(self, other: NTU[NT]) -> 'Num[NT]':  # type: ignore
+    def __itruediv__(self, other: NTU[NT]) -> "Num[NT]":  # type: ignore
         return self.__ilshift__(AstDiv(self, other))
 
     @ducktype_num_magic
-    def __imod__(self, other: NTU[int]) -> 'Num[int]':  # type: ignore
+    def __imod__(self, other: NTU[int]) -> "Num[int]":  # type: ignore
         if not issubclass(self._ref_type, int):
-            raise TypeError('availble only for KSP int expression')
+            raise TypeError("availble only for KSP int expression")
         return self.__ilshift__(AstMod(self, other))  # type: ignore
 
     @ducktype_num_magic
-    def __ipow__(self, other: NTU[float]) -> 'Num[float]':  # type: ignore
+    def __ipow__(self, other: NTU[float]) -> "Num[float]":  # type: ignore
         if not issubclass(self._ref_type, float):
-            raise TypeError('availble only for KSP float expression')
+            raise TypeError("availble only for KSP float expression")
         return self.__ilshift__(AstPow(self, other))  # type: ignore
 
     def __iand__(self, other: NTU[NT]) -> ty.NoReturn:
@@ -715,35 +727,34 @@ class Num(VarParent[NT], ProcessNum[NT]):
 
 def _assert_Num_int(var: NTU[int]) -> None:
     if not isinstance(var, Num):
-        raise TypeError(f'can only be used with {Num[int]}')
+        raise TypeError(f"can only be used with {Num[int]}")
     if not issubclass(get_value_type(var), int):
-        raise TypeError(f'can only be used with {Num[int]}')
+        raise TypeError(f"can only be used with {Num[int]}")
 
 
 def inc(var: Num[int]) -> None:
     _assert_Num_int(var)
     out = var.get_out()
-    out.put_immediatly(AstBuiltInBase(None, 'inc', var))
+    out.put_immediatly(AstBuiltInBase(None, "inc", var))
     var._value += 1
 
 
 def dec(var: Num[int]) -> None:
     _assert_Num_int(var)
     out = var.get_out()
-    out.put_immediatly(AstBuiltInBase(None, 'dec', var))
+    out.put_immediatly(AstBuiltInBase(None, "dec", var))
     var._value -= 1
 
 
 class AstAssign(AstRoot):
-
-    def __init__(self, to_arg: 'VarParent', from_arg: ATU) -> None:
-        self.to_arg: 'VarParent' = to_arg
+    def __init__(self, to_arg: "VarParent", from_arg: ATU) -> None:
+        self.to_arg: "VarParent" = to_arg
         self.from_arg: ATU = from_arg
 
     def expand(self) -> str:
         to = self.to_arg.name()
         from_str = get_compiled(self.from_arg)
-        return f'{to} := {from_str}'
+        return f"{to} := {from_str}"
 
     def get_value(self) -> ty.NoReturn:
         raise self.NullError
@@ -755,9 +766,7 @@ class AstBuiltInBase(AstRoot, AstBase[KT]):
     args: ty.List[str]
     string: str
 
-    def __init__(self,
-                 ret_val: ty.Optional[KT],
-                 string: str,
+    def __init__(self, ret_val: ty.Optional[KT], string: str,
                  *args: ATU) -> None:
         if ret_val is not None:
             self._ref_type = get_value_type(ret_val)
@@ -789,9 +798,8 @@ class AstOperatorUnary(AstBase[NT], ProcessNum[NT]):
 
 
 class AstOperatorUnaryStandart(AstOperatorUnary[NT]):
-
     def expand(self) -> str:
-        return f'{self.string}{self.arg1_str}'
+        return f"{self.string}{self.arg1_str}"
 
 
 class AstOperatorDouble(AstOperatorUnary[NT]):
@@ -805,8 +813,7 @@ class AstOperatorDouble(AstOperatorUnary[NT]):
 
 
 class AstOperatorDoubleStandart(AstOperatorDouble[NT]):
-
-    def _expand_with_string(self, string: str, is_bool: bool=False) -> str:
+    def _expand_with_string(self, string: str, is_bool: bool = False) -> str:
         pr: ty.List[int] = list()
         for arg in (self.arg1, self.arg2):
             if isinstance(arg, AstOperatorUnary):
@@ -814,29 +821,26 @@ class AstOperatorDoubleStandart(AstOperatorDouble[NT]):
                 continue
             pr.append(0)
         if self.priority <= pr[1]:
-            self.arg2_str = f'({self.arg2_str})'
+            self.arg2_str = f"({self.arg2_str})"
         if self.priority < pr[0]:
-            self.arg1_str = f'({self.arg1_str})'
-        return f'{self.arg1_str} {string} {self.arg2_str}'
+            self.arg1_str = f"({self.arg1_str})"
+        return f"{self.arg1_str} {string} {self.arg2_str}"
 
     def expand(self) -> str:
         return self._expand_with_string(self.string)
 
 
 class AstOperatorUnaryBracket(AstOperatorUnary[NT]):
-
     def expand(self) -> str:
-        return f'{self.string}({self.arg1_str})'
+        return f"{self.string}({self.arg1_str})"
 
 
 class AstOperatorDoubleBracket(AstOperatorDouble[NT]):
-
     def expand(self) -> str:
-        return f'{self.string}({self.arg1_str}, {self.arg2_str})'
+        return f"{self.string}({self.arg1_str}, {self.arg2_str})"
 
 
 class AstBool(AstBase[NT]):
-
     @abstractmethod
     def __bool__(self) -> bool:
         pass
@@ -885,7 +889,7 @@ class AstCanBeBool(AstOperatorDoubleStandart[NT], AstBool[NT]):
 
 class AstNeg(AstOperatorUnaryStandart[NT]):
     priority = 2
-    string = '-'
+    string = "-"
 
     def get_value(self) -> NT:
         return -self.arg1_pure
@@ -893,17 +897,17 @@ class AstNeg(AstOperatorUnaryStandart[NT]):
 
 class AstNot(AstOperatorUnaryStandart[int]):
     priority = 2
-    string = '.not.'
+    string = ".not."
 
     def get_value(self) -> int:
         if not issubclass(self._ref_type, int):
-            raise TypeError('works only on ints')
+            raise TypeError("works only on ints")
         return ~self.arg1_pure
 
 
 class AstAbs(AstOperatorUnaryBracket[NT]):
     priority = 2
-    string = 'abs'
+    string = "abs"
 
     def get_value(self) -> NT:
         return abs(self.arg1_pure)
@@ -911,7 +915,7 @@ class AstAbs(AstOperatorUnaryBracket[NT]):
 
 class AstInt(AstOperatorUnaryBracket[int]):
     priority = 2
-    string = 'real_to_int'
+    string = "real_to_int"
     arg1: NTU[float]  # type: ignore
     arg1_pure: int
     arg1_str: str
@@ -922,13 +926,13 @@ class AstInt(AstOperatorUnaryBracket[int]):
         self.arg1_pure: int = int(get_value(arg1))
         self.arg1_str: str = get_compiled(arg1)
 
-    def get_value(self) -> int:  # type: ignore
+    def get_value(self) -> int:
         return int(self.arg1_pure)
 
 
 class AstFloat(AstOperatorUnaryBracket[float]):
     priority = 2
-    string = 'int_to_real'
+    string = "int_to_real"
     arg1: NTU[int]  # type: ignore
     arg1_pure: float
     arg1_str: str
@@ -939,13 +943,13 @@ class AstFloat(AstOperatorUnaryBracket[float]):
         self.arg1_pure: float = float(get_value(arg1))
         self.arg1_str: str = get_compiled(arg1)
 
-    def get_value(self) -> float:  # type: ignore
+    def get_value(self) -> float:
         return float(self.arg1_pure)
 
 
 class AstAdd(AstOperatorDoubleStandart[NT]):
     priority = 4
-    string = '+'
+    string = "+"
 
     def get_value(self) -> NT:
         return self.arg1_pure + self.arg2_pure
@@ -953,7 +957,7 @@ class AstAdd(AstOperatorDoubleStandart[NT]):
 
 class AstSub(AstOperatorDoubleStandart[NT]):
     priority = 4
-    string = '-'
+    string = "-"
 
     def get_value(self) -> NT:
         return self.arg1_pure - self.arg2_pure
@@ -961,7 +965,7 @@ class AstSub(AstOperatorDoubleStandart[NT]):
 
 class AstDiv(AstOperatorDoubleStandart[NT]):
     priority = 3
-    string = '/'
+    string = "/"
 
     def get_value(self) -> NT:
         try:
@@ -975,7 +979,7 @@ class AstDiv(AstOperatorDoubleStandart[NT]):
 
 class AstMul(AstOperatorDoubleStandart[NT]):
     priority = 3
-    string = '*'
+    string = "*"
 
     def get_value(self) -> NT:
         return self.arg1_pure * self.arg2_pure
@@ -983,7 +987,7 @@ class AstMul(AstOperatorDoubleStandart[NT]):
 
 class AstMod(AstOperatorDoubleStandart[int]):
     priority = 3
-    string = 'mod'
+    string = "mod"
 
     def get_value(self) -> int:
         return self.arg1_pure % self.arg2_pure
@@ -991,15 +995,15 @@ class AstMod(AstOperatorDoubleStandart[int]):
 
 class AstPow(AstOperatorDoubleBracket[float]):
     priority = 1
-    string = 'pow'
+    string = "pow"
 
     def get_value(self) -> float:
-        return self.arg1_pure ** self.arg2_pure
+        return self.arg1_pure**self.arg2_pure
 
 
 class AstLshift(AstOperatorDoubleBracket[int]):
     priority = 5
-    string = 'sh_left'
+    string = "sh_left"
 
     def get_value(self) -> int:
         return self.arg1_pure << self.arg2_pure
@@ -1007,7 +1011,7 @@ class AstLshift(AstOperatorDoubleBracket[int]):
 
 class AstRshift(AstOperatorDoubleBracket[int]):
     priority = 5
-    string = 'sh_right'
+    string = "sh_right"
 
     def get_value(self) -> int:
         return self.arg1_pure >> self.arg2_pure
@@ -1015,12 +1019,12 @@ class AstRshift(AstOperatorDoubleBracket[int]):
 
 class AstAnd(AstCanBeBool[NT]):
     priority = 7
-    string = '.and.'
-    string_bool = 'and'
+    string = ".and."
+    string_bool = "and"
 
     def get_value(self) -> NT:
         if not issubclass(self._ref_type, int):
-            raise TypeError('waorks only on ints')
+            raise TypeError("waorks only on ints")
         return self.arg1_pure & self.arg2_pure  # type: ignore
 
     def __bool__(self) -> bool:
@@ -1031,12 +1035,12 @@ class AstAnd(AstCanBeBool[NT]):
 
 class AstOr(AstCanBeBool[NT]):
     priority = 8
-    string = '.or.'
-    string_bool = 'or'
+    string = ".or."
+    string_bool = "or"
 
     def get_value(self) -> NT:
         if not issubclass(self._ref_type, int):
-            raise TypeError('waorks only on ints')
+            raise TypeError("waorks only on ints")
         return self.arg1_pure | self.arg2_pure  # type: ignore
 
     def __bool__(self) -> bool:
@@ -1046,7 +1050,6 @@ class AstOr(AstCanBeBool[NT]):
 
 
 class OperatorComparisson(AstOperatorDoubleStandart[NT], AstBool[NT]):
-
     def expand(self) -> str:
         is_set = False
         if not self.is_bool():
@@ -1063,7 +1066,7 @@ class OperatorComparisson(AstOperatorDoubleStandart[NT], AstBool[NT]):
 
 class AstEq(OperatorComparisson[NT]):
     priority = 6
-    string = '='
+    string = "="
 
     def __nonzero__(self) -> bool:
         return self.__bool__()
@@ -1076,7 +1079,7 @@ class AstEq(OperatorComparisson[NT]):
 
 class AstNe(OperatorComparisson[NT]):
     priority = 6
-    string = '#'
+    string = "#"
 
     def __bool__(self) -> bool:
         if self.arg1_pure != self.arg2_pure:
@@ -1086,7 +1089,7 @@ class AstNe(OperatorComparisson[NT]):
 
 class AstLt(OperatorComparisson[NT]):
     priority = 6
-    string = '<'
+    string = "<"
 
     def __bool__(self) -> bool:
         if self.arg1_pure < self.arg2_pure:
@@ -1096,7 +1099,7 @@ class AstLt(OperatorComparisson[NT]):
 
 class AstGt(OperatorComparisson[NT]):
     priority = 6
-    string = '>'
+    string = ">"
 
     def __bool__(self) -> bool:
         if self.arg1_pure > self.arg2_pure:
@@ -1106,7 +1109,7 @@ class AstGt(OperatorComparisson[NT]):
 
 class AstLe(OperatorComparisson[NT]):
     priority = 6
-    string = '<='
+    string = "<="
 
     def __bool__(self) -> bool:
         if self.arg1_pure <= self.arg2_pure:
@@ -1116,7 +1119,7 @@ class AstLe(OperatorComparisson[NT]):
 
 class AstGe(OperatorComparisson[NT]):
     priority = 6
-    string = '>='
+    string = ">="
 
     def __bool__(self) -> bool:
         if self.arg1_pure >= self.arg2_pure:
@@ -1124,16 +1127,40 @@ class AstGe(OperatorComparisson[NT]):
         return False
 
 
-class Arr(VarParent, ty.Generic[KT]):
-    _value: ty.List[ty.Union[KT, VarParent[KT]]]
+class ArrVar(VarParent[KT]):
+    _ref_type: ty.Type[KT]
 
-    def __init__(self,
-                 value: ty.Optional[ty.Union[KT, ty.List[KT]]]=None,
-                 name: str='',
-                 persist: VarParent.Persist=VarParent.not_persistent,
-                 preserve_name: bool=False,
-                 size: ty.Optional[int]=None, *,
-                 local: bool=False) -> None:
+    def __init__(self, idx: int, array: 'Arr[KT]', name: str) -> None:
+        self._idx = idx
+        self._array: Arr[KT] = array
+        super().__init__(  # type: ignore
+            value=array._value[idx], name=name, local=True)
+
+    @property  # type: ignore
+    def _value(self) -> KT:  # type: ignore
+        return self._array._value[self._idx]
+
+    @_value.setter
+    def _value(self, val: KT) -> None:
+        if not isinstance(val, self._ref_type):
+            raise TypeError(f'value {val} is not of type {self._ref_type}')
+        self._array._value[self._idx] = val
+
+
+class Arr(VarParent, ty.Generic[KT]):
+    _value: ty.List[KT]
+    _vars: ty.List[ty.Optional[VarParent[KT]]]
+
+    def __init__(
+            self,
+            value: ty.Optional[ty.Union[KT, ty.List[KT]]] = None,
+            name: str = "",
+            persist: VarParent.Persist = VarParent.not_persistent,
+            preserve_name: bool = False,
+            size: ty.Optional[int] = None,
+            *,
+            local: bool = False,
+    ) -> None:
         value = ty.cast(ty.Union[KT, ty.List[KT]], value)
         self._init_size = size
         self._size = 0
@@ -1154,13 +1181,16 @@ class Arr(VarParent, ty.Generic[KT]):
             self._init_seq = value.copy()
             _value = value
             value = value[0]
-        super().__init__(value=value,
-                         name=name,
-                         persist=persist,
-                         preserve_name=preserve_name,
-                         local=local)
-        self._value = _value  # type: ignore
+        super().__init__(
+            value=value,
+            name=name,
+            persist=persist,
+            preserve_name=preserve_name,
+            local=local,
+        )
+        self._value = _value
         self._recieved_rt: bool = False
+        self._vars = list([None] * self._size)
 
     def _after_init(self, value: ty.List[KT]) -> None:
         return
@@ -1169,8 +1199,7 @@ class Arr(VarParent, ty.Generic[KT]):
         c_idx = get_compiled(idx)
         r_idx = get_value(idx)
         if not isinstance(r_idx, int):
-            raise IndexError(
-                f'index has to be resolved to int, pasted: {idx}')
+            raise IndexError(f"index has to be resolved to int, pasted: {idx}")
         if r_idx < 0:
             r_idx = self.__len__() - r_idx
         return c_idx, r_idx
@@ -1181,33 +1210,30 @@ class Arr(VarParent, ty.Generic[KT]):
 
     def __setitem__(self, idx: NTU[int], value: VarParent[KT]) -> None:
         if not isinstance(value, Type[self._ref_type]):
-            raise TypeError(
-                'has to be of type {T}[{r}], pasted: {v}'.format(
-                    T=VarParent, r=self._ref_type, v=value))
+            raise TypeError("has to be of type {T}[{r}], pasted: {v}".format(
+                T=VarParent, r=self._ref_type, v=value))
         c_idx, r_idx = self._resolve_idx(idx)
         self._value[r_idx] = value
 
     def _get_cashed_item(self, c_idx: str, r_idx: int) -> VarParent[KT]:
-        if isinstance(self._value[r_idx], VarParent):
-            obj = self._value[r_idx]
+        if isinstance(self._vars[r_idx], VarParent):
+            obj = self._vars[r_idx]
         else:
-            self._value[r_idx] = VarParent[self._ref_type](  # type: ignore
-                self._value[r_idx],
-                self.name.name,
-                local=True)
-            obj = self._value[r_idx]
+            self._vars[r_idx] = ArrVar[self._ref_type](  # type: ignore
+                r_idx, self, self.name.name)
+            obj = self._vars[r_idx]
         obj = ty.cast(VarParent, obj)
-        obj.name.postfix = f'[{c_idx}]'
+        obj.name.postfix = f"[{c_idx}]"
         obj.name.prefix = self.name.prefix
         return obj
 
     def _get_type_prefix(self) -> str:
         if issubclass(self._ref_type, int):
-            return '%'
+            return "%"
         if issubclass(self._ref_type, str):
-            return '!'
+            return "!"
         if issubclass(self._ref_type, float):
-            return '?'
+            return "?"
         else:
             raise TypeError("can't infer type")
 
@@ -1215,18 +1241,20 @@ class Arr(VarParent, ty.Generic[KT]):
         if i is None:
             return str(self._ref_type())
         if not isinstance(i, self._ref_type):
-            raise TypeError(f'value ({i}) at idx {idx} of a wrong type: {i}')
+            raise TypeError(f"value ({i}) at idx {idx} of a wrong type: {i}")
         return str(i)
 
     def get_decl_line(self) -> ty.List[str]:
-        value = ''
+        value = ""
 
         if len(self._init_seq) != 1 or self._init_seq[0]:
-            value = ', '.join([self._gen_decl_seq_item(idx, i)
-                               for idx, i in enumerate(self._init_seq)])
+            value = ", ".join([
+                self._gen_decl_seq_item(idx, i)
+                for idx, i in enumerate(self._init_seq)
+            ])
         if value:
-            value = f' := ({value})'
-        return [f'declare {self.name()}[{self._size}]{value}']
+            value = f" := ({value})"
+        return [f"declare {self.name()}[{self._size}]{value}"]
 
     def __ilshift__(self, other: ATU[KT]) -> ty.NoReturn:
         raise NotImplementedError
@@ -1236,7 +1264,7 @@ class Arr(VarParent, ty.Generic[KT]):
 
     def _append_is_possible(self) -> bool:
         if not self.in_init():
-            raise RuntimeError('can append only outside callbacks')
+            raise RuntimeError("can append only outside callbacks")
         if not self._init_size or self._size < self._init_size:
             return True
         raise RuntimeError("can't append, Array is full")
@@ -1245,7 +1273,7 @@ class Arr(VarParent, ty.Generic[KT]):
         self._append_is_possible()
         if not isinstance(get_value(value), self._ref_type):
             raise TypeError(
-                'pasted value of wront type: {v}, expected {r}'.format(
+                "pasted value of wront type: {v}, expected {r}".format(
                     v=value, r=self._ref_type))
         if isinstance(value, Type[self._ref_type]):
             self._recieved_rt = True

@@ -1,12 +1,11 @@
 import unittest as ut
 import typing as ty
+from textwrap import dedent
 
 from .. import abstract as ab
-from textwrap import dedent
 
 
 class TestEventListener(ut.TestCase):
-
     def setUp(self) -> None:
         self.listener = ab.EventListener()
         self.out: ty.List[str] = list()
@@ -21,31 +20,31 @@ class TestEventListener(ut.TestCase):
         def get_arg(event: TestEventListener.TestEvent) -> None:
             self.out.append(str(event.arg))
 
-        self.listener.bind_to_event(get_arg,
-                                    self.TestEvent)
+        self.listener.bind_to_event(get_arg, self.TestEvent)
         self.listener.put_event(self.TestEvent(4))
         self.assertEqual(self.out[-1], '4')
 
 
 class TestKspObject(ut.TestCase):
-
     class WithoutInit(ab.KspObject):
-        def __init__(self, name: str='test_object', *,
-                     has_init: bool=False) -> None:
+        def __init__(
+            self, name: str = 'test_object', *, has_init: bool = False
+        ) -> None:
             super().__init__(ab.NameBase(name), has_init=has_init)
 
         def generate_init(self) -> ty.List[str]:
             return [f'init of {self.name()}']
 
     class WithInit(WithoutInit, ab.HasInit):
-        def __init__(self, name: str='test_object') -> None:
+        def __init__(self, name: str = 'test_object') -> None:
             super().__init__(name, has_init=True)
 
     def runTest(self) -> None:
         self.WithInit()
         self.WithoutInit()
-        self.assertEqual(self.WithInit.generate_inits(),
-                         ['init of test_object'])
+        self.assertEqual(
+            self.WithInit.generate_inits(), ['init of test_object']
+        )
 
 
 class TestNames(ut.TestCase):
@@ -105,7 +104,6 @@ class TestNames(ut.TestCase):
 
 
 class TestLittle(ut.TestCase):
-
     def test_AstNull(self) -> None:
         a = ab.AstNull()
         self.assertIsInstance(a, ab.AstRoot)
@@ -117,7 +115,7 @@ class TestLittle(ut.TestCase):
     def test_AstString(self) -> None:
         s = ab.AstString('mystring')
         with self.assertRaises(TypeError):
-            ab.AstString(2)
+            ab.AstString(2)  # type: ignore
         self.assertIsInstance(s, ab.AstRoot)
         with self.assertRaises(ab.AstRoot.NullError):
             s.get_value()
@@ -125,19 +123,20 @@ class TestLittle(ut.TestCase):
 
     def test_AstRoot(self) -> None:
         with self.assertRaises(TypeError):
-            ab.AstRoot()
+            ab.AstRoot()  # type: ignore
 
         class Concrete(ab.AstRoot):
-            def expand(self) -> str:
+            def expand(self) -> str:  # pylint disable=R0201
                 return 'expanded'
 
             def get_value(self) -> None:
                 return
+
         c = Concrete()
         with self.assertRaises(AttributeError):
-            c.queue_line
+            c.queue_line  # pylint disable=W0104
         with self.assertRaises(TypeError):
-            c.queue_line = 'True'
+            c.queue_line = 'True'  # type: ignore
         c.queue_line = 2
         self.assertEqual(c.queue_line, 2)
         self.assertEqual(c.expand(), 'expanded')
@@ -154,13 +153,12 @@ class TestLittle(ut.TestCase):
         self.assertEqual(ifb.close_str, 'end if')
 
         with self.assertRaises(TypeError):
-            ab.OutputBlock(1, '1')
+            ab.OutputBlock(1, '1')  # type: ignore
         with self.assertRaises(TypeError):
-            ab.OutputBlock('1', 1)
+            ab.OutputBlock('1', 1)  # type: ignore
 
 
 class TestOutput(ut.TestCase):
-
     def setUp(self) -> None:
         self.ast = ab.AstString('line')
 
@@ -168,11 +166,11 @@ class TestOutput(ut.TestCase):
         with self.assertRaises(TypeError):
             ab.Output(-1)
         with self.assertRaises(TypeError):
-            ab.Output(1.1)
+            ab.Output(1.1)  # type: ignore
 
         out = ab.Output(0)
         with self.assertRaises(TypeError):
-            out.put_immediatly('ads')
+            out.put_immediatly('ads')  # type: ignore
         out.put_immediatly(self.ast)
         ret = out.get()
         self.assertIsInstance(ret, ab.OutputGot)
@@ -200,7 +198,8 @@ class TestOutput(ut.TestCase):
         out.close_block(ab.OutputBlock('else', 'end if'))
 
         out.close_block(ab.OutputBlock('on init', 'end on'))
-        out_str = dedent('''
+        out_str = dedent(
+            '''
             on init
                 line
                 if
@@ -216,7 +215,8 @@ class TestOutput(ut.TestCase):
                         line
                     end if
                 end if
-            end on''')[1:]
+            end on'''
+        )[1:]
         self.assertEqual(out.get_str(), out_str)
         got = out.get()
         newOut = ab.Output(0)
@@ -227,8 +227,9 @@ class TestOutput(ut.TestCase):
         out.put_immediatly(self.ast)
         out.open_block(ab.OutputBlock('if', 'end if'))
         out.put_immediatly(self.ast)
-        out.wait_for_block(ab.OutputBlock('if', 'end if'),
-                           ab.OutputBlock('else', 'end if'))
+        out.wait_for_block(
+            ab.OutputBlock('if', 'end if'), ab.OutputBlock('else', 'end if')
+        )
 
     def test_blocking(self) -> None:
         out = ab.Output(0)
@@ -250,7 +251,6 @@ class TestOutput(ut.TestCase):
 
 # @ut.skip
 class TestKSP(ut.TestCase):
-
     def tearDown(self) -> None:
         ab.KSP.refresh()
 
@@ -282,7 +282,7 @@ class TestKSP(ut.TestCase):
         root.set_bool(True)
         self.assertTrue(child.is_bool())
         with self.assertRaises(TypeError):
-            root.set_bool(1)
+            root.set_bool(1)  # type: ignore
 
     def test_listener(self) -> None:
         class Error(Exception):
@@ -293,6 +293,7 @@ class TestKSP(ut.TestCase):
 
         class Event(ab.ListenerEventBase):
             pass
+
         event = Event()
         self.assertIsNone(ab.KSP.event(event))
         listener = ab.EventListener()
