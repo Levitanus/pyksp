@@ -276,7 +276,7 @@ class TestInts(TestBase):
 
 
 class TestArray(TestBase):
-    def testi_nit(self) -> None:
+    def testi_int(self) -> None:
         with self.assertRaises(TypeError):
             bt.Arr[int]("s")  # type: ignore
         a = bt.Arr[int]([5, 6], name="a")
@@ -290,7 +290,11 @@ class TestArray(TestBase):
         self.assertEqual(a[0].val, 5)
         self.assertEqual(a[0].name(), "%a[0]")
         out = ab.KSP.new_out()
-        a[0] <<= bt.Var[int](2, name="intvar")
+        asgn = bt.Var[int](2, name="intvar")
+        print(str(a[0]), type(a[0]), a[0].val, a[0]._array, a[0]._idx)
+        a[0] <<= asgn
+        print(str(a[0]), type(a[0]), a[0].val, a[0]._array, a[0]._idx)
+        print(str(asgn), type(asgn), asgn.val, asgn._array, asgn._idx)
         self.assertEqual(a[0].val, 2)
         self.assertEqual(a[0].name(), "%a[0]")
         self.assertEqual(out.get()[-1].line, "%a[0] := $intvar")

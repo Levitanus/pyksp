@@ -44,7 +44,7 @@ def get_value(value: ATU[KT]) -> KT:
     if isinstance(value, (int, str, float)):
         return value
     if isinstance(value, VarParent):
-        return value._value
+        return value.val
     if isinstance(value, AstBase):
         return value.get_value()
     raise TypeError(f"Can't infer type of {value}")
@@ -466,11 +466,21 @@ class VarParent(KspObject, HasInit, ty.Generic[KT], metaclass=VarMeta):
         self._ref_type: ty.Type[KT] = self._ref
         self.name.prefix = self._get_type_prefix()
         self._persist: VarParent.Persist = persist
+        self._array: ty.Optional[Arr[KT]] = None
+        self._idx: ty.Optional[int] = None
         self._after_init(ty.cast(KT, value))
 
     def _after_init(self, value: KT) -> None:
         self._value: KT = value
         self._init_val: KT = value
+
+    def _bound_to_array(self, array: 'Arr[KT]', idx: int) -> None:
+        if not issubclass(array._ref_type, self._ref_type):
+            raise TypeError(f'Wrong array type: {array}')
+        if not isinstance(idx, int):
+            raise TypeError(f'idx can be only int, pasted {idx}')
+        self._array = array
+        self._idx = idx
 
     def _get_type_prefix(self) -> str:
         if issubclass(self._ref_type, int):
@@ -497,7 +507,21 @@ class VarParent(KspObject, HasInit, ty.Generic[KT], metaclass=VarMeta):
 
     @property
     def val(self) -> KT:
-        return self._value
+        if not self._array:
+            return self._value
+        else:
+            return self._array._value[ty.cast(int, self._idx)]
+
+    @val.setter
+    def val(self, val: KT) -> None:
+        if not isinstance(val, self._ref_type):
+            raise TypeError(
+                'accepts only RT values of type {r}, pasted{v}'.format(
+                    r=self._ref_type, v=val))
+        if not self._array:
+            self._value = val
+        else:
+            self._array._value[ty.cast(int, self._idx)] = val
 
     def read(self) -> None:
         self._persist = self.persistent
@@ -510,7 +534,7 @@ class VarParent(KspObject, HasInit, ty.Generic[KT], metaclass=VarMeta):
 
     def copy(self: T, name: str, prefix: str, postfix: str) -> T:
         obj = self.__class__(  # type: ignore
-            self._value, name=name, local=True)  # type: ignore
+            self.val, name=name, local=True)  # type: ignore
         obj.name.prefix = prefix  # type: ignore
         obj.name.postfix = postfix  # type: ignore
         return obj
@@ -526,12 +550,16 @@ class VarParent(KspObject, HasInit, ty.Generic[KT], metaclass=VarMeta):
         postfix = self.name.postfix
         if isinstance(other, new_type):
             ret_obj = other.copy(name, prefix, postfix)  # type: ignore
-            ret_obj._value = value
+            # ret_obj._init_val = other._init_val
         else:
             ret_obj = new_type(value, name, local=True)
             ret_obj.name.prefix = prefix
             ret_obj.name.postfix = postfix
+
         ret_obj._init_val = self._init_val
+        ret_obj._array = self._array
+        ret_obj._idx = self._idx
+        ret_obj.val = value
 
         return ret_obj
 
@@ -647,15 +675,13 @@ class Str(VarParent[str], ConcatsStrings):
 
 
 class Num(VarParent[NT], ProcessNum[NT]):
-    def __init__(
-            self,
-            value: ty.Optional[NT] = None,
-            name: str = "",
-            persist: VarParent.Persist = VarParent.not_persistent,
-            preserve_name: bool = False,
-            *,
-            local: bool = False,
-    ) -> None:
+    def __init__(self,
+                 value: ty.Optional[NT] = None,
+                 name: str = "",
+                 persist: VarParent.Persist = VarParent.not_persistent,
+                 preserve_name: bool = False,
+                 *,
+                 local: bool = False) -> None:
         super().__init__(  # type: ignore
             value=value,
             name=name,
@@ -736,14 +762,14 @@ def inc(var: Num[int]) -> None:
     _assert_Num_int(var)
     out = var.get_out()
     out.put_immediatly(AstBuiltInBase(None, "inc", var))
-    var._value += 1
+    var.val += 1
 
 
 def dec(var: Num[int]) -> None:
     _assert_Num_int(var)
     out = var.get_out()
     out.put_immediatly(AstBuiltInBase(None, "dec", var))
-    var._value -= 1
+    var.val -= 1
 
 
 class AstAssign(AstRoot):
@@ -1127,26 +1153,6 @@ class AstGe(OperatorComparisson[NT]):
         return False
 
 
-class ArrVar(VarParent[KT]):
-    _ref_type: ty.Type[KT]
-
-    def __init__(self, idx: int, array: 'Arr[KT]', name: str) -> None:
-        self._idx = idx
-        self._array: Arr[KT] = array
-        super().__init__(  # type: ignore
-            value=array._value[idx], name=name, local=True)
-
-    @property  # type: ignore
-    def _value(self) -> KT:  # type: ignore
-        return self._array._value[self._idx]
-
-    @_value.setter
-    def _value(self, val: KT) -> None:
-        if not isinstance(val, self._ref_type):
-            raise TypeError(f'value {val} is not of type {self._ref_type}')
-        self._array._value[self._idx] = val
-
-
 class Arr(VarParent, ty.Generic[KT]):
     _value: ty.List[KT]
     _vars: ty.List[ty.Optional[VarParent[KT]]]
@@ -1188,9 +1194,9 @@ class Arr(VarParent, ty.Generic[KT]):
             preserve_name=preserve_name,
             local=local,
         )
-        self._value = _value
+        self._value = _value  # type: ignore
+        self._vars = [None] * len(_value)
         self._recieved_rt: bool = False
-        self._vars = list([None] * self._size)
 
     def _after_init(self, value: ty.List[KT]) -> None:
         return
@@ -1209,22 +1215,25 @@ class Arr(VarParent, ty.Generic[KT]):
         return self._get_cashed_item(c_idx, r_idx)
 
     def __setitem__(self, idx: NTU[int], value: VarParent[KT]) -> None:
+        # pass
         if not isinstance(value, Type[self._ref_type]):
             raise TypeError("has to be of type {T}[{r}], pasted: {v}".format(
                 T=VarParent, r=self._ref_type, v=value))
         c_idx, r_idx = self._resolve_idx(idx)
-        self._value[r_idx] = value
+        self._vars[r_idx] = value
 
     def _get_cashed_item(self, c_idx: str, r_idx: int) -> VarParent[KT]:
+        obj: VarParent[KT]
         if isinstance(self._vars[r_idx], VarParent):
-            obj = self._vars[r_idx]
+            obj = self._vars[r_idx]  # type: ignore
         else:
-            self._vars[r_idx] = ArrVar[self._ref_type](  # type: ignore
-                r_idx, self, self.name.name)
-            obj = self._vars[r_idx]
-        obj = ty.cast(VarParent, obj)
+            self._vars[r_idx] = Var[self._ref_type](
+                self._value[r_idx], self.name.name, local=True)
+            obj = self._vars[r_idx]  # type: ignore
+        # obj = ty.cast(VarParent[KT], obj)
         obj.name.postfix = f"[{c_idx}]"
         obj.name.prefix = self.name.prefix
+        obj._bound_to_array(self, r_idx)
         return obj
 
     def _get_type_prefix(self) -> str:
@@ -1282,6 +1291,7 @@ class Arr(VarParent, ty.Generic[KT]):
             self._value[self._size] = _value
         except IndexError:
             self._value.append(_value)
+            self._vars.append(None)
         if not self._recieved_rt:
             self._init_seq.append(value)  # type: ignore
         else:
