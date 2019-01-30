@@ -48,6 +48,7 @@ class KSP(metaclass=KSPBaseMeta):
     __is_compiled: bool = False
     __callback: ty.Optional['CallbackBase'] = None
     __is_bool: bool = False
+    __for_init: bool = False
     __inits: ty.List['HasInit'] = list()
     docs: bool = False
     indents: int = 4
@@ -64,8 +65,16 @@ class KSP(metaclass=KSPBaseMeta):
         KSP.__is_bool = False
         KSP.__inits = list()
         KSP.__outputs = list()
+        KSP.__for_init = False
         KSP.docs = False
         KSP.indents = 4
+
+    @staticmethod
+    def for_init(val: ty.Optional[bool] = None) -> bool:
+        if val:
+            KSP.__for_init = val
+            return True
+        return KSP.__for_init
 
     class NoBaseError(Exception):
         """NoBaseError."""
@@ -700,7 +709,7 @@ class EventListener(KSP):
 
     def put_event(self, event: 'ListenerEventBase') -> None:
         """Invocate event function if any."""
-        if type(event) not in self._event_funcs:
+        if event.__class__ not in self._event_funcs:
             return
         for func in self._event_funcs[type(event)]:
             func(event)

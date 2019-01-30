@@ -196,3 +196,148 @@ class Case(SelectCase):
         self.out.close_block(self.block)
         self.listener.bind_to_event(raise_on_put, ab.EventAddedToOutput)
         self._case_opened = False
+
+
+ForEnum = ty.NewType('ForEnum', object)
+enum = ForEnum(1)
+
+ARGT = ty.Union[int, bt.Arr, ForEnum]
+
+
+class For(ab.KSP):
+    loop_type: str
+    start: int
+    step: int
+    stop: int
+    args: ty.Sequence[ARGT]
+    _exited: bool
+    _block: ab.OutputBlock
+    _out: ab.Output
+    _count: int
+
+    _idx = bt.Arr[int](name='__for_loop_idx__', size=10)
+    # reveal_type(_idx)
+    _depth = int()
+    _ptr: int
+
+    @staticmethod
+    def _check_for_arrays(args: ty.Sequence[ARGT],
+                          algo_name: str,
+                          should_be_instance: bool = True) -> None:
+        for i in range(1, len(args)):
+            if not isinstance(i, bt.Arr) and should_be_instance:
+                raise TypeError(f'{algo_name} works only with arrays')
+            if isinstance(i, bt.Arr) and not should_be_instance:
+                raise TypeError(f'{algo_name} not works with arrays')
+
+    @classmethod
+    def _initialize(cls) -> None:
+        cls.append_init(cls._idx)
+
+    def __init__(self, *args: ARGT) -> None:
+        if not args:
+            raise TypeError('has to be at least 1 arg')
+        self.args = args
+        self._exited = False
+        self._ptr = self._depth
+        if not self.for_init():
+            self._initialize()
+        if args[0] is enum:
+            self._check_for_arrays(args, 'enum')
+            self._init_as_enum(args)
+            return
+        if isinstance(args[0], bt.Arr):
+            self._check_for_arrays(args, 'zip')
+            self._init_as_zip(args)
+            return
+        if isinstance(args[0], int):
+            self._check_for_arrays(args, 'range', False)
+            self._init_as_range(args)
+            return
+        raise TypeError('can not infer loop type')
+
+    def _init_as_enum(self, args: ty.Sequence[ARGT]) -> None:
+        self.loop_type = 'enum'
+        top = 1000000
+        for arr in args[1:]:
+            arr = ty.cast(bt.Arr, arr)
+            if len(arr) < top:
+                top = len(arr)
+        self.start = 0
+        self.stop = top
+        self.step = 1
+
+    def _init_as_zip(self, args: ty.Sequence[ARGT]) -> None:
+        self.loop_type = 'zip'
+        top = 1000000
+        for arr in args:
+            arr = ty.cast(bt.Arr, arr)
+            if len(arr) < top:
+                top = len(arr)
+        self.start = 0
+        self.stop = top
+        self.step = 1
+
+    def _init_as_range(self, args: ty.Sequence[ARGT]) -> None:
+        self.loop_type = 'range'
+        if len(args) > 3:
+            raise TypeError('range supports up to 3 args: start, stop, step')
+        args = ty.cast(ty.Sequence[int], args)
+        if len(args) == 1:
+            if args[0] < 1:
+                raise TypeError('can be only positive int')
+            self.start = 0
+            self.stop = args[0]
+            self.step = 1
+        if len(args) == 2:
+            self.start = args[0]
+            self.stop = args[1]
+            if self.start < self.stop:
+                self.step = -1
+            else:
+                self.step = 1
+        if len(args) == 2:
+            self.start = args[0]
+            self.stop = args[1]
+            self.step = args[2]
+
+    def __enter__(self) -> 'For':
+        return self
+
+    def __exit__(  # pylint: disable=W0235
+            self, exc_type: ty.Type[Exception], exc_value: ty.Any,
+            traceback: ty.Any) -> None:
+        if not self._exited:
+            self._exit()
+
+    def _exit(self) -> None:
+        self._exited = True
+        self._out.release()
+        self._out.close_block(self._block)
+
+    def __iter__(self) -> 'For':
+        self._out = self.new_out()
+        self._block = self._get_block()
+        self._out.open_block(self._block)
+        self._out.block()
+        self._count = 0
+        return self
+
+    def __next__(self) -> ty.Union[ty.Iterable[bt.VarParent], bt.VarParent]:
+        if self._count != 0:
+            self._idx[self._ptr] += self.step
+        self._count += 1
+        if self.loop_type == 'range':
+            return self._idx[self._ptr]
+        if self.loop_type == 'zip':
+            self.args = ty.cast(ty.Sequence[bt.Arr], self.args)
+            return [arr[self._idx[self._ptr]] for arr in self.args]
+
+    def _get_block(self) -> ab.OutputBlock:
+        add_str: bt.OperatorComparisson
+        self._idx[self._ptr] <<= self.start
+        if self.start < self.stop:
+            add_str = self._idx[self._ptr] < self.stop
+        else:
+            add_str = self._idx[self._ptr] > self.stop
+        return ab.OutputBlock('while', 'end while', add_str.expand())

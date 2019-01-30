@@ -1553,3 +1553,6 @@ class Arr(VarParent, ty.Generic[KT]):
                 'accepts only RT values of type List[int], pasted{v}'.format(
                     r=self._ref_type, v=val))
         self._value = val
+
+    def __iter__(self) -> ty.NoReturn:
+        raise NotImplementedError('for maintainable iteration use For class')

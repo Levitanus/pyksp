@@ -353,8 +353,9 @@ class TestArray(TestBase):
             a_sized.append(5)
         assigned = a_sized[0]
         assigned <<= 8
-        print(assigned, a_sized[0])
         self.assertEqual(a_sized[0].val, 8)
+        assigned += 1
+        self.assertEqual(a_sized[0].val, 9)
 
         a_bad = bt.Arr([1, test])  # type: ignore
         with self.assertRaises(TypeError):
@@ -378,6 +379,13 @@ class TestArray(TestBase):
         ])
         with self.assertRaises(RuntimeError):
             a.read()
+
+        with self.assertRaises(NotImplementedError):
+            for i in a:  # type: ignore
+                pass
+
+    def test_ideas(self) -> None:
+        pass
 
 
 class TestTypes(ut.TestCase):
