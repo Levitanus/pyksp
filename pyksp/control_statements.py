@@ -201,7 +201,7 @@ class Case(SelectCase):
 ForEnum = ty.NewType('ForEnum', object)
 enum = ForEnum(1)
 
-ARGT = ty.Union[int, bt.Arr, ForEnum]
+ARGT = ty.Union[int, bt.ArrBase, ForEnum]
 
 
 class For(ab.KSP):
@@ -260,7 +260,7 @@ class For(ab.KSP):
         self.loop_type = 'enum'
         top = 1000000
         for arr in args[1:]:
-            arr = ty.cast(bt.Arr, arr)
+            arr = ty.cast(bt.ArrBase, arr)
             if len(arr) < top:
                 top = len(arr)
         self.start = 0
@@ -271,7 +271,7 @@ class For(ab.KSP):
         self.loop_type = 'zip'
         top = 1000000
         for arr in args:
-            arr = ty.cast(bt.Arr, arr)
+            arr = ty.cast(bt.ArrBase, arr)
             if len(arr) < top:
                 top = len(arr)
         self.start = 0
@@ -330,8 +330,11 @@ class For(ab.KSP):
         if self.loop_type == 'range':
             return self._idx[self._ptr]
         if self.loop_type == 'zip':
-            self.args = ty.cast(ty.Sequence[bt.Arr], self.args)
-            return [arr[self._idx[self._ptr]] for arr in self.args]
+            return [
+                arr[self._idx[self._ptr]]
+                for arr in ty.cast(ty.Sequence[bt.ArrBase], self.args)
+            ]
+        return NotImplemented
 
     def _get_block(self) -> ab.OutputBlock:
         add_str: bt.OperatorComparisson

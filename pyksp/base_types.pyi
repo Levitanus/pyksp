@@ -492,13 +492,22 @@ class Num(VarBase[NT, NT], ProcessNum[NT], ty.Generic[NT, KVT]):
 
 
 class VarInt(Num[int, "VarInt"], ProcessInt):
-    def __ilshift__(self, other: ATU[NT]) -> 'VarInt':
+    def __init__(self,
+                 value: int = 0,
+                 name: str = "",
+                 persist: VarBase.Persist = VarBase.not_persistent,
+                 preserve_name: bool = False,
+                 *,
+                 local: bool = False) -> None:
+        ...
+
+    def __ilshift__(self, other: ATU[NT]) -> 'VarInt':  # type: ignore
         """Return new Num[self._ref_type] object.
 
         with name of self and value of other."""
 
     @ducktype_num_magic
-    def __imod__(self, other: NTU[int]) -> "Num[int]":  # type: ignore
+    def __imod__(self, other: NTU[int]) -> "VarInt":  # type: ignore
         ...
 
     def inc(self) -> None:
@@ -511,13 +520,22 @@ class VarInt(Num[int, "VarInt"], ProcessInt):
 
 
 class VarFloat(Num[float, "VarFloat"], ProcessFloat):
+    def __init__(self,
+                 value: float = 0.0,
+                 name: str = "",
+                 persist: VarBase.Persist = VarBase.not_persistent,
+                 preserve_name: bool = False,
+                 *,
+                 local: bool = False) -> None:
+        ...
+
     def __ilshift__(self, other: ATU[NT]) -> 'VarFloat':
         """Return new Num[self._ref_type] object.
 
         with name of self and value of other."""
 
     @ducktype_num_magic
-    def __ipow__(self, other: NTU[float]) -> "Num[float]":  # type: ignore
+    def __ipow__(self, other: NTU[float]) -> "VarFloat":  # type: ignore
         ...
 
 
@@ -619,15 +637,45 @@ class ArrBase(VarBase[VHT, KT], ty.Generic[KVT, VHT, KT]):
 
 
 class ArrStr(ArrBase[VarStr, ty.List[str], str]):
-    ...
+    def __init__(
+            self,
+            value: ty.Union[str, ty.List[str]] = "",
+            name: str = "",
+            persist: VarBase.Persist = VarBase.not_persistent,
+            preserve_name: bool = False,
+            size: ty.Optional[int] = None,
+            *,
+            local: bool = False,
+    ) -> None:
+        ...
 
 
 class ArrInt(ArrBase[VarInt, ty.List[int], int]):
-    ...
+    def __init__(
+            self,
+            value: ty.Union[int, ty.List[int]] = 0,
+            name: str = "",
+            persist: VarBase.Persist = VarBase.not_persistent,
+            preserve_name: bool = False,
+            size: ty.Optional[int] = None,
+            *,
+            local: bool = False,
+    ) -> None:
+        ...
 
 
 class ArrFloat(ArrBase[VarFloat, ty.List[float], float]):
-    ...
+    def __init__(
+            self,
+            value: ty.Union[float, ty.List[float]] = 0.0,
+            name: str = "",
+            persist: VarBase.Persist = VarBase.not_persistent,
+            preserve_name: bool = False,
+            size: ty.Optional[int] = None,
+            *,
+            local: bool = False,
+    ) -> None:
+        ...
 
 
 class VarMeta(type):

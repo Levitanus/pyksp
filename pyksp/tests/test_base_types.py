@@ -56,7 +56,7 @@ class TestBasics(TestBase):
         self.assertEqual(s.val, "")
         self.assertEqual(s.name(), "@s")
         self.assertEqual(out.get()[-1].line, "@s := @ns")
-        n = bt.Var(2, name="n", local=True)
+        n = bt.Var[int](2, name="n", local=True)
         s <<= n
         self.assertEqual(s.val, "2")
         self.assertEqual(out.get()[-1].line, "@s := $n")
@@ -78,7 +78,7 @@ class TestBasics(TestBase):
 class TestInts(TestBase):
     def setUp(self) -> None:
         self.out = ab.KSP.new_out()
-        self.n = bt.Var(0, name="n")
+        self.n = bt.Var[int](0, name="n")
 
     def test_type_errors(self) -> None:
         n = self.n
@@ -98,7 +98,7 @@ class TestInts(TestBase):
         with self.assertRaises(TypeError):
             n // 0  # type: ignore
         with self.assertRaises(TypeError):
-            n**0
+            n**0  # type: ignore
         with self.assertRaises(TypeError):
             "2" + n  # type: ignore
         with self.assertRaises(TypeError):
@@ -110,7 +110,7 @@ class TestInts(TestBase):
         with self.assertRaises(TypeError):
             0 // n  # type: ignore
         with self.assertRaises(TypeError):
-            0**n
+            0**n  # type: ignore
         with self.assertRaises(TypeError):
             n **= 2  # type: ignore
         with self.assertRaises(NotImplementedError):
@@ -118,7 +118,7 @@ class TestInts(TestBase):
         with self.assertRaises(NotImplementedError):
             n |= 2
         with self.assertRaises(AttributeError):
-            bt.to_int(n)
+            bt.to_int(n)  # type: ignore
 
     def test_var(self) -> None:
         n = self.n
@@ -290,7 +290,7 @@ class TestArray(TestBase):
             bt.Arr[int]("s")  # type: ignore
         a = bt.Arr[int]([5, 6], name="a")
         with self.assertRaises(TypeError):
-            a <<= 1
+            a <<= 1  # type: ignore
         self.assertTrue(issubclass(a._ref_type, int))
         self.assertEqual(a.val, [5, 6])
         self.assertEqual(a.get_decl_line(), ["declare %a[2] := (5, 6)"])
@@ -453,10 +453,10 @@ class TestTypes(ut.TestCase):
         # self.assertNotIsInstance(sa, bt.Var[float, 0])
         # self.assertNotIsInstance(fa, bt.Var[int, 0])
 
-        with self.assertRaises(TypeError):
-            self.assertNotIsInstance(fa, bt.Var[object()])  # type: ignore
-        with self.assertRaises(TypeError):
-            self.assertNotIsInstance(fa, bt.Var[float, -1])
+        # with self.assertRaises(TypeError):
+        #     self.assertNotIsInstance(fa, bt.Var[object()])  # type: ignore
+        # with self.assertRaises(TypeError):
+        #     self.assertNotIsInstance(fa, bt.Var[float, -1])  # type: ignore
 
         self.assertIsInstance(bt.Var(2, name=n, local=True), bt.Var[int])
         self.assertIsInstance(bt.Var("2", name=n, local=True), bt.Var[str])

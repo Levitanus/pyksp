@@ -652,7 +652,7 @@ class VarInt(Num[int, "VarInt"], ProcessInt):
             local=local,
         )
 
-    def __ilshift__(self, other: ATU[int]) -> 'VarInt':
+    def __ilshift__(self, other: ATU[int]) -> 'VarInt':  # type: ignore
         """Return new Num[self._ref_type] object.
 
         with name of self and value of other."""
@@ -720,7 +720,7 @@ class VarFloat(Num[float, "VarFloat"], ProcessFloat):
         return ret_obj
 
     @ducktype_num_magic
-    def __ipow__(self, other: NTU[float]) -> "VarFloat":
+    def __ipow__(self, other: NTU[float]) -> "VarFloat":  # type: ignore
         return self.__ilshift__(AstPow(self, other))
 
 
@@ -837,7 +837,7 @@ class ArrBase(VarBase[VHT, KT], ty.Generic[KVT, VHT, KT]):
                 T=VarBase, r=self._ref_type, v=value))
         c_idx, r_idx = self._resolve_idx(idx)  # pylint: disable=W0612
         r_val = value.val
-        value._value = self._vars[r_idx]._value
+        value._value = self._vars[r_idx]._value  # type: ignore
         value.val = r_val
         self._vars[r_idx] = value
 
@@ -906,7 +906,7 @@ class ArrBase(VarBase[VHT, KT], ty.Generic[KVT, VHT, KT]):
 
     def __len__(self) -> int:
         """Return current RT length of array."""
-        return len(self._value)  # type: ignore
+        return len(self._value)
 
     def _append_is_possible(self) -> bool:
         """Check if append is possible.
