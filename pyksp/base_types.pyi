@@ -11,18 +11,18 @@ from .abstract import KSPBaseMeta
 
 T = ty.TypeVar("T")
 KT = ty.TypeVar("KT", int, float, str)
-KVT = ty.TypeVar("KVT", bound="VarParent")
 NT = ty.TypeVar("NT", int, float)
-KTT = (int, str, float)
-# AT = ty.TypeVar('AT', bound='VarParent[KT]')
+VHT = ty.TypeVar('VHT', int, str, float, ty.List[int], ty.List[str],
+                 ty.List[float])
 
-ATU = ty.Union["VarParent[KT]", "AstBase[KT]", "Magic[KT]", KT]
-STU = ty.Union["VarParent[KT]", "AstBase[KT]", "Magic[KT]", str]
-NTU = ty.Union["VarParent[NT]", "AstBase[NT]", "ProcessNum[NT]", NT]
-NotVarNTU = ty.Union["AstBase[NT]", "ProcessNum[NT]", NT]
+KVT = ty.TypeVar('KVT', bound='VarBase')
 
-VarRU = ty.Union["Num[int]", "Num[float]", "Str"]
-VarIU = ty.Union[int, str, float]
+ATU = ty.Union["VarBase[KT, KT]", "AstBase[KT]", "Magic[KT]", KT]
+NVU = ty.Union["AstBase[KT]", "Magic[KT]", KT]
+STU = ty.Union["VarBase[KT, KT]", "AstBase[KT]", "Magic[KT]", str]
+NTU = ty.Union[NT, "ProcessNum[NT]"]
+PNT = ty.TypeVar("PNT", bound='ProcessNum', covariant=True)
+NFT = ty.TypeVar("NFT", bound=ty.Callable[..., ty.Any])
 
 
 @ty.overload
@@ -68,7 +68,7 @@ def get_value_type(value: ATU[KT]) -> ty.Type[KT]:
 
 class Magic(KSP, ty.Generic[KT]):
     """Base class for types with magic methods."""
-    ...
+    _ref_type: ty.Type[KT]
 
 
 class ConcatsStrings(Magic[str]):
@@ -86,7 +86,7 @@ class ConcatsStrings(Magic[str]):
 class AstConcatString(AstBase[str], ConcatsStrings):
     """Ast, handles strings concatenation."""
 
-    _ref_type: str
+    _ref_type: ty.Type[str]
     arg1: STU
     arg2: STU
 
@@ -107,29 +107,19 @@ class AstConcatString(AstBase[str], ConcatsStrings):
         ...
 
 
-FT = ty.TypeVar("FT", bound=ty.Callable[..., ty.Any])
-
-
-def ducktype_num_magic(method: FT) -> FT:
+def ducktype_num_magic(method: NFT) -> NFT:
     """Check that ref_type of other is campatible with self."""
     ...
 
 
-class ProcessNum(Magic[NT], ty.Generic[NT]):
+class ProcessNum(Magic[NT]):
     """Base class for objects, keeps int and float values."""
-
-    _ref_type: ty.Type[NT]
-
-    def _check_for_int(self, other: NTU[NT]) -> ty.Union[NTU[NT], float]:
-        """Convert int to float if self._ref_type is float."""
-        ...
 
     def __neg__(self) -> "AstNeg[NT]":
         """Return AstNeg object."""
         ...
 
-    def __invert__(self) -> "AstNot":
-        """Return AstNot object if self ref is int."""
+    def __pos__(self) -> ty.NoReturn:
         ...
 
     @ducktype_num_magic
@@ -172,22 +162,6 @@ class ProcessNum(Magic[NT], ty.Generic[NT]):
         """Return AstDiv[self._ref_type] object."""
         ...
 
-    def __mod__(self, other: NTU[int]) -> "AstMod":
-        """Return AstMod object if self._ref_type is int."""
-        ...
-
-    def __rmod__(self, other: NTU[int]) -> "AstMod":
-        """Return AstMod object if self._ref_type is int."""
-        ...
-
-    def __pow__(self, other: NTU[float]) -> "AstPow":
-        """Return AstPow object if self._ref_type is float."""
-        ...
-
-    def __rpow__(self, other: NTU[float]) -> "AstPow":
-        """Return AstPow object if self._ref_type is float."""
-        ...
-
     def __and__(self, other: NTU[NT]) -> "AstAnd[NT]":
         """Return AstAnd[self._ref_type] object."""
         ...
@@ -221,7 +195,7 @@ class ProcessNum(Magic[NT], ty.Generic[NT]):
         ...
 
     @ducktype_num_magic
-    def __lt__(self, other: NTU[NT]) -> "AstLt[NT]":
+    def __lt__(self, other: NTU[NT]) -> "AstLt[NT]":  # type: ignore
         """Return AstLt object.
 
         note: AstLt is not equal bool, but can be used in if-conditions
@@ -229,7 +203,7 @@ class ProcessNum(Magic[NT], ty.Generic[NT]):
         ...
 
     @ducktype_num_magic
-    def __gt__(self, other: NTU[NT]) -> "AstGt[NT]":
+    def __gt__(self, other: NTU[NT]) -> "AstGt[NT]":  # type: ignore
         """Return AstGt object.
 
         note: AstGt is not equal bool, but can be used in if-conditions
@@ -237,7 +211,7 @@ class ProcessNum(Magic[NT], ty.Generic[NT]):
         ...
 
     @ducktype_num_magic
-    def __le__(self, other: NTU[NT]) -> "AstLe[NT]":
+    def __le__(self, other: NTU[NT]) -> "AstLe[NT]":  # type: ignore
         """Return AstLe object.
 
         note: AstLe is not equal bool, but can be used in if-conditions
@@ -245,7 +219,7 @@ class ProcessNum(Magic[NT], ty.Generic[NT]):
         ...
 
     @ducktype_num_magic
-    def __ge__(self, other: NTU[NT]) -> "AstGe[NT]":
+    def __ge__(self, other: NTU[NT]) -> "AstGe[NT]":  # type: ignore
         """Return AstGe object.
 
         note: AstGe is not equal bool, but can be used in if-conditions
@@ -254,10 +228,20 @@ class ProcessNum(Magic[NT], ty.Generic[NT]):
 
     def __abs__(self) -> "AstAbs[NT]":
         """Return AstAbs[self._ref_type] object."""
-        return AstAbs(self)
+        ...
 
-    def to_int(self) -> "AstInt":
-        """Return AstInt object if self._ref_type is float."""
+
+class ProcessInt(ProcessNum[int]):
+    def __invert__(self) -> "AstNot":
+        """Return AstNot object if self ref is int."""
+        ...
+
+    def __mod__(self, other: NTU[int]) -> "AstMod":
+        """Return AstMod object if self._ref_type is int."""
+        ...
+
+    def __rmod__(self, other: NTU[int]) -> "AstMod":
+        """Return AstMod object if self._ref_type is int."""
         ...
 
     def to_float(self) -> "AstFloat":
@@ -281,124 +265,65 @@ class ProcessNum(Magic[NT], ty.Generic[NT]):
         ...
 
 
-def to_int(value: ProcessNum) -> "AstInt":
+class ProcessFloat(ProcessNum[float]):
+    def to_int(self) -> "AstInt":
+        """Return AstInt object if self._ref_type is float."""
+        ...
+
+    def __pow__(self, other: NTU[float]) -> "AstPow":
+        """Return AstPow object if self._ref_type is float."""
+        ...
+
+    def __rpow__(self, other: NTU[float]) -> "AstPow":
+        """Return AstPow object if self._ref_type is float."""
+        ...
+
+
+def to_int(value: ProcessFloat) -> "AstInt":
     """Return AstInt object if value._ref_type is float."""
     ...
 
 
-def to_float(value: ProcessNum) -> "AstFloat":
+def to_float(value: ProcessInt) -> "AstFloat":
     """Return AstFloat object if value._ref_type is int."""
     ...
 
 
-class VarMeta(KSPBaseMeta):
-    """Big Scary metaclass.
-
-    combines Generic nature within RT duck_typing.
-    if Var was initialized within [type] indexing, ref_type inferred by it.
-    Otherwise by init value."""
-
-    def __getitem__(cls, *args: ty.Type[KT],
-                    **kwargs: ty.Any) -> ty.Type["VarParent[KT]"]:
-        """The next class initialization will be infered as passed type."""
-        ...
-
-
-class TypeMeta(type):
-    """Metaclass for simplifying instance-check."""
-
-    def __instancecheck__(cls, instance: "VarParent") -> bool:
-        ...
-
-    def __getitem__(
-            cls,
-            ref: ty.Union[ty.Type[KT], ty.Tuple[ty.Type[KT], ty.
-                                                Union[int, bool]]],
-    ) -> ty.Type["Type"]:
-        ...
-
-
-class Type(metaclass=TypeMeta):
-    """Base Var class for instance-checking."""
-    _ref_type: ty.Type[ty.Union[int, str, float]]
-
-
-class TypeInt(Type):
-    """IntVar class for instance-checking."""
-    _ref_type = int
-
-
-class TypeStr(Type):
-    """StrVar class for instance-checking."""
-    _ref_type = str
-
-
-class TypeFloat(Type):
-    """FloatVar class for instance-checking."""
-    _ref_type = float
-
-
-class TypeArr(Type):
-    """Base Arr class for instance-checking."""
-    _ref_type: ty.Type[ty.Union[int, str, float]]
-    _size: ty.Optional[int]
-
-
-class TypeArrInt(TypeArr):
-    """IntArr class for instance-checking."""
-    _ref_type = int
-    _size: ty.Optional[int] = None
-
-
-class TypeArrStr(TypeArr):
-    """StrArr class for instance-checking."""
-    _ref_type = str
-    _size: ty.Optional[int] = None
-
-
-class TypeArrFloat(TypeArr):
-    """FloatArr class for instance-checking."""
-    _ref_type = float
-    _size: ty.Optional[int] = None
-
-
-class ValueHolder(ty.Generic[KT]):
+class ValueHolder(ty.Generic[VHT]):
     """Simple value holder, can be transfered between variables."""
 
-    def __init__(self, value: KT) -> None:
+    def __init__(self, value: VHT) -> None:
         ...
 
-    def set(self, value: KT) -> None:
+    def set(self, value: VHT) -> None:
         """Set value to holder."""
         ...
 
-    def get(self) -> KT:
+    def get(self) -> VHT:
         """Get value from holder."""
         ...
 
 
-class VarParent(KspObject, HasInit, ty.Generic[KT], metaclass=VarMeta):
+class VarBase(KspObject, HasInit, ty.Generic[VHT, KT], Magic[KT]):
     """Base Generic class for every KSP object, recieves values.
 
     keeps self._ref_type, representing it's generic parent.
     generates init lines, if not declared as local."""
     names_count: int = 0
-    _ref: ty.ClassVar[ty.Optional[ty.Type[KT]]]
-    _ref_type: ty.Type[KT]
-    _persist: 'VarParent'.Persist
-    _array: ty.Optional['Arr']
+    _persist: 'Persist'
+    _array: ty.Optional['ArrBase']
     _idx: ty.Optional[int]
-    _value: ValueHolder[KT]
-    _init_val: KT
+    _value: ValueHolder[VHT]
+    _init_val: VHT
 
     class Persist:
         """Class for mark persistence of variable.
 
         can be:
-        VarParent.not_persistent
-        VarParent.persistent
-        VarParent.inst_persistent
-        VarParent.read_persistent"""
+        VarBase.not_persistent
+        VarBase.persistent
+        VarBase.inst_persistent
+        VarBase.read_persistent"""
 
         line: str
 
@@ -412,7 +337,7 @@ class VarParent(KspObject, HasInit, ty.Generic[KT], metaclass=VarMeta):
 
     def __init__(
             self,
-            value: ty.Optional[KT] = None,
+            value: VHT,
             name: str = "",
             persist: Persist = not_persistent,
             preserve_name: bool = False,
@@ -427,11 +352,8 @@ class VarParent(KspObject, HasInit, ty.Generic[KT], metaclass=VarMeta):
         local only for internal library usage."""
         ...
 
-    def _after_init(self, value: KT) -> None:
-        """Co-initialization, if needed."""
-        ...
-
-    def _bound_to_array(self, array: 'Arr', idx: int) -> None:
+    def _bound_to_array(self, array: 'ArrBase[KVT, VHT, KT]',
+                        idx: int) -> None:
         """Bound var to Arr cell."""
         ...
 
@@ -450,12 +372,12 @@ class VarParent(KspObject, HasInit, ty.Generic[KT], metaclass=VarMeta):
         ...
 
     @property
-    def val(self) -> KT:
+    def val(self) -> VHT:
         """Return RT value of Var or Arr."""
         ...
 
     @val.setter
-    def val(self, val: KT) -> None:
+    def val(self, val: VHT) -> None:
         """Set RT value of Var or Arr.
 
         accepts only generics: int, str, float."""
@@ -467,18 +389,14 @@ class VarParent(KspObject, HasInit, ty.Generic[KT], metaclass=VarMeta):
         makes var persistent, if not."""
         ...
 
-    def __ilshift__(self: T, other: ATU) -> T:
-        """Spetial abstract assignement operator."""
-        ...
-
-    def copy(self: T, name: str, prefix: str, postfix: str) -> T:
+    def copy(self: KVT, name: str, prefix: str, postfix: str) -> KVT:
         """Return new object of self type.
 
         For arr cells obj._array and obj._idx are loosed.
         init_val is loosed."""
         ...
 
-    def _make_copy(self, other: ATU[KT], value: KT,
+    def _make_copy(self, other: ty.Union[NVU, 'VarBase[KT, KT]'], value: VHT,
                    new_type: ty.Type[KVT]) -> KVT:
         """Return new Var[self._ref_type] object, depends on input val."""
         ...
@@ -489,77 +407,17 @@ class VarParent(KspObject, HasInit, ty.Generic[KT], metaclass=VarMeta):
         ...
 
 
-class VarWrapperMeta(type):
-    """Var getitem helper metaclass."""
-
-    @ty.overload
-    def __getitem__(cls, ref: ty.Type[int]) -> ty.Type["Num[int]"]:
-        ...
-
-    @ty.overload
-    def __getitem__(cls, ref: ty.Type[float]) -> ty.Type["Num[float]"]:
-        ...
-
-    @ty.overload
-    def __getitem__(cls, ref: ty.Type[str]) -> ty.Type["Str"]:
-        ...
-
-    def __instancecheck__(cls, instance: object) -> bool:
-        ...
+STT = (VarBase, str, ConcatsStrings)
 
 
-class Var(metaclass=VarWrapperMeta):
-    @ty.overload
-    def __new__(
-            cls,
-            value: str,
-            name: str = "",
-            persist: VarParent.Persist = VarParent.not_persistent,
-            preserve_name: bool = False,
-            *,
-            local: bool = False,
-    ) -> 'Str':
-        """Return new object of proper base concrete class."""
-        ...
-
-    @ty.overload
-    def __new__(
-            cls,
-            value: int,
-            name: str = "",
-            persist: VarParent.Persist = VarParent.not_persistent,
-            preserve_name: bool = False,
-            *,
-            local: bool = False,
-    ) -> 'Num[int]':
-        """Return new object of proper base concrete class."""
-        ...
-
-    @ty.overload
-    def __new__(
-            cls,
-            value: float,
-            name: str = "",
-            persist: VarParent.Persist = VarParent.not_persistent,
-            preserve_name: bool = False,
-            *,
-            local: bool = False,
-    ) -> 'Num[float]':
-        """Return new object of proper base concrete class."""
-        ...
-
-
-STT = (VarParent, str, ConcatsStrings)
-
-
-class Str(VarParent[str], ConcatsStrings):
+class VarStr(VarBase[str, str], ConcatsStrings):
     """String KSP Var."""
 
     def __init__(
             self,
             value: str = "",
             name: str = "",
-            persist: VarParent.Persist = VarParent.not_persistent,
+            persist: VarBase.Persist = VarBase.not_persistent,
             preserve_name: bool = False,
             *,
             local: bool = False,
@@ -572,7 +430,7 @@ class Str(VarParent[str], ConcatsStrings):
         local only for internal library usage."""
         ...
 
-    def __ilshift__(self, other: STU) -> "Str":
+    def __ilshift__(self, other: STU) -> "VarStr":
         """Return new Str object with name of self and value of other."""
         ...
 
@@ -580,18 +438,19 @@ class Str(VarParent[str], ConcatsStrings):
         """Return List[str] of simple declaration."""
         ...
 
-    def __iadd__(self, other: STU) -> "Str":  # type: ignore
+    def __iadd__(self, other: STU) -> "VarStr":  # type: ignore
         """Return new Str object, keep concatenated self+string."""
         ...
 
 
-class Num(VarParent[NT], ProcessNum[NT]):
+class Num(VarBase[NT, NT], ProcessNum[NT], ty.Generic[NT, KVT]):
     """Generic KSP numeric Var (int or float)."""
+    _ref_type: ty.Type[NT]
 
     def __init__(self,
-                 value: ty.Optional[NT] = None,
+                 value: NT,
                  name: str = "",
-                 persist: VarParent.Persist = VarParent.not_persistent,
+                 persist: VarBase.Persist = VarBase.not_persistent,
                  preserve_name: bool = False,
                  *,
                  local: bool = False) -> None:
@@ -603,10 +462,6 @@ class Num(VarParent[NT], ProcessNum[NT]):
         local only for internal library usage."""
         ...
 
-    def __ilshift__(self, other: ATU[NT]) -> "Num[NT]":  # type: ignore
-        """Return new Num[self._ref_type] object.
-
-        with name of self and value of other."""
         ...
 
     def get_decl_line(self) -> ty.List[str]:
@@ -614,33 +469,36 @@ class Num(VarParent[NT], ProcessNum[NT]):
         ...
 
     @ducktype_num_magic
-    def __iadd__(self, other: NTU[NT]) -> "Num[NT]":  # type: ignore
+    def __iadd__(self, other: NTU[NT]) -> KVT:  # type: ignore
         ...
 
     @ducktype_num_magic
-    def __isub__(self, other: NTU[NT]) -> "Num[NT]":  # type: ignore
+    def __isub__(self, other: NTU[NT]) -> KVT:  # type: ignore
         ...
 
     @ducktype_num_magic
-    def __imul__(self, other: NTU[NT]) -> "Num[NT]":  # type: ignore
+    def __imul__(self, other: NTU[NT]) -> KVT:  # type: ignore
         ...
 
     @ducktype_num_magic
-    def __itruediv__(self, other: NTU[NT]) -> "Num[NT]":  # type: ignore
-        ...
-
-    @ducktype_num_magic
-    def __imod__(self, other: NTU[int]) -> "Num[int]":  # type: ignore
-        ...
-
-    @ducktype_num_magic
-    def __ipow__(self, other: NTU[float]) -> "Num[float]":  # type: ignore
+    def __itruediv__(self, other: NTU[NT]) -> KVT:  # type: ignore
         ...
 
     def __iand__(self, other: NTU[NT]) -> ty.NoReturn:
         ...
 
     def __ior__(self, other: NTU[NT]) -> ty.NoReturn:
+        ...
+
+
+class VarInt(Num[int, "VarInt"], ProcessInt):
+    def __ilshift__(self, other: ATU[NT]) -> 'VarInt':
+        """Return new Num[self._ref_type] object.
+
+        with name of self and value of other."""
+
+    @ducktype_num_magic
+    def __imod__(self, other: NTU[int]) -> "Num[int]":  # type: ignore
         ...
 
     def inc(self) -> None:
@@ -652,28 +510,298 @@ class Num(VarParent[NT], ProcessNum[NT]):
         ...
 
 
+class VarFloat(Num[float, "VarFloat"], ProcessFloat):
+    def __ilshift__(self, other: ATU[NT]) -> 'VarFloat':
+        """Return new Num[self._ref_type] object.
+
+        with name of self and value of other."""
+
+    @ducktype_num_magic
+    def __ipow__(self, other: NTU[float]) -> "Num[float]":  # type: ignore
+        ...
+
+
 def _assert_Num_int(var: NTU[int]) -> None:
     """Raise TypeError if not int or KspInt passed."""
     ...
 
 
-def inc(var: Num[int]) -> None:
+def inc(var: Num[int, 'VarInt']) -> None:
     """Increase value by 1, if int."""
     ...
 
 
-def dec(var: Num[int]) -> None:
+def dec(var: Num[int, 'VarInt']) -> None:
     """Decrease value by 1, if int."""
     ...
 
 
-class AstAssign(AstRoot):
+class ArrBase(VarBase[VHT, KT], ty.Generic[KVT, VHT, KT]):
+    """Generic KSP array class.
+
+    * value can be as list of generic, as well as generic itself
+        e.g. declare array[size] := (val)
+    * name can be optional if array is not local
+    * size is optional, but it helps to keep self in broads"""
+
+    _value: ValueHolder[VHT]
+    _vars: ty.List[ty.Optional[KVT]]
+    _init_size: ty.Optional[int]
+    _size: int
+    _init_seq: ty.List[KT]
+    _default: KT
+    _recieved_rt: bool
+
+    def __getitem__(self, idx: NTU[int]) -> KVT:
+        """Return Var[self._ref_type] instance, bounded to the cell at idx."""
+        ...
+
+    def __setitem__(self, idx: NTU[int], value: KVT) -> None:
+        """Assign bounded var to array cell."""
+        ...
+
+    def _get_cashed_item(self, c_idx: str, r_idx: int) -> KVT:
+        """Return cashed var from cell with modified str idx.
+
+        or cash (instantiate) one."""
+        ...
+
+    def __init__(
+            self,
+            value: VHT,
+            name: str = "",
+            persist: VarBase.Persist = VarBase.not_persistent,
+            preserve_name: bool = False,
+            size: ty.Optional[int] = None,
+            *,
+            local: bool = False,
+    ) -> None:
+        """Represent all three types of KSP arrays.
+
+        * value can be as list of generic, as well as generic itself
+            e.g. declare array[size] := (val)
+        * name can be optional if array is not local
+        * size is optional, but it helps to keep self in broads"""
+        ...
+
+    def _resolve_idx(self, idx: NTU[int]) -> ty.Tuple[str, int]:
+        """Return tuple of str(idx) and RT(idx)."""
+        ...
+
+    def _get_type_prefix(self) -> str:
+        """Arr representation of the same Var method."""
+        ...
+
+    def _gen_decl_seq_item(self, idx: int, i: KT) -> str:
+        """Decl_line halper function."""
+        ...
+
+    def get_decl_line(self) -> ty.List[str]:
+        """Return declaration line with as much inlined values as possible."""
+        ...
+
+    def __len__(self) -> int:
+        """Return current RT length of array."""
+        ...
+
+    def _append_is_possible(self) -> bool:
+        """Check if append is possible.
+
+        Raises RuntimeError"""
+        ...
+
+    def append(self, value: ATU[KT]) -> None:
+        """Append value to array, if it is still init cb."""
+        ...
+
+    def __iter__(self) -> ty.NoReturn:
+        ...
+
+
+class ArrStr(ArrBase[VarStr, ty.List[str], str]):
+    ...
+
+
+class ArrInt(ArrBase[VarInt, ty.List[int], int]):
+    ...
+
+
+class ArrFloat(ArrBase[VarFloat, ty.List[float], float]):
+    ...
+
+
+class VarMeta(type):
+    """Var getitem helper metaclass."""
+
+    @ty.overload
+    def __getitem__(cls, ref: ty.Type[int]) -> ty.Type["VarInt"]:
+        ...
+
+    @ty.overload
+    def __getitem__(cls, ref: ty.Type[float]) -> ty.Type["VarFloat"]:
+        ...
+
+    @ty.overload
+    def __getitem__(cls, ref: ty.Type[str]) -> ty.Type["VarStr"]:
+        ...
+
+    def __instancecheck__(cls, inst: object) -> bool:
+        ...
+
+
+class Var(metaclass=VarMeta):
+    @ty.overload
+    def __new__(
+            cls,
+            value: int,
+            name: str = "",
+            persist: VarBase.Persist = VarBase.not_persistent,
+            preserve_name: bool = False,
+            *,
+            local: bool = False,
+    ) -> 'VarInt':
+        """Return new object of proper base concrete class."""
+        ...
+
+    @ty.overload
+    def __new__(
+            cls,
+            value: float,
+            name: str = "",
+            persist: VarBase.Persist = VarBase.not_persistent,
+            preserve_name: bool = False,
+            *,
+            local: bool = False,
+    ) -> 'VarFloat':
+        """Return new object of proper base concrete class."""
+        ...
+
+    @ty.overload
+    def __new__(
+            cls,
+            value: str,
+            name: str = "",
+            persist: VarBase.Persist = VarBase.not_persistent,
+            preserve_name: bool = False,
+            *,
+            local: bool = False,
+    ) -> 'VarStr':
+        """Return new object of proper base concrete class."""
+        ...
+
+    @ty.overload
+    def __new__(
+            cls,
+            value: ty.List[int],
+            name: str = "",
+            persist: VarBase.Persist = VarBase.not_persistent,
+            preserve_name: bool = False,
+            size: ty.Optional[int] = None,
+            *,
+            local: bool = False,
+    ) -> 'ArrInt':
+        """Return new object of proper base concrete class."""
+        ...
+
+    @ty.overload
+    def __new__(
+            cls,
+            value: ty.List[float],
+            name: str = "",
+            persist: VarBase.Persist = VarBase.not_persistent,
+            preserve_name: bool = False,
+            size: ty.Optional[int] = None,
+            *,
+            local: bool = False,
+    ) -> 'ArrFloat':
+        """Return new object of proper base concrete class."""
+        ...
+
+    @ty.overload
+    def __new__(
+            cls,
+            value: ty.List[str],
+            name: str = "",
+            persist: VarBase.Persist = VarBase.not_persistent,
+            preserve_name: bool = False,
+            size: ty.Optional[int] = None,
+            *,
+            local: bool = False,
+    ) -> 'ArrStr':
+        """Return new object of proper base concrete class."""
+        ...
+
+
+class ArrMeta(type):
+    """Var getitem helper metaclass."""
+
+    @ty.overload
+    def __getitem__(cls, ref: ty.Type[int]) -> ty.Type["ArrInt"]:
+        ...
+
+    @ty.overload
+    def __getitem__(cls, ref: ty.Type[float]) -> ty.Type["ArrFloat"]:
+        ...
+
+    @ty.overload
+    def __getitem__(cls, ref: ty.Type[str]) -> ty.Type["ArrStr"]:
+        ...
+
+    def __instancecheck__(cls, inst: object) -> bool:
+        ...
+
+
+class Arr(metaclass=ArrMeta):
+    @ty.overload
+    def __new__(
+            cls,
+            value: ty.List[int],
+            name: str = "",
+            persist: VarBase.Persist = VarBase.not_persistent,
+            preserve_name: bool = False,
+            size: ty.Optional[int] = None,
+            *,
+            local: bool = False,
+    ) -> 'ArrInt':
+        """Return new object of proper base concrete class."""
+        ...
+
+    @ty.overload
+    def __new__(
+            cls,
+            value: ty.List[float],
+            name: str = "",
+            persist: VarBase.Persist = VarBase.not_persistent,
+            preserve_name: bool = False,
+            size: ty.Optional[int] = None,
+            *,
+            local: bool = False,
+    ) -> 'ArrFloat':
+        """Return new object of proper base concrete class."""
+        ...
+
+    @ty.overload
+    def __new__(
+            cls,
+            value: ty.List[str],
+            name: str = "",
+            persist: VarBase.Persist = VarBase.not_persistent,
+            preserve_name: bool = False,
+            size: ty.Optional[int] = None,
+            *,
+            local: bool = False,
+    ) -> 'ArrStr':
+        """Return new object of proper base concrete class."""
+        ...
+
+
+class AstAssign(AstRoot[KT]):
     """Root AST representing assignement."""
 
-    to_arg: "VarParent"
+    to_arg: "VarBase[KT,KT]"
     from_arg: ATU
 
-    def __init__(self, to_arg: "VarParent", from_arg: ATU) -> None:
+    def __init__(self, to_arg: "VarBase[KT,KT]", from_arg: ATU[KT]) -> None:
         ...
 
     def expand(self) -> str:
@@ -705,7 +833,8 @@ class AstBuiltInBase(AstRoot, AstBase[KT]):
         ...
 
 
-class AstOperatorUnary(AstBase[NT], ProcessNum[NT]):  # type: ignore
+class AstOperatorUnary(  # type: ignore
+        AstBase[NT], ProcessNum[NT]):
     """Base class for AST numeric operator.
 
     arg parced
@@ -812,7 +941,7 @@ class AstCanBeBool(AstOperatorDoubleStandart[NT], AstBool[NT]):  # type: ignore
         ...
 
 
-class AstNeg(AstOperatorUnaryStandart[NT]):
+class AstNeg(AstOperatorUnaryStandart[NT], ProcessFloat, ProcessInt):
     """Negative AST operator."""
     string = "-"
 
@@ -821,7 +950,116 @@ class AstNeg(AstOperatorUnaryStandart[NT]):
         ...
 
 
-class AstNot(AstOperatorUnaryStandart[int]):
+class AstAbs(AstOperatorUnaryBracket[NT], ProcessFloat, ProcessInt):
+    """Absolute val operator."""
+
+    def get_value(self) -> NT:
+        ...
+
+
+class AstAdd(AstOperatorDoubleStandart[NT], ProcessFloat, ProcessInt):
+    """Addition AST stanfart double operator."""
+
+    def get_value(self) -> NT:
+        ...
+
+
+class AstSub(AstOperatorDoubleStandart[NT], ProcessFloat, ProcessInt):
+    """Substitution AST stanfart double operator."""
+
+    def get_value(self) -> NT:
+        ...
+
+
+class AstDiv(AstOperatorDoubleStandart[NT], ProcessFloat, ProcessInt):
+    """Division AST stanfart double operator."""
+
+    def get_value(self) -> NT:
+        ...
+
+
+class AstMul(AstOperatorDoubleStandart[NT], ProcessFloat, ProcessInt):
+    """Multiplication AST stanfart double operator."""
+
+    def get_value(self) -> NT:
+        ...
+
+
+class AstAnd(AstCanBeBool[NT], ProcessFloat, ProcessInt):
+    """Bitwise and logical and AST CanBeBool operator."""
+
+    def get_value(self) -> NT:
+        ...
+
+    def __bool__(self) -> bool:
+        ...
+
+
+class AstOr(AstCanBeBool[NT], ProcessFloat, ProcessInt):
+    """Bitwise or logical and AST CanBeBool operator."""
+
+    def get_value(self) -> NT:
+        ...
+
+    def __bool__(self) -> bool:
+        ...
+
+
+class OperatorComparisson(  # type: ignore
+        AstOperatorDoubleStandart[NT], AstBool[NT], ProcessFloat, ProcessInt):
+    """Base class for "just boolean" AST operators."""
+
+    def expand(self) -> str:
+        """Sets context to bool with invocation."""
+        ...
+
+    def get_value(self) -> ty.NoReturn:
+        ...
+
+
+class AstEq(OperatorComparisson[NT], ProcessFloat, ProcessInt):
+    """Equals AST Bool operator."""
+
+    def __bool__(self) -> bool:
+        ...
+
+
+class AstNe(OperatorComparisson[NT], ProcessFloat, ProcessInt):
+    """Not equals AST Bool operator."""
+
+    def __bool__(self) -> bool:
+        ...
+
+
+class AstLt(OperatorComparisson[NT], ProcessFloat, ProcessInt):
+    """Less than AST Bool operator."""
+
+    def __bool__(self) -> bool:
+        ...
+
+
+class AstGt(OperatorComparisson[NT], ProcessFloat, ProcessInt):
+    """Greater than AST Bool operator."""
+
+    def __bool__(self) -> bool:
+        ...
+
+
+class AstLe(OperatorComparisson[NT], ProcessFloat, ProcessInt):
+    """Less or equal AST Bool operator."""
+
+    def __bool__(self) -> bool:
+        ...
+
+
+class AstGe(OperatorComparisson[NT], ProcessFloat, ProcessInt):
+    """Greater or equal AST Bool operator."""
+
+    def __bool__(self) -> bool:
+        ...
+
+
+class AstNot(AstOperatorUnaryStandart[int], ProcessInt):
     """Bitwise not AST operator.
 
     works only for ints."""
@@ -830,14 +1068,7 @@ class AstNot(AstOperatorUnaryStandart[int]):
         ...
 
 
-class AstAbs(AstOperatorUnaryBracket[NT]):
-    """Absolute val operator."""
-
-    def get_value(self) -> NT:
-        ...
-
-
-class AstInt(AstOperatorUnaryBracket[int]):
+class AstInt(AstOperatorUnaryBracket[int], ProcessInt):
     """Represent KSP real_to_int function."""
     priority = 2
     string = "real_to_int"
@@ -853,7 +1084,28 @@ class AstInt(AstOperatorUnaryBracket[int]):
         ...
 
 
-class AstFloat(AstOperatorUnaryBracket[float]):
+class AstMod(AstOperatorDoubleStandart[int], ProcessInt):
+    """Modulo (int) AST stanfart double operator."""
+
+    def get_value(self) -> int:
+        ...
+
+
+class AstLshift(AstOperatorDoubleBracket[int], ProcessInt):
+    """Bitwise shift left AST bracket double operator."""
+
+    def get_value(self) -> int:
+        ...
+
+
+class AstRshift(AstOperatorDoubleBracket[int], ProcessInt):
+    """Bitwise shift right AST bracket double operator."""
+
+    def get_value(self) -> int:
+        ...
+
+
+class AstFloat(AstOperatorUnaryBracket[float], ProcessFloat):
     """Represent KSP int_to_real function."""
     arg1: NTU[int]  # type: ignore
     arg1_pure: float
@@ -867,447 +1119,8 @@ class AstFloat(AstOperatorUnaryBracket[float]):
         ...
 
 
-class AstAdd(AstOperatorDoubleStandart[NT]):
-    """Addition AST stanfart double operator."""
-
-    def get_value(self) -> NT:
-        ...
-
-
-class AstSub(AstOperatorDoubleStandart[NT]):
-    """Substitution AST stanfart double operator."""
-
-    def get_value(self) -> NT:
-        ...
-
-
-class AstDiv(AstOperatorDoubleStandart[NT]):
-    """Division AST stanfart double operator."""
-
-    def get_value(self) -> NT:
-        ...
-
-
-class AstMul(AstOperatorDoubleStandart[NT]):
-    """Multiplication AST stanfart double operator."""
-
-    def get_value(self) -> NT:
-        ...
-
-
-class AstMod(AstOperatorDoubleStandart[int]):
-    """Modulo (int) AST stanfart double operator."""
-
-    def get_value(self) -> int:
-        ...
-
-
-class AstPow(AstOperatorDoubleBracket[float]):
+class AstPow(AstOperatorDoubleBracket[float], ProcessFloat):
     """Power (float) AST stanfart double operator."""
 
     def get_value(self) -> float:
-        ...
-
-
-class AstLshift(AstOperatorDoubleBracket[int]):
-    """Bitwise shift left AST bracket double operator."""
-
-    def get_value(self) -> int:
-        ...
-
-
-class AstRshift(AstOperatorDoubleBracket[int]):
-    """Bitwise shift right AST bracket double operator."""
-
-    def get_value(self) -> int:
-        ...
-
-
-class AstAnd(AstCanBeBool[NT]):
-    """Bitwise and logical and AST CanBeBool operator."""
-
-    def get_value(self) -> NT:
-        ...
-
-    def __bool__(self) -> bool:
-        ...
-
-
-class AstOr(AstCanBeBool[NT]):
-    """Bitwise or logical and AST CanBeBool operator."""
-
-    def get_value(self) -> NT:
-        ...
-
-    def __bool__(self) -> bool:
-        ...
-
-
-class OperatorComparisson(  # type: ignore
-        AstOperatorDoubleStandart[NT], AstBool[NT]):
-    """Base class for "just boolean" AST operators."""
-
-    def expand(self) -> str:
-        """Sets context to bool with invocation."""
-        ...
-
-    def get_value(self) -> ty.NoReturn:
-        ...
-
-
-class AstEq(OperatorComparisson[NT]):
-    """Equals AST Bool operator."""
-
-    def __bool__(self) -> bool:
-        ...
-
-
-class AstNe(OperatorComparisson[NT]):
-    """Not equals AST Bool operator."""
-
-    def __bool__(self) -> bool:
-        ...
-
-
-class AstLt(OperatorComparisson[NT]):
-    """Less than AST Bool operator."""
-
-    def __bool__(self) -> bool:
-        ...
-
-
-class AstGt(OperatorComparisson[NT]):
-    """Greater than AST Bool operator."""
-
-    def __bool__(self) -> bool:
-        ...
-
-
-class AstLe(OperatorComparisson[NT]):
-    """Less or equal AST Bool operator."""
-
-    def __bool__(self) -> bool:
-        ...
-
-
-class AstGe(OperatorComparisson[NT]):
-    """Greater or equal AST Bool operator."""
-
-    def __bool__(self) -> bool:
-        ...
-
-
-# class ArrMeta(KSPBaseMeta):
-#     """Big Scary metaclass.
-
-#     combines Generic nature within RT duck_typing.
-#     if Var was initialized within [type] indexing, ref_type inferred by it.
-#     Otherwise by init value."""
-
-#     def __getitem__(cls, *args: ty.Type[KT],
-#                     **kwargs: ty.Any) -> ty.Type["Arr[KT]"]:
-#         """The next class initialization will be infered as passed type."""
-#         ...
-
-
-class ArrMeta(VarMeta):
-    """Var getitem helper metaclass."""
-
-    @ty.overload  # type: ignore
-    def __getitem__(cls, ref: ty.Type[int]) -> ty.Type["ArrInt"]:
-        ...
-
-    @ty.overload
-    def __getitem__(cls, ref: ty.Type[float]) -> ty.Type["ArrFloat"]:
-        ...
-
-    @ty.overload
-    def __getitem__(cls, ref: ty.Type[str]) -> ty.Type["ArrStr"]:
-        ...
-
-    def __instancecheck__(cls, instance: object) -> bool:
-        ...
-
-
-class Arr(VarParent, metaclass=ArrMeta):
-    """Generic KSP array class.
-
-    * value can be as list of generic, as well as generic itself
-        e.g. declare array[size] := (val)
-    * name can be optional if array is not local
-    * size is optional, but it helps to keep self in broads"""
-
-    _value: ty.List[KT]  # type: ignore
-    _vars: ty.List[ty.Optional[VarRU]]
-    _init_size: int
-    _size: int
-    _init_seq: ty.List[VarIU]
-    _default: VarIU
-    _recieved_rt: bool
-
-    @ty.overload
-    def __new__(
-            cls,
-            value: ty.Union[str, ty.List[str]],
-            name: str = "",
-            persist: VarParent.Persist = VarParent.not_persistent,
-            preserve_name: bool = False,
-            *,
-            local: bool = False,
-    ) -> 'ArrStr':
-        """Return new object of proper base concrete class."""
-        ...
-
-    @ty.overload
-    def __new__(
-            cls,
-            value: ty.Union[int, ty.List[int]],
-            name: str = "",
-            persist: VarParent.Persist = VarParent.not_persistent,
-            preserve_name: bool = False,
-            *,
-            local: bool = False,
-    ) -> 'ArrInt':
-        """Return new object of proper base concrete class."""
-        ...
-
-    @ty.overload
-    def __new__(
-            cls,
-            value: ty.Union[float, ty.List[float]],
-            name: str = "",
-            persist: VarParent.Persist = VarParent.not_persistent,
-            preserve_name: bool = False,
-            *,
-            local: bool = False,
-    ) -> 'ArrFloat':
-        """Return new object of proper base concrete class."""
-        ...
-
-    def __getitem__(self, idx: NTU[int]) -> VarParent[KT]:
-        """Return Var[self._ref_type] instance, bounded to the cell at idx."""
-        ...
-
-    def __setitem__(self, idx: NTU[int], value: VarParent[KT]) -> None:
-        """Assign bounded var to array cell."""
-        ...
-
-    def _get_cashed_item(self, c_idx: str, r_idx: int) -> VarParent[KT]:
-        """Return cashed var from cell with modified str idx.
-
-        or cash (instantiate) one."""
-        ...
-
-    def __init__(
-            self,
-            value: ty.Optional[ty.Union[KT, ty.List[KT]]] = None,
-            name: str = "",
-            persist: VarParent.Persist = VarParent.not_persistent,
-            preserve_name: bool = False,
-            size: ty.Optional[int] = None,
-            *,
-            local: bool = False,
-    ) -> None:
-        """Represent all three types of KSP arrays.
-
-        * value can be as list of generic, as well as generic itself
-            e.g. declare array[size] := (val)
-        * name can be optional if array is not local
-        * size is optional, but it helps to keep self in broads"""
-        ...
-
-    def _after_init(self, value: ty.List[KT]) -> None:
-        ...
-
-    def _resolve_idx(self, idx: NTU[int]) -> ty.Tuple[str, int]:
-        """Return tuple of str(idx) and RT(idx)."""
-        ...
-
-    def _get_type_prefix(self) -> str:
-        """Arr representation of the same Var method."""
-        ...
-
-    def _gen_decl_seq_item(self, idx: int, i: KT) -> str:
-        """Decl_line halper function."""
-        ...
-
-    def get_decl_line(self) -> ty.List[str]:
-        """Return declaration line with as much inlined values as possible."""
-        ...
-
-    def __ilshift__(self, other: ATU[KT]) -> ty.NoReturn:
-        """Raise NotImplementedError."""
-        ...
-
-    def __len__(self) -> int:
-        """Return current RT length of array."""
-        ...
-
-    def _append_is_possible(self) -> bool:
-        """Check if append is possible.
-
-        Raises RuntimeError"""
-        ...
-
-    def append(self, value: ATU[KT]) -> None:
-        """Append value to array, if it is still init cb."""
-        ...
-
-    @property
-    def val(self) -> ty.List[KT]:
-        """Return RT value of Var or Arr."""
-
-    @val.setter
-    def val(self, val: KT) -> None:
-        """Set RT value of Var or Arr.
-
-        accepts only generics: int, str, float."""
-
-
-class ArrStr(Arr):
-    """Generic KSP array class.
-
-    * value can be as list of generic, as well as generic itself
-        e.g. declare array[size] := (val)
-    * name can be optional if array is not local
-    * size is optional, but it helps to keep self in broads"""
-
-    _value: ty.List[str]
-    _vars: ty.List[ty.Optional[Str]]  # type: ignore
-    _init_size: int
-    _size: int
-    _init_seq: ty.List[str]
-    _default: str
-    _recieved_rt: bool
-
-    def __getitem__(self, idx: NTU[int]) -> Str:
-        """Return Var[self._ref_type] instance, bounded to the cell at idx."""
-        ...
-
-    def __setitem__(self, idx: NTU[int], value: Str) -> None:  # type: ignore
-        """Assign bounded var to array cell."""
-        ...
-
-    def _get_cashed_item(self, c_idx: str, r_idx: int) -> Str:
-        """Return cashed var from cell with modified str idx.
-
-        or cash (instantiate) one."""
-        ...
-
-    def __init__(
-            self,
-            value: ty.Optional[ty.Union[str, ty.List[str]]] = None,
-            name: str = "",
-            persist: VarParent.Persist = VarParent.not_persistent,
-            preserve_name: bool = False,
-            size: ty.Optional[int] = None,
-            *,
-            local: bool = False,
-    ) -> None:
-        """Represent all three types of KSP arrays.
-
-        * value can be as list of generic, as well as generic itself
-            e.g. declare array[size] := (val)
-        * name can be optional if array is not local
-        * size is optional, but it helps to keep self in broads"""
-        ...
-
-
-class ArrInt(Arr):
-    """Generic KSP array class.
-
-    * value can be as list of generic, as well as generic itself
-        e.g. declare array[size] := (val)
-    * name can be optional if array is not local
-    * size is optional, but it helps to keep self in broads"""
-
-    _value: ty.List[int]
-    _vars: ty.List[ty.Optional[Num[int]]]  # type: ignore
-    _init_size: int
-    _size: int
-    _init_seq: ty.List[int]
-    _default: int
-    _recieved_rt: bool
-
-    def __getitem__(self, idx: NTU[int]) -> Num[int]:
-        """Return Var[self._ref_type] instance, bounded to the cell at idx."""
-        ...
-
-    def __setitem__(  # type: ignore
-            self, idx: NTU[int], value: Num[int]) -> None:
-        """Assign bounded var to array cell."""
-        ...
-
-    def _get_cashed_item(self, c_idx: str, r_idx: int) -> Num[int]:
-        """Return cashed var from cell with modified str idx.
-
-        or cash (instantiate) one."""
-        ...
-
-    def __init__(
-            self,
-            value: ty.Optional[ty.Union[int, ty.List[int]]] = None,
-            name: str = "",
-            persist: VarParent.Persist = VarParent.not_persistent,
-            preserve_name: bool = False,
-            size: ty.Optional[int] = None,
-            *,
-            local: bool = False,
-    ) -> None:
-        """Represent all three types of KSP arrays.
-
-        * value can be as list of generic, as well as generic itself
-            e.g. declare array[size] := (val)
-        * name can be optional if array is not local
-        * size is optional, but it helps to keep self in broads"""
-        ...
-
-
-class ArrFloat(Arr):
-    """Generic KSP array class.
-
-    * value can be as list of generic, as well as generic itself
-        e.g. declare array[size] := (val)
-    * name can be optional if array is not local
-    * size is optional, but it helps to keep self in broads"""
-
-    _value: ty.List[float]
-    _vars: ty.List[ty.Optional[Num[float]]]  # type: ignore
-    _init_size: int
-    _size: int
-    _init_seq: ty.List[float]
-    _default: float
-    _recieved_rt: bool
-
-    def __getitem__(self, idx: NTU[int]) -> Num[float]:
-        """Return Var[self._ref_type] instance, bounded to the cell at idx."""
-        ...
-
-    def __setitem__(  # type: ignore
-            self, idx: NTU[int], value: Num[float]) -> None:
-        """Assign bounded var to array cell."""
-        ...
-
-    def _get_cashed_item(self, c_idx: str, r_idx: int) -> Num[float]:
-        """Return cashed var from cell with modified str idx.
-
-        or cash (instantiate) one."""
-        ...
-
-    def __init__(
-            self,
-            value: ty.Optional[ty.Union[float, ty.List[float]]] = None,
-            name: str = "",
-            persist: VarParent.Persist = VarParent.not_persistent,
-            preserve_name: bool = False,
-            size: ty.Optional[int] = None,
-            *,
-            local: bool = False,
-    ) -> None:
-        """Represent all three types of KSP arrays.
-
-        * value can be as list of generic, as well as generic itself
-            e.g. declare array[size] := (val)
-        * name can be optional if array is not local
-        * size is optional, but it helps to keep self in broads"""
         ...

@@ -12,7 +12,7 @@ class TestBase(ut.TestCase):
     def tearDown(self) -> None:
         ab.KSP.refresh()
         ab.NameVar.refresh()
-        bt.VarParent.refresh()
+        bt.VarBase.refresh()
 
 
 class TestService(ut.TestCase):
@@ -44,19 +44,19 @@ class TestBasics(TestBase):
         # out = list()
         out = ab.KSP.new_out()
         with self.assertRaises(TypeError):
-            bt.Str(2)  # type: ignore
-        s = bt.Str("s_val", name="s")
+            bt.VarStr(2)  # type: ignore
+        s = bt.VarStr("s_val", name="s")
         # self.assertEqual(s.val, 's_val')
         self.assertEqual(s.name(), "@s")
         s <<= "string"
         self.assertEqual(s.val, "string")
         self.assertEqual(s.name(), "@s")
         self.assertEqual(out.get_str(), '@s := "string"')
-        s <<= bt.Str(name="ns", local=True)
+        s <<= bt.VarStr(name="ns", local=True)
         self.assertEqual(s.val, "")
         self.assertEqual(s.name(), "@s")
         self.assertEqual(out.get()[-1].line, "@s := @ns")
-        n = bt.Num(2, name="n", local=True)
+        n = bt.Var(2, name="n", local=True)
         s <<= n
         self.assertEqual(s.val, "2")
         self.assertEqual(out.get()[-1].line, "@s := $n")
@@ -78,7 +78,7 @@ class TestBasics(TestBase):
 class TestInts(TestBase):
     def setUp(self) -> None:
         self.out = ab.KSP.new_out()
-        self.n = bt.Num(0, name="n")
+        self.n = bt.Var(0, name="n")
 
     def test_type_errors(self) -> None:
         n = self.n
@@ -117,7 +117,7 @@ class TestInts(TestBase):
             n &= 2
         with self.assertRaises(NotImplementedError):
             n |= 2
-        with self.assertRaises(TypeError):
+        with self.assertRaises(AttributeError):
             bt.to_int(n)
 
     def test_var(self) -> None:
@@ -289,13 +289,13 @@ class TestArray(TestBase):
         with self.assertRaises(TypeError):
             bt.Arr[int]("s")  # type: ignore
         a = bt.Arr[int]([5, 6], name="a")
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(TypeError):
             a <<= 1
         self.assertTrue(issubclass(a._ref_type, int))
         self.assertEqual(a.val, [5, 6])
         self.assertEqual(a.get_decl_line(), ["declare %a[2] := (5, 6)"])
         self.assertEqual(len(a), 2)
-        self.assertIsInstance(a[0], bt.Type[int])
+        self.assertIsInstance(a[0], bt.Var[int])
         self.assertEqual(a[0].val, 5)
         self.assertEqual(a[0].name(), "%a[0]")
         out = ab.KSP.new_out()
@@ -323,7 +323,7 @@ class TestArray(TestBase):
             a[1] = 3  # type: ignore
         a.append(4)
         self.assertEqual(len(a), 3)
-        self.assertIsInstance(a[2], bt.Type[int])
+        self.assertIsInstance(a[2], bt.Var[int])
         self.assertEqual(a[2].val, 4)
         with self.assertRaises(TypeError):
             a.append(4.9)  # type: ignore
@@ -359,12 +359,16 @@ class TestArray(TestBase):
 
         a_bad = bt.Arr([1, test])  # type: ignore
         with self.assertRaises(TypeError):
-            a_bad.get_decl_line()
+            a_bad.get_decl_line()  # type: ignore
 
         with self.assertRaises(TypeError):
             a_sized[0] = 4  # type: ignore
-        with self.assertRaises(RuntimeError):
-            a_sized[0] = bt.Var(4, name='local', local=True)  # type: ignore
+
+        self.assertEqual(a_sized[0].val, 9)
+        test = a_sized[0]
+        a_sized[0] = bt.Var[int](4, name='local', local=True)
+        self.assertEqual(a_sized[0].val, 4)
+        self.assertEqual(test.val, 4)
         with self.assertRaises(IndexError):
             a_sized[0.4]  # type: ignore
 
@@ -395,69 +399,70 @@ class TestTypes(ut.TestCase):
         sv = bt.Var[str](name=n, local=True)
         fv = bt.Var[float](name=n, local=True)
 
-        i = bt.Num[int](name=n, local=True)
-        f = bt.Num[float](name=n, local=True)
-        s = bt.Str(name=n, local=True)
+        i = bt.VarInt(name=n, local=True)
+        f = bt.VarFloat(name=n, local=True)
+        s = bt.VarStr(name=n, local=True)
 
         ia = bt.Arr[int](name=n, local=True, size=6)
         sa = bt.Arr[str](name=n, local=True, size=6)
         fa = bt.Arr[float](name=n, local=True, size=6)
 
-        self.assertIsInstance(iv, bt.Type[int])
-        self.assertIsInstance(sv, bt.Type[str])
-        self.assertIsInstance(fv, bt.Type[float])
+        self.assertIsInstance(iv, bt.Var[int])
+        self.assertIsInstance(sv, bt.Var[str])
+        self.assertIsInstance(fv, bt.Var[float])
         self.assertIsInstance(iv, bt.Num)
-        self.assertIsInstance(sv, bt.Str)
+        self.assertIsInstance(sv, bt.VarStr)
         self.assertIsInstance(fv, bt.Num)
         self.assertIsInstance(iv, bt.Var)
         self.assertIsInstance(sv, bt.Var)
         self.assertIsInstance(fv, bt.Var)
-        self.assertNotIsInstance(iv, bt.Type[str])
-        self.assertNotIsInstance(sv, bt.Type[float])
-        self.assertNotIsInstance(fv, bt.Type[int])
-        self.assertNotIsInstance(5, bt.Type[str])
+        self.assertNotIsInstance(iv, bt.Var[str])
+        self.assertNotIsInstance(sv, bt.Var[float])
+        self.assertNotIsInstance(fv, bt.Var[int])
+        self.assertNotIsInstance(5, bt.Var[str])
 
-        self.assertIsInstance(i, bt.Type[int])
-        self.assertIsInstance(f, bt.Type[float])
-        self.assertIsInstance(s, bt.Type[str])
-        self.assertNotIsInstance(i, bt.Type[str])
-        self.assertNotIsInstance(s, bt.Type[float])
-        self.assertNotIsInstance(f, bt.Type[int])
+        self.assertIsInstance(i, bt.Var[int])
+        self.assertIsInstance(f, bt.Var[float])
+        self.assertIsInstance(s, bt.Var[str])
+        self.assertNotIsInstance(i, bt.Var[str])
+        self.assertNotIsInstance(s, bt.Var[float])
+        self.assertNotIsInstance(f, bt.Var[int])
 
-        self.assertNotIsInstance(ia, bt.Type[int])
-        self.assertNotIsInstance(sa, bt.Type[str])
-        self.assertNotIsInstance(fa, bt.Type[float])
+        self.assertNotIsInstance(ia, bt.Var[int])
+        self.assertNotIsInstance(sa, bt.Var[str])
+        self.assertNotIsInstance(fa, bt.Var[float])
 
-        self.assertIsInstance(ia, bt.Type[int, 0])
-        self.assertIsInstance(sa, bt.Type[str, 0])
-        self.assertIsInstance(fa, bt.Type[float, 0])
+        # TODO TOTHINK
+        # self.assertIsInstance(ia, bt.Var[int, 0])
+        # self.assertIsInstance(sa, bt.Var[str, 0])
+        # self.assertIsInstance(fa, bt.Var[float, 0])
 
-        self.assertIsInstance(ia, bt.Type[int, 4])
-        self.assertIsInstance(sa, bt.Type[str, 2])
-        self.assertIsInstance(fa, bt.Type[float, 1])
+        # self.assertIsInstance(ia, bt.Var[int, 4])
+        # self.assertIsInstance(sa, bt.Var[str, 2])
+        # self.assertIsInstance(fa, bt.Var[float, 1])
 
-        self.assertIsInstance(ia, bt.Type[int, 6])
-        self.assertIsInstance(sa, bt.Type[str, 6])
-        self.assertIsInstance(fa, bt.Type[float, 6])
+        # self.assertIsInstance(ia, bt.Var[int, 6])
+        # self.assertIsInstance(sa, bt.Var[str, 6])
+        # self.assertIsInstance(fa, bt.Var[float, 6])
 
-        self.assertNotIsInstance(ia, bt.Type[int, 7])
-        self.assertNotIsInstance(sa, bt.Type[str, 7])
-        self.assertNotIsInstance(fa, bt.Type[float, 7])
+        # self.assertNotIsInstance(ia, bt.Var[int, 7])
+        # self.assertNotIsInstance(sa, bt.Var[str, 7])
+        # self.assertNotIsInstance(fa, bt.Var[float, 7])
 
-        self.assertNotIsInstance(ia, bt.Type[str, 0])
-        self.assertNotIsInstance(sa, bt.Type[float, 0])
-        self.assertNotIsInstance(fa, bt.Type[int, 0])
+        # self.assertNotIsInstance(ia, bt.Var[str, 0])
+        # self.assertNotIsInstance(sa, bt.Var[float, 0])
+        # self.assertNotIsInstance(fa, bt.Var[int, 0])
 
         with self.assertRaises(TypeError):
-            self.assertNotIsInstance(fa, bt.Type[object()])  # type: ignore
+            self.assertNotIsInstance(fa, bt.Var[object()])  # type: ignore
         with self.assertRaises(TypeError):
-            self.assertNotIsInstance(fa, bt.Type[float, -1])
+            self.assertNotIsInstance(fa, bt.Var[float, -1])
 
-        self.assertIsInstance(bt.Var(2, name=n, local=True), bt.Type[int])
-        self.assertIsInstance(bt.Var("2", name=n, local=True), bt.Type[str])
-        self.assertIsInstance(bt.Var(2.0, name=n, local=True), bt.Type[float])
+        self.assertIsInstance(bt.Var(2, name=n, local=True), bt.Var[int])
+        self.assertIsInstance(bt.Var("2", name=n, local=True), bt.Var[str])
+        self.assertIsInstance(bt.Var(2.0, name=n, local=True), bt.Var[float])
 
-        self.assertNotIsInstance(bt.Var(2, name=n, local=True), bt.Type[float])
+        self.assertNotIsInstance(bt.Var(2, name=n, local=True), bt.Var[float])
         self.assertNotIsInstance(
-            bt.Var("2", name=n, local=True), bt.Type[float])
-        self.assertNotIsInstance(bt.Var(2.0, name=n, local=True), bt.Type[int])
+            bt.Var("2", name=n, local=True), bt.Var[float])
+        self.assertNotIsInstance(bt.Var(2.0, name=n, local=True), bt.Var[int])

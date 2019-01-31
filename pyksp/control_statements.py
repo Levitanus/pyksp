@@ -323,7 +323,7 @@ class For(ab.KSP):
         self._count = 0
         return self
 
-    def __next__(self) -> ty.Union[ty.Iterable[bt.VarParent], bt.VarParent]:
+    def __next__(self) -> ty.Union[ty.Iterable[bt.VarBase], bt.VarBase]:
         if self._count != 0:
             self._idx[self._ptr] += self.step
         self._count += 1
