@@ -24,6 +24,10 @@ NTU = ty.Union[NT, "ProcessNum[NT]"]
 PNT = ty.TypeVar("PNT", bound='ProcessNum', covariant=True)
 NFT = ty.TypeVar("NFT", bound=ty.Callable[..., ty.Any])
 
+VarIU = ty.Union[ty.Type[int], ty.Type[str], ty.Type[float]]
+VarRU = ty.Union[ty.Type["VarInt"], ty.Type["VarFloat"], ty.Type["VarStr"]]
+ArrRU = ty.Type[ty.Union["ArrInt", "ArrFloat", "ArrStr"]]
+
 
 @ty.overload
 def get_value(value: ATU[int]) -> int:
@@ -693,6 +697,10 @@ class VarMeta(type):
     def __getitem__(cls, ref: ty.Type[str]) -> ty.Type["VarStr"]:
         ...
 
+    @ty.overload
+    def __getitem__(cls, ref: ty.Tuple[VarIU, int]) -> ty.Type['ArrType']:
+        ...
+
     def __instancecheck__(cls, inst: object) -> bool:
         ...
 
@@ -795,8 +803,25 @@ class ArrMeta(type):
     def __getitem__(cls, ref: ty.Type[str]) -> ty.Type["ArrStr"]:
         ...
 
+    @ty.overload
+    def __getitem__(cls, ref: ty.Tuple[VarIU, int]) -> ty.Type['ArrType']:
+        ...
+
     def __instancecheck__(cls, inst: object) -> bool:
         ...
+
+
+class ArrTypeMeta(type):
+    """Extensive instance-checker for ArrBase."""
+
+    def __instancecheck__(cls, obj: object) -> bool:
+        ...
+
+
+class ArrType(metaclass=ArrTypeMeta):
+    """Class to be used for pretty instance-checking of Arrays."""
+    size: ty.Optional[int] = None
+    ref_type: ty.Type[ty.Union[int, str, float]] = int
 
 
 class Arr(metaclass=ArrMeta):

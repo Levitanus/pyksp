@@ -310,7 +310,7 @@ class Output(KSP):
         """Put lines from another Output object to list."""
         self.event(EventAddedToOutput(self, OutputGot, lines))
         for line in lines:
-            self.put_line(line.line, indent=line.indent)
+            self.put_line(line.line, indent=line.indent - self.indent_level)
 
     def open_block(self, block: 'OutputBlock') -> None:
         """Open block, increase indent level.

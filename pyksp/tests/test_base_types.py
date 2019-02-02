@@ -22,6 +22,7 @@ class TestService(ut.TestCase):
 
 class TestBasics(TestBase):
     def test_AstConcatStrings(self) -> None:
+        # pylint: disable=W0104, R0915
         a = bt.AstConcatString("first", "second")
         self.assertEqual(a.get_value(), "firstsecond")
         self.assertEqual(a.expand(), '"first" & "second"')
@@ -113,9 +114,9 @@ class TestInts(TestBase):
             0**n  # type: ignore
         with self.assertRaises(TypeError):
             n **= 2  # type: ignore
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(RuntimeError):
             n &= 2
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(RuntimeError):
             n |= 2
         with self.assertRaises(AttributeError):
             bt.to_int(n)  # type: ignore
@@ -131,12 +132,6 @@ class TestInts(TestBase):
         self.assertEqual(bt.to_float(n).expand(), "int_to_real($n)")
         with self.assertRaises(TypeError):
             n <<= n.to_float()  # type: ignore
-        bt.inc(n)
-        self.assertEqual(n.val, 2)
-        self.assertEqual(out.get()[-1].line, "inc($n)")
-        bt.dec(n)
-        self.assertEqual(n.val, 1)
-        self.assertEqual(out.get()[-1].line, "dec($n)")
         n.inc()
         self.assertEqual(n.val, 2)
         self.assertEqual(out.get()[-1].line, "inc($n)")
@@ -384,7 +379,7 @@ class TestArray(TestBase):
         with self.assertRaises(RuntimeError):
             a.read()
 
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(RuntimeError):
             for i in a:  # type: ignore
                 pass
 
@@ -432,31 +427,30 @@ class TestTypes(ut.TestCase):
         self.assertNotIsInstance(sa, bt.Var[str])
         self.assertNotIsInstance(fa, bt.Var[float])
 
-        # TODO TOTHINK
-        # self.assertIsInstance(ia, bt.Var[int, 0])
-        # self.assertIsInstance(sa, bt.Var[str, 0])
-        # self.assertIsInstance(fa, bt.Var[float, 0])
+        self.assertIsInstance(ia, bt.Var[int, 0])
+        self.assertIsInstance(sa, bt.Var[str, 0])
+        self.assertIsInstance(fa, bt.Var[float, 0])
 
-        # self.assertIsInstance(ia, bt.Var[int, 4])
-        # self.assertIsInstance(sa, bt.Var[str, 2])
-        # self.assertIsInstance(fa, bt.Var[float, 1])
+        self.assertIsInstance(ia, bt.Var[int, 4])
+        self.assertIsInstance(sa, bt.Var[str, 2])
+        self.assertIsInstance(fa, bt.Var[float, 1])
 
-        # self.assertIsInstance(ia, bt.Var[int, 6])
-        # self.assertIsInstance(sa, bt.Var[str, 6])
-        # self.assertIsInstance(fa, bt.Var[float, 6])
+        self.assertIsInstance(ia, bt.Var[int, 6])
+        self.assertIsInstance(sa, bt.Var[str, 6])
+        self.assertIsInstance(fa, bt.Var[float, 6])
 
-        # self.assertNotIsInstance(ia, bt.Var[int, 7])
-        # self.assertNotIsInstance(sa, bt.Var[str, 7])
-        # self.assertNotIsInstance(fa, bt.Var[float, 7])
+        self.assertNotIsInstance(ia, bt.Var[int, 7])
+        self.assertNotIsInstance(sa, bt.Var[str, 7])
+        self.assertNotIsInstance(fa, bt.Var[float, 7])
 
-        # self.assertNotIsInstance(ia, bt.Var[str, 0])
-        # self.assertNotIsInstance(sa, bt.Var[float, 0])
-        # self.assertNotIsInstance(fa, bt.Var[int, 0])
+        self.assertNotIsInstance(ia, bt.Var[str, 0])
+        self.assertNotIsInstance(sa, bt.Var[float, 0])
+        self.assertNotIsInstance(fa, bt.Var[int, 0])
 
-        # with self.assertRaises(TypeError):
-        #     self.assertNotIsInstance(fa, bt.Var[object()])  # type: ignore
-        # with self.assertRaises(TypeError):
-        #     self.assertNotIsInstance(fa, bt.Var[float, -1])  # type: ignore
+        with self.assertRaises(TypeError):
+            self.assertNotIsInstance(fa, bt.Var[object()])  # type: ignore
+        with self.assertRaises(TypeError):
+            self.assertNotIsInstance(fa, bt.Var[float, -1])
 
         self.assertIsInstance(bt.Var(2, name=n, local=True), bt.Var[int])
         self.assertIsInstance(bt.Var("2", name=n, local=True), bt.Var[str])
@@ -466,3 +460,6 @@ class TestTypes(ut.TestCase):
         self.assertNotIsInstance(
             bt.Var("2", name=n, local=True), bt.Var[float])
         self.assertNotIsInstance(bt.Var(2.0, name=n, local=True), bt.Var[int])
+
+
+# pylint: enable=W0104, R0915

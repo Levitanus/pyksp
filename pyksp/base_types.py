@@ -1,5 +1,6 @@
 """Base KSP types and compiler mechanics."""  # type: ignore
 import typing as ty
+from functools import singledispatch
 from abc import abstractmethod
 
 from .abstract import KspObject
@@ -331,6 +332,7 @@ def _ducktype_arr_val(ref: VarIU, val: VHT) -> None:
 
 class ValueHolder(ty.Generic[VHT]):
     """Simple value holder, can be transfered between variables."""
+    __slots__ = ('__value', )
 
     def __init__(self, value: VHT) -> None:
         """Keep 'adress' of value."""
@@ -362,6 +364,7 @@ class VarBase(KspObject, HasInit, ty.Generic[VHT, KT], Magic[KT]):
 
     keeps self._ref_type, representing it's generic parent.
     generates init lines, if not declared as local."""
+    __slots__ = '_persist', '_value', '_init_val'
     names_count: int = 0
     _persist: 'Persist'
     _value: ValueHolder[VHT]
@@ -620,10 +623,10 @@ class Num(VarBase[NT, NT], ProcessNum[NT], ty.Generic[NT, KVT]):
         return self.__ilshift__(AstDiv(self, other))
 
     def __iand__(self, other: NTU[NT]) -> ty.NoReturn:
-        raise NotImplementedError
+        raise RuntimeError('has not to be used')
 
     def __ior__(self, other: NTU[NT]) -> ty.NoReturn:
-        raise NotImplementedError
+        raise RuntimeError('has not to be used')
 
 
 class VarInt(Num[int, "VarInt"], ProcessInt):
@@ -670,15 +673,19 @@ class VarInt(Num[int, "VarInt"], ProcessInt):
 
     def inc(self) -> None:
         """Increase value by 1, if int."""
-        if not issubclass(self._ref_type, int):
-            raise NotImplementedError
-        inc(self)
+        out = self.get_out()
+        out.put_immediatly(AstBuiltInBase(None, "inc", self))
+        if self.is_compiled():
+            return
+        self._value.set(self._value.get() + 1)
 
     def dec(self) -> None:
         """Decrease value by 1, if int."""
-        if not issubclass(self._ref_type, int):
-            raise NotImplementedError
-        dec(self)
+        out = self.get_out()
+        out.put_immediatly(AstBuiltInBase(None, "dec", self))
+        if self.is_compiled():
+            return
+        self._value.set(self._value.get() - 1)
 
 
 class VarFloat(Num[float, "VarFloat"], ProcessFloat):
@@ -726,26 +733,8 @@ class VarFloat(Num[float, "VarFloat"], ProcessFloat):
 
 def _assert_Num_int(var: NTU[int]) -> None:
     """Raise TypeError if not int or KspInt passed."""
-    if not isinstance(var, Num):
+    if not isinstance(var, (ProcessInt, int)):
         raise TypeError(f"can only be used with {VarInt}")
-    if not issubclass(get_value_type(var), int):
-        raise TypeError(f"can only be used with {VarInt}")
-
-
-def inc(var: VarInt) -> None:
-    """Increase value by 1, if int."""
-    _assert_Num_int(var)
-    out = var.get_out()
-    out.put_immediatly(AstBuiltInBase(None, "inc", var))
-    var.val += 1
-
-
-def dec(var: VarInt) -> None:
-    """Decrease value by 1, if int."""
-    _assert_Num_int(var)
-    out = var.get_out()
-    out.put_immediatly(AstBuiltInBase(None, "dec", var))
-    var.val -= 1
 
 
 class ArrBase(VarBase[VHT, KT], ty.Generic[KVT, VHT, KT]):
@@ -828,11 +817,19 @@ class ArrBase(VarBase[VHT, KT], ty.Generic[KVT, VHT, KT]):
     def __getitem__(self, idx: NTU[int]) -> KVT:
         """Return Var[self._ref_type] instance, bounded to the cell at idx."""
         c_idx, r_idx = self._resolve_idx(idx)
+        if self.is_compiled():
+            obj = Var[self._ref_type](  # type: ignore
+                0, self.name.name, local=True)
+            obj.name.postfix = f"[{c_idx}]"  # type: ignore
+            obj.name.prefix = self.name.prefix  # type: ignore
+            return obj  # type: ignore
         return self._get_cashed_item(c_idx, r_idx)
 
     def __setitem__(self, idx: NTU[int], value: KVT) -> None:
         """Assign bounded var to array cell."""
-        if not isinstance(value, Var[self._ref_type]):  # type: ignore
+        if self.is_compiled():
+            return
+        if not isinstance(value, Var[self._ref_type]):
             raise TypeError("has to be of type {T}[{r}], pasted: {v}".format(
                 T=VarBase, r=self._ref_type, v=value))
         c_idx, r_idx = self._resolve_idx(idx)  # pylint: disable=W0612
@@ -925,7 +922,7 @@ class ArrBase(VarBase[VHT, KT], ty.Generic[KVT, VHT, KT]):
             raise TypeError(
                 "pasted value of wront type: {v}, expected {r}".format(
                     v=value, r=self._ref_type))
-        if isinstance(value, Var[self._ref_type]):  # type: ignore
+        if isinstance(value, Var[self._ref_type]):
             self._recieved_rt = True
         _value = get_value(value)
         try:
@@ -940,7 +937,7 @@ class ArrBase(VarBase[VHT, KT], ty.Generic[KVT, VHT, KT]):
         self._size += 1
 
     def __iter__(self) -> ty.NoReturn:
-        raise NotImplementedError
+        raise RuntimeError('not supprots direct iteration. use For()')
 
 
 class ArrStr(ArrBase[VarStr, ty.List[str], str]):
@@ -1004,7 +1001,7 @@ class ArrFloat(ArrBase[VarFloat, ty.List[float], float]):
             *,
             local: bool = False,
     ) -> None:
-        self._ref_type = int
+        self._ref_type = float
         _ducktype_arr_val(float, value)  # type: ignore
         super().__init__(  # type: ignore
             value=value,
@@ -1018,8 +1015,15 @@ class ArrFloat(ArrBase[VarFloat, ty.List[float], float]):
 class VarMeta(type):
     """Var getitem helper metaclass."""
 
-    def __getitem__(cls, ref: ty.Type[VarIU]) -> ty.Type[VarRU]:
+    def __getitem__(cls, ref: ty.Union[VarIU, ty.Tuple[VarIU, int]]
+                    ) -> ty.Union[VarRU, ty.Type['ArrType']]:
         """Return VarBase[ref] object."""
+        size: ty.Optional[int] = None
+        if isinstance(ref, tuple):
+            size = ref[1]
+            ref = ref[0]
+            if size is not None:
+                return Arr[ref, size]  # type: ignore
         if issubclass(ref, int):
             return VarInt
         if issubclass(ref, float):
@@ -1119,8 +1123,13 @@ class Var(metaclass=VarMeta):
 class ArrMeta(type):
     """Var getitem helper metaclass."""
 
-    def __getitem__(cls, ref: ty.Type[VarIU]) -> ArrRU:
+    @singledispatch
+    def __getitem__(cls, ref: VarIU) -> ArrRU:
         """Return concrete typed class of Arr."""
+        return ArrMeta.getitem_proxy(ref)
+
+    @singledispatch
+    def getitem_proxy(ref: VarIU) -> ArrRU:  # type: ignore
         if issubclass(ref, int):
             return ArrInt
         if issubclass(ref, float):
@@ -1129,9 +1138,41 @@ class ArrMeta(type):
             return ArrStr
         raise TypeError('subscribe with one of int, str, float')
 
+    @getitem_proxy.register(tuple)  # type: ignore
+    def _(ref: ty.Tuple[ty.Type[int], int]  # type: ignore
+          ) -> ty.Type['ArrType']:
+        if isinstance(ref, tuple):
+            size = ref[1]
+            _ref = ref[0]
+            if size is not None:
+                ArrType.size = size
+                ArrType.ref_type = _ref
+                return ArrType
+        raise RuntimeError('There is nothing interesting here')
+
     def __instancecheck__(cls, inst: object) -> bool:
         """Make isinstance(ArrInt(), ArrBase) True."""
         return isinstance(inst, ArrBase)
+
+
+class ArrTypeMeta(type):
+    def __instancecheck__(cls, obj: object) -> bool:
+        if not isinstance(obj, ArrBase):
+            return False
+        if not issubclass(obj._ref_type, cls.ref_type):  # type: ignore
+            return False
+        if cls.size < 0:  # type: ignore
+            raise TypeError('size has to be False or possitive-int')
+        if not cls.size:  # type: ignore
+            return True
+        if cls.size <= len(obj):  # type: ignore
+            return True
+        return False
+
+
+class ArrType(metaclass=ArrTypeMeta):
+    size: ty.Optional[int] = None
+    ref_type: ty.Type[ty.Union[int, str, float]] = int
 
 
 class Arr(metaclass=ArrMeta):
