@@ -993,6 +993,7 @@ class ArrInt(ArrBase[VarInt, ty.List[int], int]):
 class ArrFloat(ArrBase[VarFloat, ty.List[float], float]):
     """Implement KSP Array of reals (floats)."""
 
+    # CPD-OFF
     def __init__(
             self,
             value: ty.Union[float, ty.List[float]] = 0.0,
@@ -1003,6 +1004,7 @@ class ArrFloat(ArrBase[VarFloat, ty.List[float], float]):
             *,
             local: bool = False,
     ) -> None:
+        # CPD-ON
         self._ref_type = float
         _ducktype_arr_val(float, value)  # type: ignore
         super().__init__(  # type: ignore

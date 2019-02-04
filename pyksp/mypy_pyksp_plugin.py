@@ -27,7 +27,7 @@ def vars_callback(ctx: mp.FunctionContext) -> mt.Type:
 def LocCallback(ctx: mp.AnalyzeTypeContext) -> mt.Type:
     args = ctx.context.args  # type: ignore
     if len(args) == 2:
-        print(str(args[0]))
+        # print(str(args[0]))
         if str(args[0]) == 'int?':
             return ctx.api.named_type('pyksp.service_types.LocArrInt', [])
         if str(args[0]) == 'str?':
