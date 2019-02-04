@@ -24,3 +24,7 @@ htmlcov/
 tests_old/
 
 pyksp/tests/
+
+\.pytest_cache/
+
+__pycache__/
