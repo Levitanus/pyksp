@@ -35,7 +35,7 @@ def vrs(f: F) -> F:
     ab.NameVar.scope()
 
     @ft.wraps(f)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: ty.Any, **kwargs: ty.Any) -> None:
         b_args = sig.bind(*args, **kwargs, **new_kwargs)
         return f(*b_args.args, **b_args.kwargs)
 
@@ -54,7 +54,7 @@ class C:
         print(arg, f'{arg1.name()}:{arg1.val}')
 
 
-func(1)
+func(1)  # pylint: disable=E1125
 c = C()
-c.method(3)
-c.method(5)
+c.method(3)  # pylint: disable=E1125
+c.method(5)  # pylint: disable=E1125

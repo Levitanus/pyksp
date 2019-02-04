@@ -34,14 +34,14 @@ def LocCallback(ctx: mp.AnalyzeTypeContext) -> mt.Type:
             return ctx.api.named_type('pyksp.service_types.LocArrStr', [])
         if str(args[0]) == 'float?':
             return ctx.api.named_type('pyksp.service_types.LocArrFloat', [])
-    # print(str(args[0]))
-    if str(args[0]) == 'int?':
-        return ctx.api.named_type('pyksp.service_types.LocInt', [])
-    if str(args[0]) == 'str?':
-        return ctx.api.named_type('pyksp.service_types.LocStr', [])
-    if str(args[0]) == 'float?':
-        return ctx.api.named_type('pyksp.service_types.LocFloat', [])
-    return ctx.api.named_type('pyksp.service_types.LocInt', [])
+    elif len(args) == 1:
+        if str(args[0]) == 'int?':
+            return ctx.api.named_type('pyksp.service_types.LocInt', [])
+        if str(args[0]) == 'str?':
+            return ctx.api.named_type('pyksp.service_types.LocStr', [])
+        if str(args[0]) == 'float?':
+            return ctx.api.named_type('pyksp.service_types.LocFloat', [])
+    return ctx.api.named_type('pyksp.service_types.Loc', [])
 
 
 class KspPlugin(mp.Plugin):

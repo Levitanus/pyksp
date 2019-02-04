@@ -18,6 +18,7 @@ class LocMeta(ab.KSPBaseMeta):
             if issubclass(arg[0], float):
                 return type('LocArrFloat' + str(LocMeta.calls),
                             (LocArrFloat, ), {'size': arg[1]})
+        arg = ty.cast(type, arg)
         if issubclass(arg, int):
             return LocInt
         if issubclass(arg, str):
@@ -31,25 +32,44 @@ class Loc(metaclass=LocMeta):
     pass
 
 
-class LocArrInt(Loc, bt.ArrInt):
-    pass
+# CPD-OFF
+if ty.TYPE_CHECKING:
 
+    class LocArrInt(bt.ArrInt):
+        pass
 
-class LocArrStr(Loc, bt.ArrStr):
-    pass
+    class LocArrStr(bt.ArrStr):
+        pass
 
+    class LocArrFloat(bt.ArrFloat):
+        pass
 
-class LocArrFloat(Loc, bt.ArrFloat):
-    pass
+    class LocInt(bt.VarInt):
+        pass
 
+    class LocStr(bt.VarStr):
+        pass
 
-class LocInt(Loc, bt.VarInt):
-    pass
+    class LocFloat(bt.VarFloat):
+        pass
 
+    # CPD-ON
+else:
 
-class LocStr(Loc, bt.VarStr):
-    pass
+    class LocArrInt(Loc, bt.ArrInt):
+        pass
 
+    class LocArrStr(Loc, bt.ArrStr):
+        pass
 
-class LocFloat(Loc, bt.VarFloat):
-    pass
+    class LocArrFloat(Loc, bt.ArrFloat):
+        pass
+
+    class LocInt(Loc, bt.VarInt):
+        pass
+
+    class LocStr(Loc, bt.VarStr):
+        pass
+
+    class LocFloat(Loc, bt.VarFloat):
+        pass
