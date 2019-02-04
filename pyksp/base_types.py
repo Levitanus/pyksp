@@ -943,6 +943,7 @@ class ArrBase(VarBase[VHT, KT], ty.Generic[KVT, VHT, KT]):
 class ArrStr(ArrBase[VarStr, ty.List[str], str]):
     """String KSP Var."""
 
+    # CPD-OFF
     def __init__(
             self,
             value: ty.Union[str, ty.List[str]] = "",
@@ -953,6 +954,7 @@ class ArrStr(ArrBase[VarStr, ty.List[str], str]):
             *,
             local: bool = False,
     ) -> None:
+        # CPD-ON
         self._ref_type = str
         _ducktype_arr_val(str, value)  # type: ignore
         super().__init__(  # type: ignore
@@ -1054,6 +1056,7 @@ class Var(metaclass=VarMeta):
     preserve_name arg keeps name unhashed even if compiled with compact option.
     local is for internal compiler tasks. Has not to be used."""
 
+    # CPD-OFF
     def __new__(
             cls,
             value: VHT,
@@ -1064,6 +1067,7 @@ class Var(metaclass=VarMeta):
             *,
             local: bool = False,
     ) -> VarRU:
+        # CPD-ON
         """Return new object of proper base concrete class."""
         if not size:
             if isinstance(value, int):

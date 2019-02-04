@@ -316,6 +316,7 @@ class TestFor(ut.TestCase):
         self.assertEqual(self.out.get_str(), simple_str)
 
     def test_zip(self) -> None:
+        # CPD-OFF
         self.target.val = 0
         for idx, t in enumerate(cs.For(self.iarr, self.arr_f)):
             i, f = t
@@ -325,6 +326,7 @@ class TestFor(ut.TestCase):
                 self.target.inc()
         self.assertEqual(self.target.val, 2)
         self.assertEqual(self.out.get_str(), zip_str)
+        # CPD-ON
 
     def test_enum(self) -> None:
         self.target.val = 0
