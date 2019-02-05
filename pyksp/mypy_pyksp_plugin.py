@@ -50,7 +50,7 @@ class KspPlugin(mp.Plugin):
     def get_function_hook(
             self, fullname: str
     ) -> ty.Optional[ty.Callable[[mp.FunctionContext], mt.Type]]:
-        # print(fullname)
+        print(fullname)
         if fullname == 'pyksp.simple_test.vrs':
             # print('vrs')
             return vars_callback

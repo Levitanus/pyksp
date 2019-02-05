@@ -10,7 +10,7 @@ def st_func(arg: int, *, arg1: st.Loc[str, 5]) -> None:
 class C:
     @st.vrs
     def st_method(self, arg: int, *, arg1: st.Loc[str, 5]) -> None:
-        print(arg, f'{arg1.name()}:{arg1.val}')
+        print(self, arg, f'{arg1.name()}:{arg1.val}')
 
 
 st_func(1)

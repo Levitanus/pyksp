@@ -1,9 +1,9 @@
-from . import base_types as bt
-from . import abstract as ab
 import typing as ty
 import functools as ft
 import inspect as it
 import re
+from . import base_types as bt
+from . import abstract as ab
 
 
 class LocMeta(ab.KSPBaseMeta):
@@ -82,28 +82,31 @@ F = ty.TypeVar('F', bound=ty.Callable[..., None])
 
 
 def vrs(f: F) -> F:
-    name = f.__qualname__
-    name = re.sub(r'\.', '_', name)
-    ab.NameVar.scope(name)
-    sig = it.signature(f)
-    new_kwargs: ty.Dict[str, Loc] = dict()
-    for par in sig.parameters:
-        anno = sig.parameters[par].annotation
-        # print(par, anno)
-        if issubclass(anno, Loc):
-            # print('instance')
-            a_kwgs = dict(name=par)
-            if hasattr(anno, 'size'):
-                a_kwgs['size'] = anno.size
-            try:
-                new_kwargs[par] = anno(**a_kwgs)
-            except NameError:
-                new_kwargs[par] = anno(**a_kwgs, local=True)
-    ab.NameVar.scope()
+    if not ty.TYPE_CHECKING:
+        name = f.__qualname__
+        name = re.sub(r'\.', '_', name)
+        ab.NameVar.scope(name)
+        sig = it.signature(f)
+        new_kwargs: ty.Dict[str, Loc] = dict()
+        for par in sig.parameters:
+            anno = sig.parameters[par].annotation
+            # print(par, anno)
+            if issubclass(anno, Loc):
+                # print('instance')
+                a_kwgs = dict(name=par)
+                if hasattr(anno, 'size'):
+                    a_kwgs['size'] = anno.size
+                try:
+                    new_kwargs[par] = anno(**a_kwgs)
+                except NameError:
+                    new_kwargs[par] = anno(**a_kwgs, local=True)
+        ab.NameVar.scope()
 
-    @ft.wraps(f)
-    def wrapper(*args: ty.Any, **kwargs: ty.Any) -> None:
-        b_args = sig.bind(*args, **kwargs, **new_kwargs)
-        return f(*b_args.args, **b_args.kwargs)
+        @ft.wraps(f)
+        def wrapper(*args: ty.Any, **kwargs: ty.Any) -> None:
+            b_args = sig.bind(*args, **kwargs, **new_kwargs)
+            return f(*b_args.args, **b_args.kwargs)
 
-    return wrapper  # type: ignore
+        return wrapper
+    else:
+        return f
