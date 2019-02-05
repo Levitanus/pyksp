@@ -1,4 +1,4 @@
-import setuptools
+import setuptools  # type: ignore
 
 setuptools.setup(
     name='pyksp',
@@ -8,8 +8,9 @@ setuptools.setup(
     author='Levitanus',
     author_email='pianoist@ya.ru',
     license='GPLv3',
-    packages=setuptools.find_packages(),
-    install_requires=[
-        'pyperclip'
-    ],
+    package_data={
+        'pyksp': ['py.typed'],
+    },
+    packages=['pyksp'],
+    install_requires=['pyperclip'],
     zip_safe=False)

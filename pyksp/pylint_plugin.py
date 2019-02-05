@@ -14,13 +14,16 @@ def register(linter):  # type: ignore
 
 
 def _vrs_inference(node, context=None):  # type: ignore
+    indicies = list()
     for idx, anno in enumerate(node.args.kwonlyargs_annotations):
         attr = anno.value
         if attr.attrname != 'Loc':
-            return (node, )
+            continue
         module = attr.expr.inferred()[0]
         if module.name != 'pyksp.service_types':
-            return (node, )
+            continue
+        indicies.append(idx)
+    for idx in reversed(indicies):
         del node.args.kwonlyargs[idx]
         del node.args.kwonlyargs_annotations[idx]
     return (node, )

@@ -753,7 +753,7 @@ class ArrBase(VarBase[VHT, KT], ty.Generic[KVT, VHT, KT]):
     _default: KT
     _recieved_rt: bool
 
-    def __init__(
+    def __init__(  # pylint: disable=R0913
             self,
             value: VHT,
             name: str = "",
@@ -944,7 +944,7 @@ class ArrStr(ArrBase[VarStr, ty.List[str], str]):
     """String KSP Var."""
 
     # CPD-OFF
-    def __init__(
+    def __init__(  # pylint: disable=R0913
             self,
             value: ty.Union[str, ty.List[str]] = "",
             name: str = "",
@@ -969,7 +969,7 @@ class ArrStr(ArrBase[VarStr, ty.List[str], str]):
 class ArrInt(ArrBase[VarInt, ty.List[int], int]):
     """Implement KSP Array of ints."""
 
-    def __init__(
+    def __init__(  # pylint: disable=R0913
             self,
             value: ty.Union[int, ty.List[int]] = 0,
             name: str = "",
@@ -994,7 +994,7 @@ class ArrFloat(ArrBase[VarFloat, ty.List[float], float]):
     """Implement KSP Array of reals (floats)."""
 
     # CPD-OFF
-    def __init__(
+    def __init__(  # pylint: disable=R0913
             self,
             value: ty.Union[float, ty.List[float]] = 0.0,
             name: str = "",
@@ -1059,7 +1059,7 @@ class Var(metaclass=VarMeta):
     local is for internal compiler tasks. Has not to be used."""
 
     # CPD-OFF
-    def __new__(
+    def __new__(  # pylint: disable=R0913
             cls,
             value: VHT,
             name: str = "",
@@ -1126,6 +1126,7 @@ class Var(metaclass=VarMeta):
         raise TypeError("can't infer type of value")
 
 
+# pylint: disable=C0203
 class ArrMeta(type):
     """Var getitem helper metaclass."""
 
@@ -1159,6 +1160,9 @@ class ArrMeta(type):
     def __instancecheck__(cls, inst: object) -> bool:
         """Make isinstance(ArrInt(), ArrBase) True."""
         return isinstance(inst, ArrBase)
+
+
+# pylint: enable=C0203
 
 
 class ArrTypeMeta(type):
@@ -1198,7 +1202,7 @@ class Arr(metaclass=ArrMeta):
     size restricts size of array and has to be positive-int.
     local is for internal compiler tasks. Has not to be used."""
 
-    def __new__(
+    def __new__(  # pylint: disable=R0913
             cls,
             value: VHT,
             name: str = "",

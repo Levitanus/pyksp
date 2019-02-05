@@ -1,13 +1,16 @@
 """Base KSP types and compiler mechanics."""
 import typing as ty
+from functools import singledispatch
 from abc import abstractmethod
 
 from .abstract import KspObject
+from .abstract import NameBase
+from .abstract import NameVar
 from .abstract import AstRoot
+from .abstract import AstString
 from .abstract import AstBase
 from .abstract import HasInit
 from .abstract import KSP
-from .abstract import KSPBaseMeta
 
 T = ty.TypeVar("T")
 KT = ty.TypeVar("KT", int, float, str)
