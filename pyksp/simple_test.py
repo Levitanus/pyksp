@@ -1,5 +1,8 @@
 from . import service_types as st
 
+# st.vars works as functools.partial, auto-passing args with st.Loc annotations
+# my home pylint and mypy accepts this, as library plugin is used
+
 
 @st.vrs
 def st_func(arg: int, *, arg1: st.Loc[str, 5]) -> None:

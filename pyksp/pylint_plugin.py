@@ -14,9 +14,7 @@ def register(linter):  # type: ignore
 
 
 def _vrs_inference(node, context=None):  # type: ignore
-    for idx, t in enumerate(
-            zip(node.args.kwonlyargs, node.args.kwonlyargs_annotations)):
-        arg, anno = t
+    for idx, anno in enumerate(node.args.kwonlyargs_annotations):
         attr = anno.value
         if attr.attrname != 'Loc':
             return (node, )

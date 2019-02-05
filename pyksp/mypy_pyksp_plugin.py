@@ -51,7 +51,7 @@ class KspPlugin(mp.Plugin):
             self, fullname: str
     ) -> ty.Optional[ty.Callable[[mp.FunctionContext], mt.Type]]:
         print(fullname)
-        if fullname == 'pyksp.simple_test.vrs':
+        if fullname == 'pyksp.service_types.vrs':
             # print('vrs')
             return vars_callback
         return None
