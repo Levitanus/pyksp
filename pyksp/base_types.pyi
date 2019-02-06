@@ -17,6 +17,7 @@ KT = ty.TypeVar("KT", int, float, str)
 NT = ty.TypeVar("NT", int, float)
 VHT = ty.TypeVar('VHT', int, str, float, ty.List[int], ty.List[str],
                  ty.List[float])
+KLT = ty.TypeVar('KLT', ty.List[int], ty.List[str], ty.List[float])
 
 KVT = ty.TypeVar('KVT', bound='VarBase')
 

@@ -32,7 +32,16 @@ class LocMeta(ab.KSPBaseMeta):
 
 
 class Loc(metaclass=LocMeta):
-    pass
+    """Spetial class can be used as callable argument annotation.
+
+    when used in function or method decorated with vrs,
+        new KSP variable will be created and passed to the
+        every function call.
+    when used in function or method decorated with func,
+        stack area will be allocated and returned as KSP var
+    Loc[type] produces variables
+    Loc[type, size: int] produces array of specified size
+    """
 
 
 # CPD-OFF
@@ -139,7 +148,15 @@ class OutMeta(ab.KSPBaseMeta):
 
 
 class Out(metaclass=OutMeta):
-    pass
+    """Spetial class can be used as func argument annotation.
+
+    can be used only in function or method decorated with func,
+        stack area will be allocated and returned as KSP var,
+        then returned to variable, passed as argument.
+        If no var passed, no error is raised.
+    Out[type] produces variables
+    Out[type, size: int] produces array of specified size
+    """
 
 
 # CPD-OFF
@@ -211,7 +228,14 @@ class InMeta(ab.KSPBaseMeta):
 
 
 class In(metaclass=InMeta):
-    pass
+    """Spetial class can be used as func argument annotation.
+
+    can be used only in function or method decorated with func,
+        arg will recieve the KSP var of specified type
+        stack area will be allocated and could be used as KKSP variable
+    In[type] produces variables
+    In[type, size: int] produces array of specified size
+    """
 
 
 # CPD-OFF
@@ -255,3 +279,55 @@ else:
 
     class InFloat(In, bt.VarFloat):
         pass
+
+
+class SubArray(bt.ArrBase[bt.KVT, bt.KLT, bt.KT]):
+    array: bt.ArrBase[bt.KVT, bt.KLT, bt.KT]
+    _start_idx: int
+    _stop_idx: int
+
+    def __init__(self, array: bt.ArrBase[bt.KVT, bt.KLT, bt.KT],
+                 start_idx: int, stop_idx: int) -> None:
+        self.array = array
+        self._start_idx = start_idx
+        self._stop_idx = stop_idx
+        self._ref_type = self.array._ref_type
+
+    def name(self) -> ty.NoReturn:  # type: ignore
+        raise RuntimeError("shouldn't be used directly in code")
+
+    @property
+    def val(self) -> bt.KLT:
+        return [
+            self.array.val[i]
+            for i in range(self._start_idx, self._stop_idx + 1)
+        ]
+
+    @val.setter
+    def val(self, val: bt.KLT) -> None:
+        if len(val) != self._stop_idx + 1 - self._start_idx:
+            raise TypeError(
+                'len of val {lv} bigger than length of array {la}'.format(
+                    lv=len(val), la=self._stop_idx + 1 - self._start_idx))
+        for idx, i in enumerate(val):
+            self.array.val[idx + self._start_idx] = i
+
+    def _get_subarr_idx(self, idx: bt.NTU[int]) -> int:
+        if bt.get_value(idx) < 0:
+            return self._stop_idx
+        return self._start_idx
+
+    def __getitem__(self, idx: bt.NTU[int]) -> bt.KVT:
+        start = self._get_subarr_idx(idx)
+        return self.array[start + idx]
+
+    def __setitem__(self, idx: bt.NTU[int], val: bt.KVT) -> None:
+        start = self._get_subarr_idx(idx)
+        self.array[start + idx] <<= val  # type: ignore
+
+    def set_val_at_idx(self, idx: int, val: bt.KT) -> None:
+        start = self._get_subarr_idx(idx)
+        if not isinstance(val, self._ref_type):
+            raise TypeError(
+                f'pasted val of type {type(val)}, has to be {self._ref_type}')
+        self.array.val[start + idx] = val  # type: ignore
