@@ -27,6 +27,8 @@ class FrameVar(ab.KSP, ty.Generic[bt.KVT, bt.VHT, bt.KT, bt.KVAT]):
             self.array, idx, idx + self.size - 1), idx + self.size
 
 
-# class StackFrame(ab.KSP, ty.Generic[bt.KT]):
-
-#     def __init__(self, )
+# class StackFrame(ab.KSP, ty.Generic[bt.KVT, bt.VHT, bt.KT, bt.KVAT]):
+#     def __init__(self, array: bt.ArrBase[bt.KVT, bt.VHT, bt.KT],
+#                  ptr: bt.VarInt, **vars: bt.KVAT) -> None:
+#         self.array = array
+#         self.ptr =
