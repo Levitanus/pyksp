@@ -154,3 +154,6 @@ class SubArray(bt.ArrBase[bt.KVT, bt.KLT, bt.KT]):
 
     def set_val_at_idx(self, idx: int, val: bt.KT) -> None:
         ...
+
+    def __len__(self) -> int:
+        ...

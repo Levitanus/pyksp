@@ -90,7 +90,7 @@ class TestSubArray(ut.TestCase):
 
     def runTest(self) -> None:
         arr = bt.ArrInt([1, 3, 4, 6, 7], name='arr')
-        s_arr = st.SubArray[bt.VarInt, ty.List[int], int](arr, 1, 3)
+        s_arr = st.SubArray(arr, 1, 3)
         self.assertEqual(s_arr.val[0], 3)
         self.assertEqual(s_arr.val[2], 6)
         with self.assertRaises(IndexError):
@@ -119,3 +119,4 @@ class TestSubArray(ut.TestCase):
         s_arr.val = [7, 6, 5]
         self.assertEqual(arr.val[1:4], [7, 6, 5])
         self.assertEqual(arr.val[3], 5)
+        self.assertIsInstance(s_arr, bt.Arr[int, 3])

@@ -285,32 +285,40 @@ class SubArray(bt.ArrBase[bt.KVT, bt.KLT, bt.KT]):
     array: bt.ArrBase[bt.KVT, bt.KLT, bt.KT]
     _start_idx: int
     _stop_idx: int
+    _ref_type: ty.Type[bt.KT]
+    _size: int
 
     def __init__(self, array: bt.ArrBase[bt.KVT, bt.KLT, bt.KT],
                  start_idx: int, stop_idx: int) -> None:
+        if stop_idx > len(array):
+            raise TypeError(
+                f'len of arr is {len(array)}, stop_idx is {stop_idx}')
         self.array = array
         self._start_idx = start_idx
         self._stop_idx = stop_idx
         self._ref_type = self.array._ref_type
+        self._size = self._stop_idx + 1 - self._start_idx
 
     def name(self) -> ty.NoReturn:  # type: ignore
         raise RuntimeError("shouldn't be used directly in code")
 
     @property
     def val(self) -> bt.KLT:
+        # TODO: change val behaviour for arrays
         return [
-            self.array.val[i]
-            for i in range(self._start_idx, self._stop_idx + 1)
+            self.array[i].val for i in range(
+                bt.get_value(self._start_idx), bt.get_value(self._stop_idx +
+                                                            1))
         ]
 
     @val.setter
     def val(self, val: bt.KLT) -> None:
-        if len(val) != self._stop_idx + 1 - self._start_idx:
+        if len(val) != self._size:
             raise TypeError(
                 'len of val {lv} bigger than length of array {la}'.format(
-                    lv=len(val), la=self._stop_idx + 1 - self._start_idx))
+                    lv=len(val), la=self._size))
         for idx, i in enumerate(val):
-            self.array.val[idx + self._start_idx] = i
+            self.array.val[idx + bt.get_value(self._start_idx)] = i
 
     def _get_subarr_idx(self, idx: bt.NTU[int]) -> int:
         if bt.get_value(idx) < 0:
@@ -331,3 +339,6 @@ class SubArray(bt.ArrBase[bt.KVT, bt.KLT, bt.KT]):
             raise TypeError(
                 f'pasted val of type {type(val)}, has to be {self._ref_type}')
         self.array.val[start + idx] = val  # type: ignore
+
+    def __len__(self) -> int:
+        return self._size

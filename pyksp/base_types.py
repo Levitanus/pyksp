@@ -20,12 +20,16 @@ VHT = ty.TypeVar('VHT', int, str, float, ty.List[int], ty.List[str],
 KLT = ty.TypeVar('KLT', ty.List[int], ty.List[str], ty.List[float])
 
 KVT = ty.TypeVar('KVT', bound='VarBase')
+KAT = ty.TypeVar('KAT', bound='ArrBase')
+KVAT = ty.TypeVar('KVAT', 'ArrBase', 'VarBase')
 
 ATU = ty.Union["VarBase[KT, KT]", "AstBase[KT]", "Magic[KT]", KT]
 NVU = ty.Union["AstBase[KT]", "Magic[KT]", KT]
 STU = ty.Union["VarBase[KT, KT]", "AstBase[KT]", "Magic[KT]", str]
 NTU = ty.Union[NT, "ProcessNum[NT]"]
 PNT = ty.TypeVar("PNT", bound='ProcessNum', covariant=True)
+PNTI = ty.TypeVar("PNTI", bound='ProcessNum[int]', covariant=True)
+PNTF = ty.TypeVar("PNTF", bound='ProcessNum[float]', covariant=True)
 NFT = ty.TypeVar("NFT", bound=ty.Callable[..., ty.Any])
 
 VarIU = ty.Union[ty.Type[int], ty.Type[str], ty.Type[float]]
