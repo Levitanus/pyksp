@@ -1,6 +1,6 @@
-import unittest as ut
 import typing as ty
 
+from .service import KTest
 from .. import service_types as st
 from .. import base_types as bt
 from .. import abstract as ab
@@ -24,12 +24,7 @@ class SimpleClass:
         return arg1, arg2, arg3
 
 
-class TestVrs(ut.TestCase):
-    def tearDown(self) -> None:
-        bt.VarBase.refresh()
-        ab.KSP.refresh()
-        ab.NameVar.refresh()
-
+class TestVrs(KTest):
     def runTest(self) -> None:
         f_ret = simple_func(5)
         m_ret = SimpleClass().simple_method(4)
@@ -82,12 +77,7 @@ class TestVrs(ut.TestCase):
         self.assertTrue(issubclass(st.Out[float, 5], st.OutArrFloat))
 
 
-class TestSubArray(ut.TestCase):
-    def tearDown(self) -> None:
-        bt.VarBase.refresh()
-        ab.KSP.refresh()
-        ab.NameVar.refresh()
-
+class TestSubArray(KTest):
     def runTest(self) -> None:
         arr = bt.ArrInt([1, 3, 4, 6, 7], name='arr')
         s_arr = st.SubArray(arr, 1, 3)

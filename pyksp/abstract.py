@@ -561,8 +561,8 @@ class NameVar(NameBase):
     """Variable name, can be hashed."""
 
     __scope: ty.List[str] = ['']
-    __names_full: ty.List[str] = list()
-    __names_comp: ty.List[str] = list()
+    __names_full: ty.Dict[str, 'NameVar'] = dict()
+    __names_comp: ty.Dict[str, 'NameVar'] = dict()
 
     def __init__(self,
                  name: str,
@@ -575,13 +575,13 @@ class NameVar(NameBase):
         name = NameVar.__scope[-1] + name
         if name in NameVar.__names_full:
             raise NameError(f'name "{name}" exists')
-        NameVar.__names_full.append(name)
+        NameVar.__names_full[name] = self
         self._full = name
         if self.compacted_names and not preserve:
             name = self._hash_name(name)
             if name in NameVar.__names_comp:
                 raise NameError(f'name "{name}" hashe exists, try to rename')
-            NameVar.__names_comp.append(name)
+            NameVar.__names_comp[name] = self
         super().__init__(name, prefix, postfix)
 
     @property
@@ -611,8 +611,8 @@ class NameVar(NameBase):
     @staticmethod
     def refresh() -> None:
         """Set all class variables to defaults."""
-        NameVar.__names_full = list()
-        NameVar.__names_comp = list()
+        NameVar.__names_full.clear()
+        NameVar.__names_comp.clear()
 
 
 class HasInit(metaclass=KSPBaseMeta):

@@ -1,5 +1,7 @@
 import unittest as ut
 
+from .service import KTest
+
 from .. import abstract as ab
 from .. import base_types as bt
 from .. import control_statements as cs
@@ -38,10 +40,7 @@ else
 end if'''
 
 
-class TestIfElse(ut.TestCase):
-    def tearDown(self) -> None:
-        ab.KSP.refresh()
-
+class TestIfElse(KTest):
     def runTest(self) -> None:
         a = bt.Var[int](1, name='a', local=True)
         b = bt.Var[int](2, name='b', local=True)
@@ -115,10 +114,7 @@ end select
 inc($var)"""
 
 
-class TestSelect(ut.TestCase):
-    def tearDown(self) -> None:
-        ab.KSP.refresh()
-
+class TestSelect(KTest):
     def runTest(self) -> None:
         var = bt.Var[int](16, name='var', local=True)
         var2 = bt.Var[int](3, name='var2', local=True)
@@ -246,17 +242,12 @@ while(%__for_idx__[0] < 6)
 end while"""
 
 
-class TestFor(ut.TestCase):
-    def tearDown(self) -> None:
-        bt.VarBase.refresh()
-        ab.KSP.refresh()
-        ab.NameVar.refresh()
-
+class TestFor(KTest):
     def setUp(self) -> None:
         self.iarr = bt.Arr[int]([1, 3, 4, 6, 8, 9], 'iarr')
         self.arr_f = bt.Arr[float]([1.0, 3.1, 4.0], 'arr_f')
         self.target = bt.VarInt(name='target')
-        self.out = ab.KSP.new_out()
+        super().setUp()
 
     def test_range_1(self) -> None:
         for i, idx in zip(cs.For(3), range(3)):
