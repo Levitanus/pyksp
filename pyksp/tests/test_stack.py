@@ -70,4 +70,3 @@ class TestStack(KTest):
     def runTest(self) -> None:
         stack = stc.Stack('test')
         print(stack.arrays)
-        assert False
