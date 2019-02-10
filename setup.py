@@ -8,8 +8,7 @@ setuptools.setup(
     author='Levitanus',
     author_email='pianoist@ya.ru',
     license='GPLv3',
+    package_data={'pyksp': ['py.typed']},
     packages=setuptools.find_packages(),
-    install_requires=[
-        'pyperclip'
-    ],
+    install_requires=['pyperclip'],
     zip_safe=False)

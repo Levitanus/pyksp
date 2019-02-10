@@ -22,7 +22,6 @@ from .k_built_ins import BuiltInIntVar
 from .bi_load_save import save_array
 from .bi_load_save import save_array_str
 
-
 from .base_types import KspArray
 
 from .functions import func
@@ -41,13 +40,13 @@ from .conditions_loops import check
 
 
 class InRange(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('in_range',
-                         args=OrderedDict(
-                             value=(int, KspIntVar, AstBase),
-                             min_val=(int, KspIntVar, AstBase),
-                             max_val=(int, KspIntVar, AstBase)))
+        super().__init__(
+            'in_range',
+            args=OrderedDict(
+                value=(int, KspIntVar, AstBase),
+                min_val=(int, KspIntVar, AstBase),
+                max_val=(int, KspIntVar, AstBase)))
 
     def __call__(self, value: int, min_val: int, max_val):
         '''returns true if value in bounds of min_val & max_val'''
@@ -64,11 +63,10 @@ in_range = InRange().__call__
 
 
 class ArrayEqual(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('array_equal',
-                         args=OrderedDict(array_1=KspArray,
-                                          array_2=KspArray))
+        super().__init__(
+            'array_equal',
+            args=OrderedDict(array_1=KspArray, array_2=KspArray))
 
     def __call__(self, array_1: KspArray, array_2: KspArray):
         '''checks the values of two arrays, true if all values are equal,
@@ -86,10 +84,8 @@ array_equal = ArrayEqual().__call__
 
 
 class NumElements(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('num_elements',
-                         args=OrderedDict(array=KspArray))
+        super().__init__('num_elements', args=OrderedDict(array=KspArray))
 
     def __call__(self, array: KspArray):
         '''returns the number of elements in an array'''
@@ -103,10 +99,8 @@ num_elements = NumElements().__call__
 
 
 class Search(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('search',
-                         args=OrderedDict(array=kArrInt, value=int))
+        super().__init__('search', args=OrderedDict(array=kArrInt, value=int))
 
     def __call__(self, array: kArrInt, value: int):
         '''searches the specified array for the specified value and
@@ -129,10 +123,9 @@ search = Search().__call__
 
 
 class Sort(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('sort',
-                         args=OrderedDict(array=kArrInt, direction=int))
+        super().__init__(
+            'sort', args=OrderedDict(array=kArrInt, direction=int))
 
     def __call__(self, array: kArrInt, direction: int):
         '''returns the number of elements in an array'''
@@ -151,11 +144,9 @@ sort = Sort().__call__
 
 
 class AllowGroup(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('allow_group',
-                         args=OrderedDict(group_idx=int),
-                         def_ret=kNone())
+        super().__init__(
+            'allow_group', args=OrderedDict(group_idx=int), def_ret=kNone())
 
     def __call__(self, group_idx: int):
         '''allows the specified group, i.e.
@@ -171,11 +162,9 @@ allow_group = AllowGroup().__call__
 
 
 class DisAllowGroup(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('disallow_group',
-                         args=OrderedDict(group_idx=int),
-                         def_ret=kNone())
+        super().__init__(
+            'disallow_group', args=OrderedDict(group_idx=int), def_ret=kNone())
 
     def __call__(self, group_idx: int):
         '''disallows the specified group, i.e. makes it unavailable for
@@ -191,11 +180,9 @@ disallow_group = DisAllowGroup().__call__
 
 
 class FindGroup(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('find_group',
-                         args=OrderedDict(group_name=str),
-                         def_ret=1)
+        super().__init__(
+            'find_group', args=OrderedDict(group_name=str), def_ret=1)
 
     def __call__(self, group_name: str):
         '''returns the group index for the specified group name
@@ -211,11 +198,9 @@ find_group = FindGroup().__call__
 
 
 class GetPurgeState(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('get_purge_state',
-                         args=OrderedDict(group_idx=int),
-                         def_ret=1)
+        super().__init__(
+            'get_purge_state', args=OrderedDict(group_idx=int), def_ret=1)
 
     def __call__(self, group_idx: int):
         '''returns the purge state of the specified group:
@@ -230,11 +215,11 @@ get_purge_state = GetPurgeState().__call__
 
 
 class GroupName(BuiltInFuncStr):
-
     def __init__(self):
-        super().__init__(name='group_name',
-                         args=OrderedDict(group_idx=(int, KspIntVar, AstBase)),
-                         def_ret='group_name')
+        super().__init__(
+            name='group_name',
+            args=OrderedDict(group_idx=(int, KspIntVar, AstBase)),
+            def_ret='group_name')
 
     def __call__(self, group_idx: int):
         '''returns the group name for the specified group
@@ -248,11 +233,11 @@ group_name = GroupName().__call__
 
 
 class PurgeGroup(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('purge_group',
-                         args=OrderedDict(group_idx=int, value=int),
-                         def_ret=kNone())
+        super().__init__(
+            'purge_group',
+            args=OrderedDict(group_idx=int, value=int),
+            def_ret=kNone())
 
     def __call__(self, group_idx: int, value: int):
         '''purges (i.e. unloads from RAM) the samples of the specified
@@ -270,12 +255,11 @@ purge_group = PurgeGroup().__call__
 
 
 class ChangeListener(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('change_listener_par',
-                         args=OrderedDict(signal_type=bListenerConst,
-                                          value=int),
-                         def_ret=kNone())
+        super().__init__(
+            'change_listener_par',
+            args=OrderedDict(signal_type=bListenerConst, value=int),
+            def_ret=kNone())
 
     def __call__(self, signal_type: bListenerConst, value: int):
         '''changes the parameters of the on listener callback.
@@ -297,11 +281,9 @@ change_listener_par = ChangeListener().__call__
 
 
 class MsToTicks(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('ms_to_ticks',
-                         args=OrderedDict(microseconds=int),
-                         def_ret=1)
+        super().__init__(
+            'ms_to_ticks', args=OrderedDict(microseconds=int), def_ret=1)
 
     def __call__(self, microseconds: int):
         '''converts a microseconds value into a tempo
@@ -313,11 +295,8 @@ ms_to_ticks = MsToTicks().__call__
 
 
 class TicksToMs(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('ticks_to_ms',
-                         args=OrderedDict(ticks=int),
-                         def_ret=1)
+        super().__init__('ticks_to_ms', args=OrderedDict(ticks=int), def_ret=1)
 
     def __call__(self, ticks: int):
         '''converts a tempo dependent ticks value into a
@@ -329,13 +308,12 @@ ticks_to_ms = TicksToMs().__call__
 
 
 class SetListener(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('set_listener',
-                         args=OrderedDict(signal_type=bListenerConst,
-                                          value=int),
-                         def_ret=kNone(),
-                         callbacks=(InitCallback,))
+        super().__init__(
+            'set_listener',
+            args=OrderedDict(signal_type=bListenerConst, value=int),
+            def_ret=kNone(),
+            callbacks=(InitCallback, ))
 
     def __call__(self, signal_type: bListenerConst, value: int):
         '''Sets the signals on which the listener callback should
@@ -369,12 +347,11 @@ set_listener = SetListener().__call__
 
 
 class StopWait(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('stop_wait',
-                         args=OrderedDict(callback_id=int,
-                                          parameter=int),
-                         def_ret=kNone())
+        super().__init__(
+            'stop_wait',
+            args=OrderedDict(callback_id=int, parameter=int),
+            def_ret=kNone())
 
     def __call__(self, callback_id: int, parameter: int):
         '''stops wait commands in the specified callback
@@ -392,11 +369,9 @@ stop_wait = StopWait().__call__
 
 
 class Wait(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('wait',
-                         args=OrderedDict(microseconds=int),
-                         def_ret=kNone())
+        super().__init__(
+            'wait', args=OrderedDict(microseconds=int), def_ret=kNone())
 
     def __call__(self, microseconds: int):
         '''pauses the callback for the specified time in microseconds'''
@@ -407,11 +382,9 @@ wait = Wait().__call__
 
 
 class WaitTicks(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('wait_ticks',
-                         args=OrderedDict(ticks=int),
-                         def_ret=kNone())
+        super().__init__(
+            'wait_ticks', args=OrderedDict(ticks=int), def_ret=kNone())
 
     def __call__(self, ticks: int):
         '''pauses the callback for the specified time in ticks'''
@@ -433,7 +406,6 @@ NI_KEY_TYPE_NONE = bKeyType('NI_KEY_TYPE_NONE')
 
 
 class key_color(BuiltInIntVar):
-
     def _get_item(note_nr):
         if hasattr(note_nr, '_get_runtime'):
             note_nr = note_nr._get_runtime()
@@ -509,10 +481,8 @@ keys = [Key(idx) for idx in range(128)]
 
 
 class GetKeyColor(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('get_key_color',
-                         args=OrderedDict(note_nr=int))
+        super().__init__('get_key_color', args=OrderedDict(note_nr=int))
 
     def __call__(self, note_nr: int):
         '''returns the color constant of the specified note number
@@ -527,12 +497,11 @@ get_key_color = GetKeyColor().__call__
 
 
 class SetKeyColor(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('set_key_color',
-                         args=OrderedDict(note_nr=int,
-                                          color=key_color),
-                         def_ret=kNone())
+        super().__init__(
+            'set_key_color',
+            args=OrderedDict(note_nr=int, color=(key_color, kInt)),
+            def_ret=kNone())
 
     def __call__(self, note_nr: int, color: key_color):
         '''sets the color of the specified key (i.e. MIDI note) on
@@ -567,10 +536,8 @@ set_key_color = SetKeyColor().__call__
 
 
 class GetKeyName(BuiltInFuncStr):
-
     def __init__(self):
-        super().__init__('get_key_name',
-                         args=OrderedDict(note_nr=int))
+        super().__init__('get_key_name', args=OrderedDict(note_nr=int))
 
     def __call__(self, note_nr: int):
         '''returns the name of the specified key'''
@@ -585,10 +552,9 @@ get_key_name = GetKeyName().__call__
 
 
 class SetKeyName(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('set_key_name',
-                         args=OrderedDict(note_nr=int, name=str))
+        super().__init__(
+            'set_key_name', args=OrderedDict(note_nr=int, name=str))
 
     def __call__(self, note_nr: int, name: str):
         '''assigns a text string to the specified key'''
@@ -605,10 +571,8 @@ set_key_name = SetKeyName().__call__
 
 
 class GetKeyTriggerstate(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('get_key_triggerstate',
-                         args=OrderedDict(note_nr=int))
+        super().__init__('get_key_triggerstate', args=OrderedDict(note_nr=int))
 
     def __call__(self, note_nr: int):
         '''returns the name of the specified key'''
@@ -623,10 +587,8 @@ get_key_triggerstate = GetKeyTriggerstate().__call__
 
 
 class GetKeyType(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('get_key_type',
-                         args=OrderedDict(note_nr=int))
+        super().__init__('get_key_type', args=OrderedDict(note_nr=int))
 
     def __call__(self, note_nr: int):
         '''returns the name of the specified key'''
@@ -641,11 +603,9 @@ get_key_type = GetKeyType().__call__
 
 
 class GetKeyRangeMinNote(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('get_keyrange_min_note',
-                         args=OrderedDict(note_nr=int),
-                         def_ret=1)
+        super().__init__(
+            'get_keyrange_min_note', args=OrderedDict(note_nr=int), def_ret=1)
 
     def __call__(self, note_nr: int):
         '''returns the lowest note of the specified key range'''
@@ -656,11 +616,9 @@ get_keyrange_min_note = GetKeyRangeMinNote().__call__
 
 
 class GetKeyRangeMaxNote(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('get_keyrange_max_note',
-                         args=OrderedDict(note_nr=int),
-                         def_ret=1)
+        super().__init__(
+            'get_keyrange_max_note', args=OrderedDict(note_nr=int), def_ret=1)
 
     def __call__(self, note_nr: int):
         '''returns the highest note of the specified key range'''
@@ -671,11 +629,11 @@ get_keyrange_max_note = GetKeyRangeMaxNote().__call__
 
 
 class GetKeyRangeMaxNote(BuiltInFuncStr):
-
     def __init__(self):
-        super().__init__('get_keyrange_name',
-                         args=OrderedDict(note_nr=int),
-                         def_ret='keyrange')
+        super().__init__(
+            'get_keyrange_name',
+            args=OrderedDict(note_nr=int),
+            def_ret='keyrange')
 
     def __call__(self, note_nr: int):
         '''returns the name of the specified key range'''
@@ -686,10 +644,9 @@ get_keyrange_name = GetKeyRangeMaxNote().__call__
 
 
 class SetKeyPressed(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('set_key_pressed',
-                         args=OrderedDict(note_nr=int, value=int))
+        super().__init__(
+            'set_key_pressed', args=OrderedDict(note_nr=int, value=int))
 
     def __call__(self, note_nr: int, value: int):
         '''sets the trigger state of the specified key on KONTAKT's
@@ -707,11 +664,11 @@ set_key_pressed = SetKeyPressed().__call__
 
 
 class SetKeyPressedSupport(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('set_key_pressed_support',
-                         args=OrderedDict(mode=int),
-                         def_ret=kNone())
+        super().__init__(
+            'set_key_pressed_support',
+            args=OrderedDict(mode=int),
+            def_ret=kNone())
 
     def __call__(self, mode: int):
         '''sets the trigger state of the specified key on KONTAKT's
@@ -725,10 +682,9 @@ set_key_pressed_support = SetKeyPressedSupport().__call__
 
 
 class SetKeyType(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('set_key_type',
-                         args=OrderedDict(note_nr=int, value=bKeyType))
+        super().__init__(
+            'set_key_type', args=OrderedDict(note_nr=int, value=bKeyType))
 
     def __call__(self, note_nr: int, value: bKeyType):
         '''assigns a key type to the specified key.
@@ -750,11 +706,11 @@ set_key_type = SetKeyType().__call__
 
 
 class SetKeyrange(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('set_keyrange',
-                         args=OrderedDict(min=int, max=int, name=str),
-                         def_ret=kNone())
+        super().__init__(
+            'set_keyrange',
+            args=OrderedDict(min=int, max=int, name=str),
+            def_ret=kNone())
 
     def __call__(self, min: int, max: int, name: str):
         '''assigns a text string to the specified range of keys.
@@ -774,11 +730,9 @@ set_keyrange = SetKeyrange().__call__
 
 
 class RemoveKeyrange(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('remove_keyrange',
-                         args=OrderedDict(note_nr=int),
-                         def_ret=kNone())
+        super().__init__(
+            'remove_keyrange', args=OrderedDict(note_nr=int), def_ret=kNone())
 
     def __call__(self, note_nr: int):
         '''assigns a text string to the specified range of keys
@@ -794,7 +748,6 @@ remove_keyrange = RemoveKeyrange().__call__
 
 
 class ConditiionSymbol:
-
     def __init__(self, symbol: str):
         self._name = symbol
 
@@ -808,11 +761,11 @@ NO_SYS_SCRIPT_RLS_TRIG = ConditiionSymbol('NO_SYS_SCRIPT_RLS_TRIG')
 
 
 class SetCondition(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('SET_CONDITION',
-                         args=OrderedDict(condition=ConditiionSymbol),
-                         def_ret=kNone())
+        super().__init__(
+            'SET_CONDITION',
+            args=OrderedDict(condition=ConditiionSymbol),
+            def_ret=kNone())
 
     def __call__(self, condition: ConditiionSymbol):
         '''used to set system KONTAKT parameters
@@ -829,11 +782,11 @@ SET_CONDITION = SetCondition().__call__
 
 
 class ResetCondition(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('RESET_CONDITION',
-                         args=OrderedDict(condition=ConditiionSymbol),
-                         def_ret=kNone())
+        super().__init__(
+            'RESET_CONDITION',
+            args=OrderedDict(condition=ConditiionSymbol),
+            def_ret=kNone())
 
     def __call__(self, condition: ConditiionSymbol):
         '''used to reset system KONTAKT parameters
@@ -849,11 +802,9 @@ RESET_CONDITION = ResetCondition().__call__
 
 
 class FindZone(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('find_zone',
-                         args=OrderedDict(zone_name=str),
-                         def_ret=1)
+        super().__init__(
+            'find_zone', args=OrderedDict(zone_name=str), def_ret=1)
 
     def __call__(self, zone_name: str):
         '''returns the zone ID for the specified zone name.
@@ -865,11 +816,9 @@ find_zone = FindZone().__call__
 
 
 class GetSampleLength(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('get_sample_length',
-                         args=OrderedDict(zone_id=int),
-                         def_ret=1)
+        super().__init__(
+            'get_sample_length', args=OrderedDict(zone_id=int), def_ret=1)
 
     def __call__(self, zone_id: int):
         '''returns the length of the specified zone's
@@ -881,11 +830,9 @@ get_sample_length = GetSampleLength().__call__
 
 
 class NumSlicesZone(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('num_slices_zone',
-                         args=OrderedDict(zone_id=int),
-                         def_ret=1)
+        super().__init__(
+            'num_slices_zone', args=OrderedDict(zone_id=int), def_ret=1)
 
     def __call__(self, zone_id: int):
         '''returns the number of slices of the specified zone'''
@@ -896,12 +843,11 @@ num_slices_zone = NumSlicesZone().__call__
 
 
 class ZoneSliceLength(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('zone_slice_length',
-                         args=OrderedDict(zone_id=int,
-                                          slice_idx=int),
-                         def_ret=1)
+        super().__init__(
+            'zone_slice_length',
+            args=OrderedDict(zone_id=int, slice_idx=int),
+            def_ret=1)
 
     def __call__(self, zone_id: int, slice_idx: int):
         '''returns the length in microseconds of the specified
@@ -913,12 +859,11 @@ zone_slice_length = ZoneSliceLength().__call__
 
 
 class ZoneSliceStart(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('zone_slice_start',
-                         args=OrderedDict(zone_id=int,
-                                          slice_idx=int),
-                         def_ret=1)
+        super().__init__(
+            'zone_slice_start',
+            args=OrderedDict(zone_id=int, slice_idx=int),
+            def_ret=1)
 
     def __call__(self, zone_id: int, slice_idx: int):
         '''returns the absolute start point of the specified
@@ -930,12 +875,11 @@ zone_slice_start = ZoneSliceStart().__call__
 
 
 class ZoneLoopStart(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('zone_slice_idx_loop_start',
-                         args=OrderedDict(zone_id=int,
-                                          loop_idx=int),
-                         def_ret=1)
+        super().__init__(
+            'zone_slice_idx_loop_start',
+            args=OrderedDict(zone_id=int, loop_idx=int),
+            def_ret=1)
 
     def __call__(self, zone_id: int, loop_idx: int):
         '''returns the index number of the slice at the loop start'''
@@ -946,12 +890,11 @@ zone_slice_idx_loop_start = ZoneLoopStart().__call__
 
 
 class ZoneLoopEnd(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('zone_slice_idx_loop_end',
-                         args=OrderedDict(zone_id=int,
-                                          loop_idx=int),
-                         def_ret=1)
+        super().__init__(
+            'zone_slice_idx_loop_end',
+            args=OrderedDict(zone_id=int, loop_idx=int),
+            def_ret=1)
 
     def __call__(self, zone_id: int, loop_idx: int):
         '''returns the index number of the slice at the loop end'''
@@ -962,12 +905,11 @@ zone_slice_idx_loop_end = ZoneLoopEnd().__call__
 
 
 class ZoneLoopCount(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('zone_slice_loop_count',
-                         args=OrderedDict(zone_id=int,
-                                          loop_idx=int),
-                         def_ret=1)
+        super().__init__(
+            'zone_slice_loop_count',
+            args=OrderedDict(zone_id=int, loop_idx=int),
+            def_ret=1)
 
     def __call__(self, zone_id: int, loop_idx: int):
         '''returns the loop count of the specified loop'''
@@ -978,11 +920,9 @@ zone_slice_loop_count = ZoneLoopCount().__call__
 
 
 class DontUseMachineMode(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('dont_use_machine_mode',
-                         args=OrderedDict(event_id=int),
-                         def_ret=1)
+        super().__init__(
+            'dont_use_machine_mode', args=OrderedDict(event_id=int), def_ret=1)
 
     def __call__(self, event_id: int):
         '''play the specified event in sampler mode'''
@@ -993,7 +933,6 @@ dont_use_machine_mode = DontUseMachineMode().__call__
 
 
 class PgsKey:
-
     def __init__(self, size, is_str):
         self._is_str = is_str
         if is_str:
@@ -1014,7 +953,6 @@ class PgsKey:
 
 
 class PGS(metaclass=SingletonMeta):
-
     def __init__(self):
         self._keys_int = dict()
         self._keys_str = dict()
@@ -1045,7 +983,6 @@ class PGS(metaclass=SingletonMeta):
 
 
 class PgsKeyConverter:
-
     def __init__(self, key):
         if not isinstance(key, str):
             raise TypeError(f'key has to be {str}')
@@ -1063,15 +1000,13 @@ class PgsKeyConverter:
 
 
 class PgsCreateKey(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('pgs_create_key',
-                         args=OrderedDict(key=PgsKeyConverter,
-                                          size=int),
-                         def_ret=kNone())
+        super().__init__(
+            'pgs_create_key',
+            args=OrderedDict(key=PgsKeyConverter, size=int),
+            def_ret=kNone())
 
-    def __call__(self, key: str,
-                 size: int):
+    def __call__(self, key: str, size: int):
         '''create int PGS key to be used as cross_script comunication.
         instead of original KSP, key has to be string'''
         key = PgsKeyConverter(key)
@@ -1083,11 +1018,11 @@ pgs_create_key = PgsCreateKey().__call__
 
 
 class PgsCreateKeyStr(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('pgs_create_str_key',
-                         args=OrderedDict(key=PgsKeyConverter),
-                         def_ret=kNone())
+        super().__init__(
+            'pgs_create_str_key',
+            args=OrderedDict(key=PgsKeyConverter),
+            def_ret=kNone())
 
     def __call__(self, key: str):
         '''create str PGS key to be used as cross_script comunication.
@@ -1101,10 +1036,9 @@ pgs_create_str_key = PgsCreateKeyStr().__call__
 
 
 class PgsKeyExsists(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('pgs_key_exists',
-                         args=OrderedDict(key=PgsKeyConverter))
+        super().__init__(
+            'pgs_key_exists', args=OrderedDict(key=PgsKeyConverter))
 
     def __call__(self, key: str):
         '''returns 1 if int key exsists
@@ -1122,10 +1056,9 @@ pgs_key_exists = PgsKeyExsists().__call__
 
 
 class PgsStrKeyExsists(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('pgs_str_key_exists',
-                         args=OrderedDict(key=PgsKeyConverter))
+        super().__init__(
+            'pgs_str_key_exists', args=OrderedDict(key=PgsKeyConverter))
 
     def __call__(self, key: str):
         '''returns 1 if str key exsists
@@ -1143,15 +1076,13 @@ pgs_str_key_exists = PgsStrKeyExsists().__call__
 
 
 class PgsSetKeyVal(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('pgs_set_key_val',
-                         args=OrderedDict(key=PgsKeyConverter,
-                                          idx=int, val=int),
-                         def_ret=kNone())
+        super().__init__(
+            'pgs_set_key_val',
+            args=OrderedDict(key=PgsKeyConverter, idx=int, val=int),
+            def_ret=kNone())
 
-    def __call__(self, key: str,
-                 idx: int, val: int):
+    def __call__(self, key: str, idx: int, val: int):
         '''sets value of PGS integer key at idx
         raises IndexError if idx is invalid
         instead of original KSP, key has to be string'''
@@ -1166,11 +1097,11 @@ pgs_set_key_val = PgsSetKeyVal().__call__
 
 
 class PgsSetStrKeyVal(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('pgs_set_str_key_val',
-                         args=OrderedDict(key=PgsKeyConverter, val=str),
-                         def_ret=kNone())
+        super().__init__(
+            'pgs_set_str_key_val',
+            args=OrderedDict(key=PgsKeyConverter, val=str),
+            def_ret=kNone())
 
     def __call__(self, key: str, val: str):
         '''sets value of PGS string key at idx
@@ -1186,11 +1117,9 @@ pgs_set_str_key_val = PgsSetStrKeyVal().__call__
 
 
 class PgsGetKeyVal(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('pgs_get_key_val',
-                         args=OrderedDict(key=PgsKeyConverter,
-                                          idx=int))
+        super().__init__(
+            'pgs_get_key_val', args=OrderedDict(key=PgsKeyConverter, idx=int))
 
     def __call__(self, key: str, idx: int):
         '''returns value of PGS integer key at idx
@@ -1209,10 +1138,9 @@ pgs_get_key_val = PgsGetKeyVal().__call__
 
 
 class PgsGetStrKeyVal(BuiltInFuncStr):
-
     def __init__(self):
-        super().__init__('pgs_get_str_key_val',
-                         args=OrderedDict(key=PgsKeyConverter))
+        super().__init__(
+            'pgs_get_str_key_val', args=OrderedDict(key=PgsKeyConverter))
 
     def __call__(self, key: str):
         '''returns value of PGS string key at idx
@@ -1248,6 +1176,7 @@ def logpr(*args, sep=' '):
 
 def logoff(f: Callable) -> Callable:
     """Decorator for tunring off logger for particular function"""
+
     def wrapper(*args, **kwargs):
         try:
             kLog()._disabled = True
@@ -1259,6 +1188,7 @@ def logoff(f: Callable) -> Callable:
             else:
                 raise e
         return out
+
     return wrapper
 
 
@@ -1299,7 +1229,7 @@ class kLog(metaclass=SingletonMeta):
       end if
     end on'''
 
-    def __init__(self, l_type: object, path: str=None) -> None:
+    def __init__(self, l_type: object, path: str = None) -> None:
         self._type = l_type
         self._path = path
         self._disabled = False
@@ -1381,8 +1311,7 @@ class kLog(metaclass=SingletonMeta):
     def _check_sep(self, sep):
         for char in sep:
             if char in ('\n', '\r', '\t', '\v'):
-                raise AttributeError(
-                    f'symbol {repr(char)} is not allowed')
+                raise AttributeError(f'symbol {repr(char)} is not allowed')
 
     def disabled(self):
         return self._disabled

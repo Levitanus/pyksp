@@ -320,9 +320,11 @@ class Select(KSP):
     def __init__(self, expression: int):
         if self.is_compiled():
             if not isinstance(expression, (KspIntVar, AstOperator)):
-                raise KspCondError('''
+                raise KspCondError(
+                    '''
                     can select only KSP variables or expressions
-                    with them''')
+                    with them'''
+                )
         self.__var = expression
 
     def __enter__(self):
@@ -331,7 +333,8 @@ class Select(KSP):
             Output().put(f'select({self.__var.val})')
             Output().indent()
         Output().exception_on_put = KspCondError(
-            '''Wrong syntax. all code has to be in Case context''')
+            '''Wrong syntax. all code has to be in Case context'''
+        )
 
     def __exit__(self, exc_type, value, trace):
         Select._vars.pop()
@@ -364,8 +367,7 @@ class Case(KSP):
         try:
             var = Select._vars[-1]
         except IndexError:
-            raise KspCondError(
-                '''Case has to be inside Select() context''')
+            raise KspCondError('''Case has to be inside Select() context''')
         if self.is_compiled():
             Output().put(f'case({self.__state})')
             Output().indent()
@@ -382,7 +384,8 @@ class Case(KSP):
             if not isinstance(value, KspCondFalse):
                 return
         Output().exception_on_put = KspCondError(
-            '''Wrong syntax. all code hase to be in Case block''')
+            '''Wrong syntax. all code hase to be in Case block'''
+        )
         Output().unindent()
         return True
 
@@ -457,8 +460,13 @@ class For(KSP):
         out.extend(cls.arr._generate_init())
         return out
 
-    def __init__(self, start: int=None, stop: int=None,
-                 step: int=None, arr: KspArray=None):
+    def __init__(
+        self,
+        start: int = None,
+        stop: int = None,
+        step: int = None,
+        arr: KspArray = None
+    ):
         self.init_arrays()
         self.running_instances.append(self)
         self._out_touched = False
@@ -495,31 +503,34 @@ class For(KSP):
             raise KspCondError(for_wrong_syntax_msg)
         if not isinstance(arr, KspArray):
             raise KspCondError(
-                'For loop accepts only KSP arrays.' +
-                f' Pasted {type(arr)}')
+                'For loop accepts only KSP arrays.' + f' Pasted {type(arr)}'
+            )
         self.__func = self.__foreach_handler
         self.__seq = arr
         return True
 
-    def __check_duck_arg(self, arg, arg_name: str,
-                         requirement: int):
+    def __check_duck_arg(self, arg, arg_name: str, requirement: int):
         if not arg:
             return
-        if not requirement:
+        if requirement is None:
             raise KspCondError(for_wrong_arg_msg)
         if not isinstance(arg, (int, KspIntVar, AstOperator)):
-            raise KspCondError(for_type_err_msg.format(
-                name=arg_name,
-                arg_typ=type(arg),
-                classes=(int, 'KSP int variable(%s)' % kInt)))
+            raise KspCondError(
+                for_type_err_msg.format(
+                    name=arg_name,
+                    arg_typ=type(arg),
+                    classes=(int, 'KSP int variable(%s)' % kInt)
+                )
+            )
 
     def __duck_typing(self, start, stop, step):
         '''Checks types or range arguments.
         Raises exception on non-int args'''
-        if not start:
+        if start is None:
             raise KspCondError(
                 f'''has to be at least one arg:
-                start: [{int}, {kInt}] or arr: [{KspArray}]''')
+                start: [{int}, {kInt}] or arr: [{KspArray}]'''
+            )
         self.__check_duck_arg(start, 'start', start)
         self.__check_duck_arg(stop, 'stop', start)
         self.__check_duck_arg(step, 'step', stop)
@@ -601,8 +612,8 @@ class For(KSP):
         Under compilation idx assignement and while cond lines'''
         self._idx <<= self.__start
         if self.is_compiled():
-            Output().put(
-                f'while({self._idx.val} < {get_string_repr(self.__stop)})')
+            Output(
+            ).put(f'while({self._idx.val} < {get_string_repr(self.__stop)})')
             Output().indent()
         for i in range(*get_runtime(*self.__args)):
             self._idx._set_runtime(i)

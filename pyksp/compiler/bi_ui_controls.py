@@ -46,7 +46,6 @@ from .base_types import KspArray
 
 # from .gui_system import WidgetMeta
 
-
 from .conditions_loops import For
 from .conditions_loops import If
 from .conditions_loops import check
@@ -56,7 +55,6 @@ from .conditions_loops import check
 
 
 class kParVarGetError(Exception):
-
     def __init__(self, name):
         super().__init__(f'par {name} is not set')
 
@@ -66,9 +64,12 @@ class kMainWindow(KSP):
     sets ui_height_px and ui_width_px.
     Within icon being set to False – hides it'''
 
-    def __init__(self, width: int=633, height: int=100,
-                 wallpaper: str=None, icon: str=None,
-                 skin_offset: int=None) -> None:
+    def __init__(self,
+                 width: int = 633,
+                 height: int = 100,
+                 wallpaper: str = None,
+                 icon: str = None,
+                 skin_offset: int = None) -> None:
         if width < 633:
             raise AttributeError('width can be not less than 633 px')
         self._x = WidgetPar('x', 0)
@@ -76,17 +77,14 @@ class kMainWindow(KSP):
         self._width = WidgetPar('width', width)
         self._height = WidgetPar('height', height)
         if wallpaper:
-            Output().put(
-                'set_control_par_str($INST_WALLPAPER_ID,' +
-                f'$CONTROL_PAR_PICTURE,{wallpaper})')
+            Output().put('set_control_par_str($INST_WALLPAPER_ID,' +
+                         f'$CONTROL_PAR_PICTURE,"{wallpaper}")')
         if icon:
-            Output().put(
-                'set_control_par_str($INST_ICON_ID,' +
-                f'$CONTROL_PAR_PICTURE,{icon})')
+            Output().put('set_control_par_str($INST_ICON_ID,' +
+                         f'$CONTROL_PAR_PICTURE,"{icon}")')
         elif icon is False:
-            Output().put(
-                'set_control_par($INST_ICON_ID,' +
-                '$CONTROL_PAR_HIDE,$HIDE_WHOLE_CONTROL)')
+            Output().put('set_control_par($INST_ICON_ID,' +
+                         '$CONTROL_PAR_HIDE,$HIDE_WHOLE_CONTROL)')
         self._skin_offset = 0
         if skin_offset is not None:
             self._skin_offset = skin_offset
@@ -125,7 +123,7 @@ class kMainWindow(KSP):
 class WidgetPar(kInt):
     '''WidgetPar doc'''
 
-    def __init__(self, name: str, value: Optional[int]=None) -> None:
+    def __init__(self, name: str, value: Optional[int] = None) -> None:
         super().__init__(value=None, is_local=True)
         self._name = name
         self._val = value
@@ -164,9 +162,14 @@ class WidgetGrid(KSP):
     '''stores ceils x, y, width, height
     returns them by get_ceil(column, row)'''
 
-    def __init__(self, obj, columns: int=1, rows: int=1,
-                 top_offset: int=0, bottom_offset: int=0,
-                 left_offset: int=0, right_offset: int=0) -> None:
+    def __init__(self,
+                 obj,
+                 columns: int = 1,
+                 rows: int = 1,
+                 top_offset: int = 0,
+                 bottom_offset: int = 0,
+                 left_offset: int = 0,
+                 right_offset: int = 0) -> None:
         self._obj = obj
         self._columns_am = columns
         self._rows_am = rows
@@ -205,7 +208,6 @@ class WidgetGrid(KSP):
 
 
 class WidgetMeta(ABCMeta):
-
     def __call__(cls, *args, **kwargs):
         obj = super().__call__(*args, **kwargs)
         if obj._parent:
@@ -218,8 +220,12 @@ class kWidget(metaclass=WidgetMeta):
     kButton or kLabel (ui_button & ui_label). Behaves like tkinter Frame.
     Can be parented by kMainWindow or another kWidget instances'''
 
-    def __init__(self, parent: object=None, x: int=None, y: int=None,
-                 width: int=None, height: int=None) -> None:
+    def __init__(self,
+                 parent: object = None,
+                 x: int = None,
+                 y: int = None,
+                 width: int = None,
+                 height: int = None) -> None:
         if not isinstance(parent, (kWidget, kMainWindow)) and\
                 parent is not None:
             raise TypeError('parent can be only instance of types' +
@@ -238,7 +244,7 @@ class kWidget(metaclass=WidgetMeta):
     def childs(self):
         return self._childs
 
-    def pack(self, sticky: str=''):
+    def pack(self, sticky: str = ''):
         '''puts widget in the borders of parent.
         sticky can cosists of 'nswe'.
         with one side selected places border of widget to the side.
@@ -304,39 +310,52 @@ class kWidget(metaclass=WidgetMeta):
         if 'e' not in sticky and 'w' not in sticky:
             self.x <<= center_w()
 
-    def add_grid(self, columns: int=1, rows: int=1,
-                 top_offset: int=0, bottom_offset: int=0,
-                 left_offset: int=0, right_offset: int=0):
+    def add_grid(self,
+                 columns: int = 1,
+                 rows: int = 1,
+                 top_offset: int = 0,
+                 bottom_offset: int = 0,
+                 left_offset: int = 0,
+                 right_offset: int = 0):
         '''add grid to the widget'''
         if not KSP.in_init():
             raise RuntimeError('can be used only in init')
-        self._grid = WidgetGrid(self, columns, rows,
-                                top_offset, bottom_offset,
+        self._grid = WidgetGrid(self, columns, rows, top_offset, bottom_offset,
                                 left_offset, right_offset)
 
-    def grid(self, column: int, row: int,
-             columnspan: int=1, rowspan: int=1,
-             top_offset: int=0, bottom_offset: int=0,
-             left_offset: int=0, right_offset: int=0):
+    def grid(self,
+             column: int,
+             row: int,
+             columnspan: int = 1,
+             rowspan: int = 1,
+             top_offset: int = 0,
+             bottom_offset: int = 0,
+             left_offset: int = 0,
+             right_offset: int = 0):
         '''similar to tkinter grid method:
         places object to the grid ceil (zerobased) or ceils if
         columnspan or rowspan are used'''
         if not self._parent:
             raise RuntimeError('has to be set to parent')
-        l, t, r, b = [int(get_runtime_val(i))
-                      for i in self._parent._grid.get_ceil(
-            column, row)]
+        l, t, r, b = [
+            int(get_runtime_val(i))
+            for i in self._parent._grid.get_ceil(column, row)
+        ]
 
         self.x <<= l + left_offset
         self.y <<= t + top_offset
         self.width <<= ((r - l) * columnspan) - left_offset - right_offset
         self.height <<= ((b - t) * rowspan) - top_offset - bottom_offset
 
-    def place(self, x: Optional[int]=None, y: Optional[int]=None,
-              width: Optional[int]=None, height: Optional[int]=None,
-              x_pct: Optional[int]=None, y_pct: Optional[int]=None,
-              width_pct: Optional[int]=None,
-              height_pct: Optional[int]=None):
+    def place(self,
+              x: Optional[int] = None,
+              y: Optional[int] = None,
+              width: Optional[int] = None,
+              height: Optional[int] = None,
+              x_pct: Optional[int] = None,
+              y_pct: Optional[int] = None,
+              width_pct: Optional[int] = None,
+              height_pct: Optional[int] = None):
         '''place widget depends on parent position
         x, y, width, height are counted in pixels
         x_pct, y_pct, width_pct, height_pct – in percents
@@ -344,17 +363,13 @@ class kWidget(metaclass=WidgetMeta):
         if not self._parent:
             raise RuntimeError('has to be set to parent')
         if x and x_pct:
-            raise AttributeError(
-                'can assign only "x" or "x_pct"')
+            raise AttributeError('can assign only "x" or "x_pct"')
         if y and y_pct:
-            raise AttributeError(
-                'can assign only "y" or "y_pct"')
+            raise AttributeError('can assign only "y" or "y_pct"')
         if width and width_pct:
-            raise AttributeError(
-                'can assign only "width" or "width_pct"')
+            raise AttributeError('can assign only "width" or "width_pct"')
         if height and height_pct:
-            raise AttributeError(
-                'can assign only "height" or "height_pct"')
+            raise AttributeError('can assign only "height" or "height_pct"')
 
         p_x = self._parent.x
         if hasattr(p_x, 'val'):
@@ -381,61 +396,52 @@ class kWidget(metaclass=WidgetMeta):
 
         if x_pct is not None:
             if x_pct < 0 or x_pct > 100:
-                raise AttributeError(
-                    'x_pct has to be between 0 and 100')
+                raise AttributeError('x_pct has to be between 0 and 100')
             self.x <<= int(
-                get_runtime_val(
-                    self._parent.x +
-                    (self._parent.width * x_pct / 100)))
+                get_runtime_val(self._parent.x +
+                                (self._parent.width * x_pct / 100)))
         if y_pct is not None:
             if y_pct < 0 or y_pct > 100:
-                raise AttributeError(
-                    'y_pct has to be between 0 and 100')
+                raise AttributeError('y_pct has to be between 0 and 100')
             self.y <<= int(
-                get_runtime_val(
-                    self._parent.y +
-                    (self._parent.height * y_pct / 100)))
+                get_runtime_val(self._parent.y +
+                                (self._parent.height * y_pct / 100)))
         if width_pct:
             if width_pct < 0 or width_pct > 100:
-                raise AttributeError(
-                    'width_pct has to be between 0 and 100')
+                raise AttributeError('width_pct has to be between 0 and 100')
             self.width <<= int(
-                get_runtime_val(
-                    self._parent.width * width_pct / 100))
+                get_runtime_val(self._parent.width * width_pct / 100))
         if height_pct:
             if height_pct < 0 or height_pct > 100:
-                raise AttributeError(
-                    'height_pct has to be between 0 and 100')
+                raise AttributeError('height_pct has to be between 0 and 100')
             self.height <<= int(
-                get_runtime_val(
-                    self._parent.height * height_pct / 100))
+                get_runtime_val(self._parent.height * height_pct / 100))
 
         s_r = get_runtime_val(self.x + self.width)
         p_r = get_runtime_val(self._parent.x + self._parent.width)
         if s_r > p_r:
-            raise RuntimeError(
-                f'the right side of control ({s_r}px) out of ' +
-                f'bounds of parent {p_r}')
+            raise RuntimeError(f'the right side of control ({s_r}px) out of ' +
+                               f'bounds of parent {p_r}')
         s_b = get_runtime_val(self.y + self.height)
         p_b = get_runtime_val(self._parent.y + self._parent.height)
         if s_b > p_b:
-            raise RuntimeError(
-                f'the bottom side of control {s_b} out of ' +
-                f'bounds of parent {p_b}')
+            raise RuntimeError(f'the bottom side of control {s_b} out of ' +
+                               f'bounds of parent {p_b}')
         # print(self.y._get_runtime())
 
-    def place_pct(self, x: Optional[int]=None, y: Optional[int]=None,
-                  width: Optional[int]=None, height: Optional[int]=None):
+    def place_pct(self,
+                  x: Optional[int] = None,
+                  y: Optional[int] = None,
+                  width: Optional[int] = None,
+                  height: Optional[int] = None):
         '''the same as place(), but all arguments are in percents'''
-        self.place(x_pct=x, y_pct=y,
-                   width_pct=width, height_pct=height)
+        self.place(x_pct=x, y_pct=y, width_pct=width, height_pct=height)
 
 
 class bControlParVar(BuiltInIntVar):
     shorts = dict()
 
-    def __init__(self, name: str, short: str,
-                 callbacks=all_callbacks) -> None:
+    def __init__(self, name: str, short: str, callbacks=all_callbacks) -> None:
         super().__init__(name, callbacks=callbacks)
         self._attr = short
         bControlParVar.shorts[short] = self
@@ -450,7 +456,6 @@ class bControlParStrVar(bControlParVar, BuiltInIntVar):
 
 
 class bControlParConst(BuiltInIntVar):
-
     def __init__(self, name, callbacks=all_callbacks):
         super().__init__(name, callbacks=all_callbacks)
         self._value = self._id
@@ -508,27 +513,19 @@ HIDE_PART_NOTHING = bControlHideConst('HIDE_PART_NOTHING')
 HIDE_WHOLE_CONTROL = bControlHideConst('HIDE_WHOLE_CONTROL')
 HIDE_PART_CURSOR = bControlHideConst('HIDE_PART_CURSOR')
 
-CONTROL_PAR_PICTURE = bControlParStrVar('CONTROL_PAR_PICTURE',
-                                        'picture')
+CONTROL_PAR_PICTURE = bControlParStrVar('CONTROL_PAR_PICTURE', 'picture')
 CONTROL_PAR_PICTURE_STATE = bControlParIntVar('CONTROL_PAR_PICTURE_STATE',
                                               'picture_state')
-CONTROL_PAR_Z_LAYER = bControlParIntVar('CONTROL_PAR_Z_LAYER',
-                                        'z_layer')
-CONTROL_PAR_VALUE = bControlParIntVar('CONTROL_PAR_VALUE',
-                                      'value')
-CONTROL_PAR_DEFAULT_VALUE = bControlParIntVar(
-    'CONTROL_PAR_DEFAULT_VALUE', 'default')
-CONTROL_PAR_TEXT = bControlParStrVar('CONTROL_PAR_TEXT',
-                                     'text')
-CONTROL_PAR_TEXTLINE = bControlParStrVar('CONTROL_PAR_TEXTLINE',
-                                         'textline')
-CONTROL_PAR_LABEL = bControlParStrVar('CONTROL_PAR_LABEL',
-                                      'label')
-CONTROL_PAR_UNIT = bControlParStrVar('CONTROL_PAR_UNIT',
-                                     'unit')
+CONTROL_PAR_Z_LAYER = bControlParIntVar('CONTROL_PAR_Z_LAYER', 'z_layer')
+CONTROL_PAR_VALUE = bControlParIntVar('CONTROL_PAR_VALUE', 'value')
+CONTROL_PAR_DEFAULT_VALUE = bControlParIntVar('CONTROL_PAR_DEFAULT_VALUE',
+                                              'default')
+CONTROL_PAR_TEXT = bControlParStrVar('CONTROL_PAR_TEXT', 'text')
+CONTROL_PAR_TEXTLINE = bControlParStrVar('CONTROL_PAR_TEXTLINE', 'textline')
+CONTROL_PAR_LABEL = bControlParStrVar('CONTROL_PAR_LABEL', 'label')
+CONTROL_PAR_UNIT = bControlParStrVar('CONTROL_PAR_UNIT', 'unit')
 
-CONTROL_PAR_FONT_TYPE = bControlParIntVar(
-    'CONTROL_PAR_FONT_TYPE', 'font_type')
+CONTROL_PAR_FONT_TYPE = bControlParIntVar('CONTROL_PAR_FONT_TYPE', 'font_type')
 
 
 class font:
@@ -560,10 +557,9 @@ class font:
     white_medium_bold_2 = 24
 
 
-CONTROL_PAR_TEXTPOS_Y = bControlParIntVar(
-    'CONTROL_PAR_TEXTPOS_Y', 'textpos_y')
-CONTROL_PAR_TEXT_ALIGNMENT = bControlParIntVar(
-    'CONTROL_PAR_TEXT_ALIGNMENT', 'text_alignment')
+CONTROL_PAR_TEXTPOS_Y = bControlParIntVar('CONTROL_PAR_TEXTPOS_Y', 'textpos_y')
+CONTROL_PAR_TEXT_ALIGNMENT = bControlParIntVar('CONTROL_PAR_TEXT_ALIGNMENT',
+                                               'text_alignment')
 
 
 class text_alignment:
@@ -573,25 +569,24 @@ class text_alignment:
     right = 2
 
 
-CONTROL_PAR_AUTOMATION_NAME = bControlParStrVar(
-    'CONTROL_PAR_AUTOMATION_NAME', 'automation_name')
+CONTROL_PAR_AUTOMATION_NAME = bControlParStrVar('CONTROL_PAR_AUTOMATION_NAME',
+                                                'automation_name')
 CONTROL_PAR_ALLOW_AUTOMATION = bControlParIntVar(
     'CONTROL_PAR_ALLOW_AUTOMATION', 'allow_automation')
-CONTROL_PAR_AUTOMATION_ID = bControlParIntVar(
-    'CONTROL_PAR_AUTOMATION_ID', 'automation_id')
-NI_CONTROL_PAR_IDX = bControlParIntVar('NI_CONTROL_PAR_IDX', 'idx',
-                                       callbacks=(UiControlCallback,))
+CONTROL_PAR_AUTOMATION_ID = bControlParIntVar('CONTROL_PAR_AUTOMATION_ID',
+                                              'automation_id')
+NI_CONTROL_PAR_IDX = bControlParIntVar(
+    'NI_CONTROL_PAR_IDX', 'idx', callbacks=(UiControlCallback, ))
 
 
 class bKontrolKeyVars(bControlParIntVar):
     pass
 
 
-CONTROL_PAR_KEY_SHIFT = bKontrolKeyVars(
-    'CONTROL_PAR_KEY_SHIFT', 'key_shift')
+CONTROL_PAR_KEY_SHIFT = bKontrolKeyVars('CONTROL_PAR_KEY_SHIFT', 'key_shift')
 CONTROL_PAR_KEY_ALT = bKontrolKeyVars('CONTROL_PAR_KEY_ALT', 'key_alt')
-CONTROL_PAR_KEY_CONTROL = bKontrolKeyVars(
-    'CONTROL_PAR_KEY_CONTROL', 'key_control')
+CONTROL_PAR_KEY_CONTROL = bKontrolKeyVars('CONTROL_PAR_KEY_CONTROL',
+                                          'key_control')
 
 
 class bControlTableVar(bControlParIntVar):
@@ -606,8 +601,8 @@ class bControlTableWaveFormVar(bControlTableVar, bControlWaveFormVar):
     pass
 
 
-CONTROL_PAR_BAR_COLOR = bControlWaveFormVar(
-    'CONTROL_PAR_BAR_COLOR', 'bar_color')
+CONTROL_PAR_BAR_COLOR = bControlWaveFormVar('CONTROL_PAR_BAR_COLOR',
+                                            'bar_color')
 CONTROL_PAR_ZERO_LINE_COLOR = bControlWaveFormVar(
     'CONTROL_PAR_ZERO_LINE_COLOR', 'zero_line_color')
 
@@ -617,8 +612,7 @@ class bControlMenuVar(bControlParIntVar):
     pass
 
 
-CONTROL_PAR_NUM_ITEMS = bControlMenuVar(
-    'CONTROL_PAR_NUM_ITEMS', 'num_items')
+CONTROL_PAR_NUM_ITEMS = bControlMenuVar('CONTROL_PAR_NUM_ITEMS', 'num_items')
 CONTROL_PAR_SELECTED_ITEM_IDX = bControlMenuVar(
     'CONTROL_PAR_SELECTED_ITEM_IDX', 'selected_item_idx')
 
@@ -627,32 +621,29 @@ class bControlLabelVar(bControlParIntVar):
     pass
 
 
-CONTROL_PAR_DND_BEHAVIOUR = bControlLabelVar(
-    'CONTROL_PAR_DND_BEHAVIOUR', 'dnd_behaviour')
+CONTROL_PAR_DND_BEHAVIOUR = bControlLabelVar('CONTROL_PAR_DND_BEHAVIOUR',
+                                             'dnd_behaviour')
 
 
 class bControlValueEditVar(bControlParIntVar):
     pass
 
 
-CONTROL_PAR_SHOW_ARROWS = bControlValueEditVar(
-    'CONTROL_PAR_SHOW_ARROWS', 'show_arrows')
+CONTROL_PAR_SHOW_ARROWS = bControlValueEditVar('CONTROL_PAR_SHOW_ARROWS',
+                                               'show_arrows')
 
 
 class bControlLlvMetVar(bControlParIntVar):
     pass
 
 
-CONTROL_PAR_OFF_COLOR = bControlLlvMetVar(
-    'CONTROL_PAR_OFF_COLOR', 'off_color')
-CONTROL_PAR_ON_COLOR = bControlLlvMetVar(
-    'CONTROL_PAR_ON_COLOR', 'on_color')
-CONTROL_PAR_OVERLOAD_COLOR = bControlLlvMetVar(
-    'CONTROL_PAR_OVERLOAD_COLOR', 'overload_color')
-CONTROL_PAR_PEAK_COLOR = bControlLlvMetVar(
-    'CONTROL_PAR_PEAK_COLOR', 'peak_color')
-CONTROL_PAR_VERTICAL = bControlLlvMetVar(
-    'CONTROL_PAR_VERTICAL', 'vertical')
+CONTROL_PAR_OFF_COLOR = bControlLlvMetVar('CONTROL_PAR_OFF_COLOR', 'off_color')
+CONTROL_PAR_ON_COLOR = bControlLlvMetVar('CONTROL_PAR_ON_COLOR', 'on_color')
+CONTROL_PAR_OVERLOAD_COLOR = bControlLlvMetVar('CONTROL_PAR_OVERLOAD_COLOR',
+                                               'overload_color')
+CONTROL_PAR_PEAK_COLOR = bControlLlvMetVar('CONTROL_PAR_PEAK_COLOR',
+                                           'peak_color')
+CONTROL_PAR_VERTICAL = bControlLlvMetVar('CONTROL_PAR_VERTICAL', 'vertical')
 
 
 class bControlFileBrtVar():
@@ -667,14 +658,14 @@ class bControlFileBrtStrVar(bControlFileBrtVar, bControlParStrVar):
     pass
 
 
-CONTROL_PAR_BASEPATH = bControlFileBrtStrVar(
-    'CONTROL_PAR_BASEPATH', 'basepath')
-CONTROL_PAR_FILEPATH = bControlFileBrtStrVar(
-    'CONTROL_PAR_FILEPATH', 'filepath')
-CONTROL_PAR_COLUMN_WIDTH = bControlFileBrtIntVar(
-    'CONTROL_PAR_COLUMN_WIDTH', 'column_width')
-CONTROL_PAR_FILE_TYPE = bControlFileBrtIntVar(
-    'CONTROL_PAR_FILE_TYPE', 'file_type')
+CONTROL_PAR_BASEPATH = bControlFileBrtStrVar('CONTROL_PAR_BASEPATH',
+                                             'basepath')
+CONTROL_PAR_FILEPATH = bControlFileBrtStrVar('CONTROL_PAR_FILEPATH',
+                                             'filepath')
+CONTROL_PAR_COLUMN_WIDTH = bControlFileBrtIntVar('CONTROL_PAR_COLUMN_WIDTH',
+                                                 'column_width')
+CONTROL_PAR_FILE_TYPE = bControlFileBrtIntVar('CONTROL_PAR_FILE_TYPE',
+                                              'file_type')
 
 
 class bControlFileTypeConst(bControlParConst):
@@ -702,8 +693,7 @@ UI_WAVEFORM_USE_SLICES = bWaveFormFlagConst('UI_WAVEFORM_USE_SLICES')
 UI_WAVEFORM_USE_TABLE = bWaveFormFlagConst('UI_WAVEFORM_USE_TABLE')
 UI_WAVEFORM_TABLE_IS_BIPOLAR = bWaveFormFlagConst(
     'UI_WAVEFORM_TABLE_IS_BIPOLAR')
-UI_WAVEFORM_USE_MIDI_DRAG = bWaveFormFlagConst(
-    'UI_WAVEFORM_USE_MIDI_DRAG')
+UI_WAVEFORM_USE_MIDI_DRAG = bWaveFormFlagConst('UI_WAVEFORM_USE_MIDI_DRAG')
 
 
 class bWaveFormPropConst(bControlParConst):
@@ -717,22 +707,21 @@ UI_WF_PROP_TABLE_IDX_HIGHLIGHT = bWaveFormPropConst(
     'UI_WF_PROP_TABLE_IDX_HIGHLIGHT')
 UI_WF_PROP_MIDI_DRAG_START_NOTE = bWaveFormPropConst(
     'UI_WF_PROP_MIDI_DRAG_START_NOTE')
-CONTROL_PAR_WAVE_COLOR = bControlWaveFormVar(
-    'CONTROL_PAR_WAVE_COLOR', 'wave_color')
+CONTROL_PAR_WAVE_COLOR = bControlWaveFormVar('CONTROL_PAR_WAVE_COLOR',
+                                             'wave_color')
 CONTROL_PAR_WAVE_CURSOR_COLOR = bControlWaveFormVar(
     'CONTROL_PAR_WAVE_CURSOR_COLOR', 'cursor_color')
 CONTROL_PAR_SLICEMARKERS_COLOR = bControlWaveFormVar(
     'CONTROL_PAR_SLICEMARKERS_COLOR', 'slicemarkers_color')
-CONTROL_PAR_BG_ALPHA = bControlWaveFormVar(
-    'CONTROL_PAR_BG_ALPHA', 'bg_alpha')
+CONTROL_PAR_BG_ALPHA = bControlWaveFormVar('CONTROL_PAR_BG_ALPHA', 'bg_alpha')
 
 
 class bControlSliderVar(bControlParIntVar):
     pass
 
 
-CONTROL_PAR_MOUSE_BEHAVIOUR = bControlParIntVar(
-    'CONTROL_PAR_MOUSE_BEHAVIOUR', 'mouse_behaviour')
+CONTROL_PAR_MOUSE_BEHAVIOUR = bControlParIntVar('CONTROL_PAR_MOUSE_BEHAVIOUR',
+                                                'mouse_behaviour')
 
 
 class bXyPadVar():
@@ -751,12 +740,12 @@ CONTROL_PAR_MOUSE_BEHAVIOUR_X = bControlXyIntVar(
     'CONTROL_PAR_MOUSE_BEHAVIOUR_X', 'mouse_behaviour_x')
 CONTROL_PAR_MOUSE_BEHAVIOUR_Y = bControlXyIntVar(
     'CONTROL_PAR_MOUSE_BEHAVIOUR_Y', 'mouse_behaviour_y')
-CONTROL_PAR_MOUSE_MODE = bControlXyIntVar(
-    'CONTROL_PAR_MOUSE_MODE', 'mouse_mode')
-CONTROL_PAR_ACTIVE_INDEX = bControlXyIntVar(
-    'CONTROL_PAR_ACTIVE_INDEX', 'active_index')
-CONTROL_PAR_CURSOR_PICTURE = bControlXyStrVar(
-    'CONTROL_PAR_CURSOR_PICTURE', 'cursor_picture')
+CONTROL_PAR_MOUSE_MODE = bControlXyIntVar('CONTROL_PAR_MOUSE_MODE',
+                                          'mouse_mode')
+CONTROL_PAR_ACTIVE_INDEX = bControlXyIntVar('CONTROL_PAR_ACTIVE_INDEX',
+                                            'active_index')
+CONTROL_PAR_CURSOR_PICTURE = bControlXyStrVar('CONTROL_PAR_CURSOR_PICTURE',
+                                              'cursor_picture')
 
 
 class SetUiColor(BuiltInFuncInt):
@@ -770,9 +759,8 @@ class SetUiColor(BuiltInFuncInt):
     constant id, not the For index'''
 
     def __init__(self):
-        super().__init__('set_ui_color',
-                         args=OrderedDict(value=(int)),
-                         def_ret=kNone())
+        super().__init__(
+            'set_ui_color', args=OrderedDict(value=(int)), def_ret=kNone())
 
     def __call__(self, value: Union[KspIntVar, int]):
         super().__call__(value)
@@ -791,10 +779,8 @@ class ControlParFunc:
                 raise kParVarGetError(parameter)
         return parameter
 
-    def _get_contrl_obj(self,
-                        control_or_id: Union[
-                            'KspNativeControl',
-                            int])-> 'KspNativeControl':
+    def _get_contrl_obj(self, control_or_id: Union['KspNativeControl', int]
+                        ) -> 'KspNativeControl':
         if isinstance(control_or_id, KspNativeControl):
             return control_or_id
         return ControlId.get_by_id(control_or_id)
@@ -803,8 +789,7 @@ class ControlParFunc:
         self._args['control_or_id'] = \
             (*self._args['control_or_id'], KspNativeControl)
 
-    def _get_line_c_id(self,
-                       control_or_id: Union['KspNativeControl', int]):
+    def _get_line_c_id(self, control_or_id: Union['KspNativeControl', int]):
 
         if isinstance(control_or_id, KspNativeControl):
             return control_or_id.id
@@ -812,19 +797,17 @@ class ControlParFunc:
 
 
 class kParVar(KSP):
-
-    def __init__(self, control: 'KspNativeControl',
-                 control_par: bControlParVar, var_type: Type[KspVar],
-                 value: Any=None) -> None:
+    def __init__(self,
+                 control: 'KspNativeControl',
+                 control_par: bControlParVar,
+                 var_type: Type[KspVar],
+                 value: Any = None) -> None:
         if not isinstance(control_par, bControlParVar):
-            raise TypeError(
-                f'control_par has to be of type {bControlParVar}')
+            raise TypeError(f'control_par has to be of type {bControlParVar}')
         if not issubclass(var_type, KspVar):
-            raise TypeError(
-                f'control has to be subclass of {KspVar}')
+            raise TypeError(f'control has to be subclass of {KspVar}')
 
-        self._var = var_type(value=kNone(), name='name',
-                             is_local=True)
+        self._var = var_type(value=kNone(), name='name', is_local=True)
         self._parameter = control_par
         self._par_name = control_par._get_compiled()
         self._control = control
@@ -852,8 +835,7 @@ class kParVar(KSP):
         pass
 
     def _raise_get_compiled(self):
-        raise RuntimeError(
-            'can not get var val, use orig obj param instead')
+        raise RuntimeError('can not get var val, use orig obj param instead')
 
     def _get_compiled(self):
         if not self._is_set:
@@ -893,20 +875,22 @@ class kParVar(KSP):
 
 
 class kParPosVar(kParVar, kInt):
-
-    def __init__(self, control: 'KspNativeControl',
+    def __init__(self,
+                 control: 'KspNativeControl',
                  control_par: bControlParVar,
-                 value: Any=None) -> None:
-        super().__init__(control=control, control_par=control_par,
-                         var_type=kInt, value=value)
+                 value: Any = None) -> None:
+        super().__init__(
+            control=control,
+            control_par=control_par,
+            var_type=kInt,
+            value=value)
         # if value:
         #     self._is_set = 1
         #     self._var._set_runtime(value)
         self._init_value = get_runtime_val(value)
 
     def _get_func_invoke(self):
-        return get_control_par(
-            self._control, self._parameter)._get_compiled()
+        return get_control_par(self._control, self._parameter)._get_compiled()
 
     def _set_func_invoke(self, val):
         set_control_par(self._control, self._parameter, val)
@@ -957,21 +941,22 @@ class kParPosVar(kParVar, kInt):
 
 
 class kParIntVar(kParVar, kInt):
-    def __init__(self, control: 'KspNativeControl',
+    def __init__(self,
+                 control: 'KspNativeControl',
                  control_par: bControlParVar,
-                 value: Optional[Union[int, KspIntVar, AstBase]]=None):
+                 value: Optional[Union[int, KspIntVar, AstBase]] = None):
         if value and not isinstance(value, (int, KspIntVar, AstBase)):
-            raise TypeError(
-                'control_var has to be of type ' +
-                f'{int, KspIntVar, AstBase}')
-        super().__init__(control=control,
-                         control_par=control_par, var_type=kInt,
-                         value=value)
+            raise TypeError('control_var has to be of type ' +
+                            f'{int, KspIntVar, AstBase}')
+        super().__init__(
+            control=control,
+            control_par=control_par,
+            var_type=kInt,
+            value=value)
         self._def_value = 0
 
     def _get_func_invoke(self):
-        return get_control_par(
-            self._control, self._parameter)._get_compiled()
+        return get_control_par(self._control, self._parameter)._get_compiled()
 
     def _set_func_invoke(self, val):
         set_control_par(self._control, self._parameter, val)
@@ -981,21 +966,23 @@ class kParIntVar(kParVar, kInt):
 
 
 class kParStrVar(kParVar, kStr):
-    def __init__(self, control: 'KspNativeControl',
+    def __init__(self,
+                 control: 'KspNativeControl',
                  control_par: bControlParVar,
-                 value: Optional[Union[str, KspStrVar, AstBase]]=None):
+                 value: Optional[Union[str, KspStrVar, AstBase]] = None):
         if value and not isinstance(value, (str, KspStrVar, AstBase)):
-            raise TypeError(
-                'control_var has to be of type ' +
-                f'{str, KspStrVar, AstBase}')
-        super().__init__(control=control,
-                         control_par=control_par, var_type=kStr,
-                         value=value)
+            raise TypeError('control_var has to be of type ' +
+                            f'{str, KspStrVar, AstBase}')
+        super().__init__(
+            control=control,
+            control_par=control_par,
+            var_type=kStr,
+            value=value)
         self._def_value = ''
 
     def _get_func_invoke(self):
-        return get_control_par_str(
-            self._control, self._parameter)._get_compiled()
+        return get_control_par_str(self._control,
+                                   self._parameter)._get_compiled()
 
     def _set_func_invoke(self, val):
         set_control_par_str(self._control, self._parameter, val)
@@ -1005,16 +992,18 @@ class kParStrVar(kParVar, kStr):
 
 
 class kParArrIntVar(kParVar, kInt):
-    def __init__(self, control: 'KspNativeControl',
+    def __init__(self,
+                 control: 'KspNativeControl',
                  control_par: bControlParVar,
-                 value: Optional[Union[int, KspIntVar, AstBase]]=None):
+                 value: Optional[Union[int, KspIntVar, AstBase]] = None):
         if value and not isinstance(value, (int, KspIntVar, AstBase)):
-            raise TypeError(
-                'control_var has to be of type ' +
-                f'{int, KspIntVar, AstBase}')
-        super().__init__(control=control,
-                         control_par=control_par, var_type=kInt,
-                         value=value)
+            raise TypeError('control_var has to be of type ' +
+                            f'{int, KspIntVar, AstBase}')
+        super().__init__(
+            control=control,
+            control_par=control_par,
+            var_type=kInt,
+            value=value)
         self._def_value = 0
         self._idx = None
 
@@ -1026,12 +1015,11 @@ class kParArrIntVar(kParVar, kInt):
         self.idx = idx
 
     def _get_func_invoke(self):
-        return get_control_par_arr(
-            self._control, self._parameter, self.idx)._get_compiled()
+        return get_control_par_arr(self._control, self._parameter,
+                                   self.idx)._get_compiled()
 
     def _set_func_invoke(self, val):
-        set_control_par_arr(self._control, self._parameter, val,
-                            self.idx)
+        set_control_par_arr(self._control, self._parameter, val, self.idx)
 
     def _set_func_put_line(self, val):
         set_control_par_arr._put_line(self._control, self._parameter, val,
@@ -1039,16 +1027,18 @@ class kParArrIntVar(kParVar, kInt):
 
 
 class kParArrStrVar(kParVar, kStr):
-    def __init__(self, control: 'KspNativeControl',
+    def __init__(self,
+                 control: 'KspNativeControl',
                  control_par: bControlParVar,
-                 value: Optional[Union[str, KspStrVar, AstBase]]=None):
+                 value: Optional[Union[str, KspStrVar, AstBase]] = None):
         if value and not isinstance(value, (str, KspStrVar, AstBase)):
-            raise TypeError(
-                'control_var has to be of type ' +
-                f'{str, KspStrVar, AstBase}')
-        super().__init__(control=control,
-                         control_par=control_par, var_type=kStr,
-                         value=value)
+            raise TypeError('control_var has to be of type ' +
+                            f'{str, KspStrVar, AstBase}')
+        super().__init__(
+            control=control,
+            control_par=control_par,
+            var_type=kStr,
+            value=value)
         self._def_value = ''
         self._idx = None
 
@@ -1060,21 +1050,18 @@ class kParArrStrVar(kParVar, kStr):
         self.idx = idx
 
     def _get_func_invoke(self):
-        return get_control_par_str_arr(
-            self._control, self._parameter, self.idx)._get_compiled()
+        return get_control_par_str_arr(self._control, self._parameter,
+                                       self.idx)._get_compiled()
 
     def _set_func_invoke(self, val):
-        set_control_par_str_arr(self._control, self._parameter, val,
-                                self.idx)
+        set_control_par_str_arr(self._control, self._parameter, val, self.idx)
 
     def _set_func_put_line(self, val):
-        set_control_par_str_arr._put_line(self._control,
-                                          self._parameter, val,
+        set_control_par_str_arr._put_line(self._control, self._parameter, val,
                                           self.idx)
 
 
 class kParVarArrInt(kArrInt):
-
     def __init__(self, seq):
         self._vars = seq
         super().__init__(size=len(seq), is_local=True)
@@ -1090,7 +1077,6 @@ class kParVarArrInt(kArrInt):
 
 
 class kParVarArrStr(kArrStr):
-
     def __init__(self, seq):
         self._vars = seq
         super().__init__(size=len(seq), is_local=True)
@@ -1103,6 +1089,7 @@ class kParVarArrStr(kArrStr):
 
     def __setitem__(self, idx, val):
         return self
+
 
 # DEPRECATED UNTIL ADDING REAL PARAMETERS IN KSP API
 # class kParRealVar(kParVar, kReal):
@@ -1128,7 +1115,7 @@ class kParVarArrStr(kArrStr):
 
 #     def _set_func_put_line(self, val):
 #         set_control_par_str._put_line(self._control,
-        # self._parameter, val)
+# self._parameter, val)
 
 
 class ControlParControls:
@@ -1163,13 +1150,10 @@ class ControlPar():
     '''control attribute represents it's respective parameter state'''
 
     def __init__(self, name: str, cls: Type['KspNativeControl'],
-                 arr_type: Type[KspArray],
-                 var_type: Type[kParVar],
-                 ref_type: Union[Type[int], Type[str], Type[float]],
-                 size: int,
+                 arr_type: Type[KspArray], var_type: Type[kParVar],
+                 ref_type: Union[Type[int], Type[str], Type[float]], size: int,
                  set_func: Type[ControlParFunc],
-                 get_func: Type[ControlParFunc],
-                 parameter: bControlParVar):
+                 get_func: Type[ControlParFunc], parameter: bControlParVar):
         self._cls = cls
         self._used = False
         self._name = name
@@ -1206,8 +1190,8 @@ class ControlPar():
         '''return hash for self._keys'''
         return repr(control_obj)
 
-    def _get_ref_from_basic(self, ref_type: Union[Type[int], Type[str],
-                                                  Type[float]]):
+    def _get_ref_from_basic(
+            self, ref_type: Union[Type[int], Type[str], Type[float]]):
         if ref_type is int:
             return (KspIntVar, int, AstBase)
         if ref_type is str:
@@ -1215,8 +1199,7 @@ class ControlPar():
         if ref_type is float:
             return (KspRealVar, float, AstBase)
 
-    def _get(self, control_or_id: Union['KspNativeControl', int],
-             idx: int):
+    def _get(self, control_or_id: Union['KspNativeControl', int], idx: int):
         c_id, c_obj, idx, idx_runtime = \
             self._get_args(control_or_id, idx)
         c_id = self._controls[self._get_key_from_control(c_obj)]
@@ -1235,26 +1218,24 @@ class ControlPar():
 
     def _check_val(self, value: Any, c_obj: 'KspNativeControl'):
         if not isinstance(value, self._ref_type):
-            raise TypeError(
-                ('parameter "{n}" of control "{c}"' +
-                 ' has to be instance of {t}').format(
-                    n=self._name, c=c_obj._name, t=self._ref_type))
+            raise TypeError(('parameter "{n}" of control "{c}"' +
+                             ' has to be instance of {t}').format(
+                                 n=self._name, c=c_obj._name,
+                                 t=self._ref_type))
         return get_runtime_val(value)
 
-    def _init_control(self, control_obj: 'KspNativeControl',
+    def _init_control(self,
+                      control_obj: 'KspNativeControl',
                       value: Optional[Any],
-                      bounded_var: Optional[KspVar]=None):
+                      bounded_var: Optional[KspVar] = None):
         if value and not isinstance(value, self._ref_type):
-            raise TypeError(
-                'parameter "{n}" has to be {t}'.format(
-                    n=self._name, t=self._ref_type))
+            raise TypeError('parameter "{n}" has to be {t}'.format(
+                n=self._name, t=self._ref_type))
 
         if not isinstance(control_obj, KspNativeControl):
-            raise TypeError(
-                'control_obj has to be instance of ' +
-                '{ref}, pasted {pst}'.format(
-                    ref=KspNativeControl,
-                    pst=type(control_obj)))
+            raise TypeError('control_obj has to be instance of ' +
+                            '{ref}, pasted {pst}'.format(
+                                ref=KspNativeControl, pst=type(control_obj)))
 
         if bounded_var:
             if not isinstance(bounded_var, KspVar):
@@ -1285,12 +1266,10 @@ class ControlPar():
             obj = self._var_type(control_obj.id, self._par, val)
             item.append(obj)
 
-    def __get__(self, obj: 'KspNativeControl',
-                cls: Type['KspNativeControl']):
+    def __get__(self, obj: 'KspNativeControl', cls: Type['KspNativeControl']):
         if not obj:
             return self
-        bound_var = self._vars[self._controls[
-            self._get_key_from_control(obj)]]
+        bound_var = self._vars[self._controls[self._get_key_from_control(obj)]]
         self._used = True
         if self._size == 1:
             par_var = self._get(obj, 0)
@@ -1311,8 +1290,8 @@ class ControlPar():
 
     def __set__(self, obj: 'KspNativeControl', val: Any):
         if get_runtime_val(val) == self._get(obj, 0)._get_runtime():
-            bound_var = self._vars[self._controls[
-                self._get_key_from_control(obj)]]
+            bound_var = self._vars[self._controls[self._get_key_from_control(
+                obj)]]
             if bound_var:
                 bound_var._set_runtime(get_runtime_val(val))
             return
@@ -1335,12 +1314,14 @@ class ControlPar():
                 values_seq.append(item._def_value)
                 active_seq.append(-1)
         cls_name = self._cls.__name__
-        values_arr = self._arr_type(sequence=values_seq,
-                                    name=f'_{cls_name}_{self._name}_vals',
-                                    size=len(values_seq))
-        active_arr = kArrInt(sequence=active_seq,
-                             name=f'_{cls_name}_{self._name}_avail',
-                             size=len(active_seq))
+        values_arr = self._arr_type(
+            sequence=values_seq,
+            name=f'_{cls_name}_{self._name}_vals',
+            size=len(values_seq))
+        active_arr = kArrInt(
+            sequence=active_seq,
+            name=f'_{cls_name}_{self._name}_avail',
+            size=len(active_seq))
         # idx = kInt(name=f'_{cls_name}_{self._name}_idx')
         out.extend(values_arr._generate_init())
         out.extend(active_arr._generate_init())
@@ -1358,11 +1339,13 @@ class SetControlPar(BuiltInFuncInt, ControlParFunc):
     constant id, not the For index'''
 
     def __init__(self):
-        super().__init__('set_control_par',
-                         args=OrderedDict(
-                             control_or_id=(KspIntVar, int),
-                             parameter=bControlParVar, value=(int)),
-                         def_ret=kNone())
+        super().__init__(
+            'set_control_par',
+            args=OrderedDict(
+                control_or_id=(KspIntVar, int),
+                parameter=bControlParVar,
+                value=(int)),
+            def_ret=kNone())
 
     def __call__(self, control_or_id: Union['KspNativeControl', int],
                  parameter: bControlParVar, value: Union[KspIntVar, int]):
@@ -1399,10 +1382,10 @@ class GetControlPar(BuiltInFuncInt, ControlParFunc):
     constant id, not the For index'''
 
     def __init__(self):
-        super().__init__('get_control_par',
-                         args=OrderedDict(
-                             control_or_id=(KspIntVar, int),
-                             parameter=bControlParVar))
+        super().__init__(
+            'get_control_par',
+            args=OrderedDict(
+                control_or_id=(KspIntVar, int), parameter=bControlParVar))
 
     def __call__(self, control_or_id: Union['KspNativeControl', int],
                  parameter: bControlParVar):
@@ -1450,11 +1433,13 @@ class SetControlParStr(BuiltInFuncInt, ControlParFunc):
     constant id, not the For index'''
 
     def __init__(self):
-        super().__init__('set_control_par_str',
-                         args=OrderedDict(
-                             control_or_id=(KspIntVar, int),
-                             parameter=bControlParVar, value=(str)),
-                         def_ret=kNone())
+        super().__init__(
+            'set_control_par_str',
+            args=OrderedDict(
+                control_or_id=(KspIntVar, int),
+                parameter=bControlParVar,
+                value=(str)),
+            def_ret=kNone())
 
     def __call__(self, control_or_id: Union['KspNativeControl', int],
                  parameter: bControlParVar, value: Union[KspStrVar, str]):
@@ -1491,10 +1476,10 @@ class GetControlParStr(BuiltInFuncStr, ControlParFunc):
     constant id, not the For index'''
 
     def __init__(self):
-        super().__init__('get_control_par_str',
-                         args=OrderedDict(
-                             control_or_id=(KspIntVar, int),
-                             parameter=bControlParVar))
+        super().__init__(
+            'get_control_par_str',
+            args=OrderedDict(
+                control_or_id=(KspIntVar, int), parameter=bControlParVar))
 
     def __call__(self, control_or_id: Union['KspNativeControl', int],
                  parameter: bControlParVar):
@@ -1544,16 +1529,16 @@ class SetControlParArr(BuiltInFuncInt, ControlParFunc):
     constant id, not the For index'''
 
     def __init__(self):
-        super().__init__('set_control_par_arr',
-                         args=OrderedDict(
-                             control_or_id=(KspIntVar, int, AstBase),
-                             parameter=bControlParVar,
-                             value=(KspIntVar, int, AstBase),
-                             idx=(KspIntVar, int, AstBase)),
-                         def_ret=kNone())
+        super().__init__(
+            'set_control_par_arr',
+            args=OrderedDict(
+                control_or_id=(KspIntVar, int, AstBase),
+                parameter=bControlParVar,
+                value=(KspIntVar, int, AstBase),
+                idx=(KspIntVar, int, AstBase)),
+            def_ret=kNone())
 
-    def __call__(self,
-                 control_or_id: Union['KspNativeControl', int, AstBase],
+    def __call__(self, control_or_id: Union['KspNativeControl', int, AstBase],
                  parameter: bControlParVar,
                  value: Union[KspIntVar, int, AstBase],
                  idx: Union[KspIntVar, int, AstBase]):
@@ -1592,11 +1577,12 @@ class GetControlParArr(BuiltInFuncInt, ControlParFunc):
     constant id, not the For index'''
 
     def __init__(self):
-        super().__init__('get_control_par_arr',
-                         args=OrderedDict(
-                             control_or_id=(KspIntVar, int, AstBase),
-                             parameter=bControlParVar,
-                             idx=(KspIntVar, int, AstBase)))
+        super().__init__(
+            'get_control_par_arr',
+            args=OrderedDict(
+                control_or_id=(KspIntVar, int, AstBase),
+                parameter=bControlParVar,
+                idx=(KspIntVar, int, AstBase)))
 
     def __call__(self, control_or_id: Union['KspNativeControl', int],
                  parameter: bControlParVar, idx: int):
@@ -1652,16 +1638,16 @@ class SetControlParStrArr(BuiltInFuncInt, ControlParFunc):
     constant id, not the For index'''
 
     def __init__(self):
-        super().__init__('set_control_par_str_arr',
-                         args=OrderedDict(
-                             control_or_id=(KspIntVar, int, AstBase),
-                             parameter=bControlParVar,
-                             value=(KspStrVar, str, AstBase),
-                             idx=(KspIntVar, int, AstBase)),
-                         def_ret=kNone())
+        super().__init__(
+            'set_control_par_str_arr',
+            args=OrderedDict(
+                control_or_id=(KspIntVar, int, AstBase),
+                parameter=bControlParVar,
+                value=(KspStrVar, str, AstBase),
+                idx=(KspIntVar, int, AstBase)),
+            def_ret=kNone())
 
-    def __call__(self,
-                 control_or_id: Union['KspNativeControl', int, AstBase],
+    def __call__(self, control_or_id: Union['KspNativeControl', int, AstBase],
                  parameter: bControlParVar,
                  value: Union[KspStrVar, str, AstBase],
                  idx: Union[KspIntVar, int, AstBase]):
@@ -1700,11 +1686,12 @@ class GetControlParStrArr(BuiltInFuncStr, ControlParFunc):
     constant id, not the For index'''
 
     def __init__(self):
-        super().__init__('get_control_par_str_arr',
-                         args=OrderedDict(
-                             control_or_id=(KspIntVar, int, AstBase),
-                             parameter=bControlParVar,
-                             idx=(KspIntVar, int, AstBase)))
+        super().__init__(
+            'get_control_par_str_arr',
+            args=OrderedDict(
+                control_or_id=(KspIntVar, int, AstBase),
+                parameter=bControlParVar,
+                idx=(KspIntVar, int, AstBase)))
 
     def __call__(self, control_or_id: Union['KspNativeControl', int],
                  parameter: bControlParVar, idx: int):
@@ -1801,81 +1788,77 @@ class KspNativeControlMeta(WidgetMeta):
         cls._def_height = 18
 
         cls.x = ControlPar('x', cls, kArrInt, kParPosVar, int, 1,
-                           set_control_par, get_control_par,
-                           CONTROL_PAR_POS_X)
+                           set_control_par, get_control_par, CONTROL_PAR_POS_X)
         cls.y = ControlPar('y', cls, kArrInt, kParPosVar, int, 1,
-                           set_control_par, get_control_par,
-                           CONTROL_PAR_POS_Y)
-        cls.width = ControlPar('width', cls, kArrInt, kParPosVar,
-                               int, 1,
+                           set_control_par, get_control_par, CONTROL_PAR_POS_Y)
+        cls.width = ControlPar('width', cls, kArrInt, kParPosVar, int, 1,
                                set_control_par, get_control_par,
                                CONTROL_PAR_WIDTH)
-        cls.height = ControlPar('height', cls, kArrInt, kParPosVar,
-                                int, 1,
+        cls.height = ControlPar('height', cls, kArrInt, kParPosVar, int, 1,
                                 set_control_par, get_control_par,
                                 CONTROL_PAR_HEIGHT)
         cls.help = ControlPar('help', cls, kArrStr, kParStrVar, str, 1,
                               set_control_par_str, get_control_par_str,
                               CONTROL_PAR_HELP)
 
-        cls.grid_x = ControlPar('grid_x', cls, kArrInt, kParIntVar,
-                                int, 1,
+        cls.grid_x = ControlPar('grid_x', cls, kArrInt, kParIntVar, int, 1,
                                 set_control_par, get_control_par,
                                 CONTROL_PAR_GRID_X)
-        cls.grid_y = ControlPar('grid_y', cls, kArrInt, kParIntVar,
-                                int, 1,
+        cls.grid_y = ControlPar('grid_y', cls, kArrInt, kParIntVar, int, 1,
                                 set_control_par, get_control_par,
                                 CONTROL_PAR_GRID_Y)
-        cls.grid_width = ControlPar('grid_width', cls, kArrInt,
-                                    kParIntVar, int, 1,
-                                    set_control_par, get_control_par,
+        cls.grid_width = ControlPar('grid_width', cls, kArrInt, kParIntVar,
+                                    int, 1, set_control_par, get_control_par,
                                     CONTROL_PAR_GRID_WIDTH)
-        cls.grid_height = ControlPar('grid_height', cls, kArrInt,
-                                     kParIntVar, int, 1,
-                                     set_control_par, get_control_par,
+        cls.grid_height = ControlPar('grid_height', cls, kArrInt, kParIntVar,
+                                     int, 1, set_control_par, get_control_par,
                                      CONTROL_PAR_GRID_HEIGHT)
         cls.help = ControlPar('help', cls, kArrStr, kParStrVar, str, 1,
                               set_control_par_str, get_control_par_str,
                               CONTROL_PAR_HELP)
-        cls.hide = ControlPar('hide', cls, kArrInt,
-                              kParIntVar, int, 1,
+        cls.hide = ControlPar('hide', cls, kArrInt, kParIntVar, int, 1,
                               set_control_par, get_control_par,
                               CONTROL_PAR_HIDE)
-        cls.z_layer = ControlPar('z_layer', cls, kArrInt,
-                                 kParIntVar, int, 1,
+        cls.z_layer = ControlPar('z_layer', cls, kArrInt, kParIntVar, int, 1,
                                  set_control_par, get_control_par,
                                  CONTROL_PAR_Z_LAYER)
-        cls.key_control = ControlPar('key_control', cls, kArrInt,
-                                     kParIntVar, int, 1,
-                                     set_control_par, get_control_par,
+        cls.key_control = ControlPar('key_control', cls, kArrInt, kParIntVar,
+                                     int, 1, set_control_par, get_control_par,
                                      CONTROL_PAR_KEY_CONTROL)
-        cls.key_alt = ControlPar('key_alt', cls, kArrInt,
-                                 kParIntVar, int, 1,
+        cls.key_alt = ControlPar('key_alt', cls, kArrInt, kParIntVar, int, 1,
                                  set_control_par, get_control_par,
                                  CONTROL_PAR_KEY_SHIFT)
-        cls.key_shift = ControlPar('key_shift', cls, kArrInt,
-                                   kParIntVar, int, 1,
-                                   set_control_par, get_control_par,
+        cls.key_shift = ControlPar('key_shift', cls, kArrInt, kParIntVar, int,
+                                   1, set_control_par, get_control_par,
                                    CONTROL_PAR_KEY_ALT)
 
         return cls
 
-    def __call__(cls, *args, name: Optional[str]=None,
-                 persist: bool=False, preserve: bool=False,
-                 parent: ParentTuple=None,
-                 x: Optional[int]=None, y: Optional[int]=None,
-                 width: Optional[int]=None,
-                 height: Optional[int]=None, size: Optional[int]=None,
+    def __call__(cls,
+                 *args,
+                 name: Optional[str] = None,
+                 persist: bool = False,
+                 preserve: bool = False,
+                 parent: ParentTuple = None,
+                 x: Optional[int] = None,
+                 y: Optional[int] = None,
+                 width: Optional[int] = None,
+                 height: Optional[int] = None,
+                 size: Optional[int] = None,
                  **kwargs):
         if not cls.ids:
             cls.ids = kArrInt(name=f'_{cls.__name__}_ids')
         if ControlId._controls_arr is None:
             ControlId._controls_arr = kArrInt(name='_all_ui_ids')
-        obj = super().__call__(*args, persist=persist,
-                               parent=parent,
-                               x=x, y=y,
-                               width=width,
-                               height=height, **kwargs)
+        obj = super().__call__(
+            *args,
+            persist=persist,
+            parent=parent,
+            x=x,
+            y=y,
+            width=width,
+            height=height,
+            **kwargs)
 
         obj._id = KspNativeControlMeta.objects_count
         if name is None:
@@ -1885,11 +1868,11 @@ class KspNativeControlMeta(WidgetMeta):
         KspNativeControlMeta.objects_count += 1
         try:
             if size:
-                obj.var = cls._var_type(name=name, preserve=preserve,
-                                        persist=persist, size=size)
+                obj.var = cls._var_type(
+                    name=name, preserve=preserve, persist=persist, size=size)
             else:
-                obj.var = cls._var_type(name=name, preserve=preserve,
-                                        persist=persist)
+                obj.var = cls._var_type(
+                    name=name, preserve=preserve, persist=persist)
         except AttributeError:
             raise AttributeError(
                 'class has to contain attribute "_var_type" which is' +
@@ -1948,10 +1931,9 @@ class KspNativeControlMeta(WidgetMeta):
                 params['height'].append(-1)
         all_x = kArrInt(sequence=params['x'], name='_all_x_params')
         all_y = kArrInt(sequence=params['y'], name='_all_y_params')
-        all_width = kArrInt(sequence=params['width'],
-                            name='_all_width_params')
-        all_height = kArrInt(sequence=params['height'],
-                             name='_all_height_params')
+        all_width = kArrInt(sequence=params['width'], name='_all_width_params')
+        all_height = kArrInt(
+            sequence=params['height'], name='_all_height_params')
         for arr in (all_x, all_y, all_width, all_height):
             out.extend(arr._generate_init())
         Output().set(out)
@@ -1974,92 +1956,76 @@ class KspNativeControlMeta(WidgetMeta):
 
 
 def init_value(cls):
-    return ControlPar('value', cls, kArrInt,
-                      kParIntVar, int, 1,
-                      set_control_par, get_control_par,
-                      CONTROL_PAR_VALUE)
+    return ControlPar('value', cls, kArrInt, kParIntVar, int, 1,
+                      set_control_par, get_control_par, CONTROL_PAR_VALUE)
 
 
 def init_default(cls):
-    return ControlPar('default', cls, kArrInt,
-                      kParIntVar, int, 1,
+    return ControlPar('default', cls, kArrInt, kParIntVar, int, 1,
                       set_control_par, get_control_par,
                       CONTROL_PAR_DEFAULT_VALUE)
 
 
 def init_picture(cls):
-    return ControlPar('picture', cls, kArrStr,
-                      kParStrVar, str, 1,
+    return ControlPar('picture', cls, kArrStr, kParStrVar, str, 1,
                       set_control_par_str, get_control_par_str,
                       CONTROL_PAR_PICTURE)
 
 
 def init_picture_state(cls):
-    return ControlPar('picture_state', cls, kArrInt,
-                      kParIntVar, int, 1,
+    return ControlPar('picture_state', cls, kArrInt, kParIntVar, int, 1,
                       set_control_par, get_control_par,
                       CONTROL_PAR_PICTURE_STATE)
 
 
 def init_text(cls):
-    return ControlPar('text', cls, kArrStr,
-                      kParStrVar, str, 1,
+    return ControlPar('text', cls, kArrStr, kParStrVar, str, 1,
                       set_control_par_str, get_control_par_str,
                       CONTROL_PAR_TEXT)
 
 
 def init_textline(cls):
-    return ControlPar('textline', cls, kArrStr,
-                      kParStrVar, str, 1,
+    return ControlPar('textline', cls, kArrStr, kParStrVar, str, 1,
                       set_control_par_str, get_control_par_str,
                       CONTROL_PAR_TEXTLINE)
 
 
 def init_label(cls):
-    return ControlPar('label', cls, kArrStr,
-                      kParStrVar, str, 1,
+    return ControlPar('label', cls, kArrStr, kParStrVar, str, 1,
                       set_control_par_str, get_control_par_str,
                       CONTROL_PAR_LABEL)
 
 
 def init_font_type(cls):
-    return ControlPar('font_type', cls, kArrInt,
-                      kParIntVar, int, 1,
-                      set_control_par, get_control_par,
-                      CONTROL_PAR_FONT_TYPE)
+    return ControlPar('font_type', cls, kArrInt, kParIntVar, int, 1,
+                      set_control_par, get_control_par, CONTROL_PAR_FONT_TYPE)
 
 
 def init_textpos_y(cls):
-    return ControlPar('textpos_y', cls, kArrInt,
-                      kParIntVar, int, 1,
-                      set_control_par, get_control_par,
-                      CONTROL_PAR_TEXTPOS_Y)
+    return ControlPar('textpos_y', cls, kArrInt, kParIntVar, int, 1,
+                      set_control_par, get_control_par, CONTROL_PAR_TEXTPOS_Y)
 
 
 def init_text_alignment(cls):
-    return ControlPar('text_alignment', cls, kArrInt,
-                      kParIntVar, int, 1,
+    return ControlPar('text_alignment', cls, kArrInt, kParIntVar, int, 1,
                       set_control_par, get_control_par,
                       CONTROL_PAR_TEXT_ALIGNMENT)
 
 
 def init_automation_name(cls):
-    return ControlPar('automation_name', cls, kArrStr,
-                      kParStrVar, str, 1,
+    return ControlPar('automation_name', cls, kArrStr, kParStrVar, str, 1,
                       set_control_par_str, get_control_par_str,
                       CONTROL_PAR_AUTOMATION_NAME)
 
 
 def init_allow_automation(cls):
-    return ControlPar('allow_automation', cls, kArrInt,
-                      kParIntVar, int, 1,
+    return ControlPar('allow_automation', cls, kArrInt, kParIntVar, int, 1,
                       set_control_par, get_control_par,
                       CONTROL_PAR_ALLOW_AUTOMATION)
 
 
 def init_automation_id(cls):
-    return ControlPar('automation_id', cls, kArrInt,
-                      kParIntVar, int, 1,
+    return ControlPar('automation_id', cls, kArrInt, kParIntVar, int, 1,
                       set_control_par, get_control_par,
                       CONTROL_PAR_AUTOMATION_ID)
 
@@ -2104,12 +2070,16 @@ class KspNativeControl(kWidget, metaclass=KspNativeControlMeta):
     '''
     _var_type = kInt
 
-    def __init__(self, name: Optional[str]=None,
-                 persist: bool=False, preserve: bool=False,
-                 parent: object=None, x: int=None, y: int=None,
-                 width: int=None, height: int=None):
-        super().__init__(parent=parent, x=x, y=y,
-                         width=width, height=height)
+    def __init__(self,
+                 name: Optional[str] = None,
+                 persist: bool = False,
+                 preserve: bool = False,
+                 parent: object = None,
+                 x: int = None,
+                 y: int = None,
+                 width: int = None,
+                 height: int = None):
+        super().__init__(parent=parent, x=x, y=y, width=width, height=height)
         self._persist = persist
         self._read = False
 
@@ -2120,8 +2090,9 @@ class KspNativeControl(kWidget, metaclass=KspNativeControlMeta):
     def _generate_init(self):
         # return self.__class__._generate_init(self)
         name = self.__class__._decl_name
-        out = [f'declare ui_{name} {self.var.name()} ' +
-               f'{self._decl_postfix}']
+        out = [
+            f'declare ui_{name} {self.var.name()} ' + f'{self._decl_postfix}'
+        ]
         if self._persist:
             out.append(f'make_persistent({self.var.name()})')
         if self._read:
@@ -2164,11 +2135,11 @@ def value_min_max(obj: KspNativeControl, min_val: int, max_val: int):
         #     raise RuntimeError(f'value {val_rt} is out of bounds. has to be ' +
         #                        f'between {obj._min} and {obj._max}')
         return f(val)
+
     obj.var._set_runtime = wrapper
 
 
 class kButtonMeta(KspNativeControlMeta):
-
     def __new__(self, name, bases, dct):
         cls = super().__new__(self, name, bases, dct)
         cls._decl_name = 'button'
@@ -2207,19 +2178,28 @@ class kButton(KspNativeControl, metaclass=kButtonMeta):
 
     See KspNativeControl doc for future explanation'''
 
-    def __init__(self, name: Optional[str]=None,
-                 persist: bool=False, preserve: bool=False,
-                 parent: ParentTuple=None,
-                 x: Optional[int]=None, y: Optional[int]=None,
-                 width: Optional[int]=None,
-                 height: Optional[int]=None):
-        super().__init__(name=name, persist=persist,
-                         preserve=preserve, parent=parent,
-                         x=x, y=y, width=width, height=height,)
+    def __init__(self,
+                 name: Optional[str] = None,
+                 persist: bool = False,
+                 preserve: bool = False,
+                 parent: ParentTuple = None,
+                 x: Optional[int] = None,
+                 y: Optional[int] = None,
+                 width: Optional[int] = None,
+                 height: Optional[int] = None):
+        super().__init__(
+            name=name,
+            persist=persist,
+            preserve=preserve,
+            parent=parent,
+            x=x,
+            y=y,
+            width=width,
+            height=height,
+        )
 
 
 class kSwitchMeta(kButtonMeta):
-
     def __new__(self, name, bases, dct):
         cls = super().__new__(self, name, bases, dct)
         cls._decl_name = 'switch'
@@ -2251,19 +2231,28 @@ class kSwitch(KspNativeControl, metaclass=kSwitchMeta):
 
     See KspNativeControl doc for future explanation'''
 
-    def __init__(self, name: Optional[str]=None,
-                 persist: bool=False, preserve: bool=False,
-                 parent: ParentTuple=None,
-                 x: Optional[int]=None, y: Optional[int]=None,
-                 width: Optional[int]=None,
-                 height: Optional[int]=None):
-        super().__init__(name=name, persist=persist,
-                         preserve=preserve, parent=parent,
-                         x=x, y=y, width=width, height=height,)
+    def __init__(self,
+                 name: Optional[str] = None,
+                 persist: bool = False,
+                 preserve: bool = False,
+                 parent: ParentTuple = None,
+                 x: Optional[int] = None,
+                 y: Optional[int] = None,
+                 width: Optional[int] = None,
+                 height: Optional[int] = None):
+        super().__init__(
+            name=name,
+            persist=persist,
+            preserve=preserve,
+            parent=parent,
+            x=x,
+            y=y,
+            width=width,
+            height=height,
+        )
 
 
 class kKnobMeta(KspNativeControlMeta):
-
     def __new__(self, name, bases, dct):
         cls = super().__new__(self, name, bases, dct)
         cls._decl_name = 'knob'
@@ -2280,19 +2269,21 @@ class kKnobMeta(KspNativeControlMeta):
         cls.font_type = init_font_type(cls)
         cls.textpos_y = init_textpos_y(cls)
         cls.text_alignment = init_text_alignment(cls)
-        cls.unit = ControlPar('unit', cls, kArrInt,
-                              kParIntVar, bKnobUnitConst, 1,
-                              set_control_par, get_control_par,
+        cls.unit = ControlPar('unit', cls, kArrInt, kParIntVar, bKnobUnitConst,
+                              1, set_control_par, get_control_par,
                               CONTROL_PAR_UNIT)
 
         return cls
 
-    def __call__(cls, min_val: int, max_val: int, display_ratio: int,
-                 *args, **kwargs):
+    def __call__(cls, min_val: int, max_val: int, display_ratio: int, *args,
+                 **kwargs):
 
-        obj = super().__call__(*args, min_val=min_val, max_val=max_val,
-                               display_ratio=display_ratio,
-                               **kwargs)
+        obj = super().__call__(
+            *args,
+            min_val=min_val,
+            max_val=max_val,
+            display_ratio=display_ratio,
+            **kwargs)
 
         value_min_max(obj, min_val, max_val)
         if isinstance(display_ratio, bKnobUnitConst):
@@ -2326,26 +2317,36 @@ class kKnob(KspNativeControl, metaclass=kKnobMeta):
     See KspNativeControl doc for future explanation
     '''
 
-    def __init__(self, min_val: int, max_val: int, display_ratio: int,
-                 name: Optional[str]=None,
-                 persist: bool=False, preserve: bool=False,
-                 parent: object=None, x: int=None, y: int=None,
-                 width: int=None, height: int=None):
-        super().__init__(name=name, persist=persist, preserve=preserve,
-                         parent=parent, x=x, y=y,
-                         width=width, height=height)
+    def __init__(self,
+                 min_val: int,
+                 max_val: int,
+                 display_ratio: int,
+                 name: Optional[str] = None,
+                 persist: bool = False,
+                 preserve: bool = False,
+                 parent: object = None,
+                 x: int = None,
+                 y: int = None,
+                 width: int = None,
+                 height: int = None):
+        super().__init__(
+            name=name,
+            persist=persist,
+            preserve=preserve,
+            parent=parent,
+            x=x,
+            y=y,
+            width=width,
+            height=height)
 
 
 class kFileSelectorMeta(KspNativeControlMeta):
-
     def __new__(self, name, bases, dct):
         cls = super().__new__(self, name, bases, dct)
         cls._decl_name = 'file_selector'
 
-        cls.filepath = ControlPar('filath', cls, kArrStr, kParStrVar,
-                                  str, 1,
-                                  set_control_par_str,
-                                  get_control_par_str,
+        cls.filepath = ControlPar('filath', cls, kArrStr, kParStrVar, str, 1,
+                                  set_control_par_str, get_control_par_str,
                                   CONTROL_PAR_FILEPATH)
 
         return cls
@@ -2362,8 +2363,7 @@ class kFileSelector(KspNativeControl, metaclass=KspNativeControlMeta):
     Remarks
     Only one file selector can be applied per script slot.'''
 
-    def get_file_name(self,
-                      return_format: Union[int, KspIntVar, AstBase]):
+    def get_file_name(self, return_format: Union[int, KspIntVar, AstBase]):
         '''return the filename of the last selected file in the
         UI file browser.
         <return_format>
@@ -2373,22 +2373,19 @@ class kFileSelector(KspNativeControl, metaclass=KspNativeControlMeta):
         rf = get_runtime_val(return_format)
         if not isinstance(rf, int):
             raise TypeError(
-                'return_format has to be of type ' +
-                '{t}, passed {p}'.format(t=(int, KspIntVar, AstBase),
-                                         p=type(return_format)))
+                'return_format has to be of type ' + '{t}, passed {p}'.format(
+                    t=(int, KspIntVar, AstBase), p=type(return_format)))
         if hasattr(return_format, '_get_compiled'):
             return_format = return_format._get_compiled()
         if hasattr(return_format, 'expand'):
             return_format = return_format.expand()
         string = 'fs_get_filename({idx},{rf})'.format(
-            idx=self.id._get_compiled(),
-            rf=return_format)
+            idx=self.id._get_compiled(), rf=return_format)
         var = kStr(is_local=True)
         var.name = lambda: string
         return var
 
-    def navigate(self,
-                 direction: Union[int, KspIntVar, AstBase]):
+    def navigate(self, direction: Union[int, KspIntVar, AstBase]):
         '''jump to the next/previous file in an ui file selector and
         trigger its callback.
         <direction>
@@ -2399,21 +2396,18 @@ class kFileSelector(KspNativeControl, metaclass=KspNativeControlMeta):
         rt = get_runtime_val(direction)
         if not isinstance(rt, int):
             raise TypeError(
-                'return_format has to be of type ' +
-                '{t}, passed {p}'.format(t=(int, KspIntVar, AstBase),
-                                         p=type(direction)))
+                'return_format has to be of type ' + '{t}, passed {p}'.format(
+                    t=(int, KspIntVar, AstBase), p=type(direction)))
         if hasattr(direction, '_get_compiled'):
             direction = direction._get_compiled()
         if hasattr(direction, 'expand'):
             direction = direction.expand()
         string = 'fs_navigate({idx},{rf})'.format(
-            idx=self.id._get_compiled(),
-            rf=direction)
+            idx=self.id._get_compiled(), rf=direction)
         if KSP.is_compiled():
             Output().put(string)
 
-    def base_path(self,
-                  path: Union[str, KspStrVar, AstBase]):
+    def base_path(self, path: Union[str, KspStrVar, AstBase]):
         '''sets the basepath of the UI file browser.
         Can only be used in the init callback.
         Be careful with the number of subfolders of the basepath as it
@@ -2423,10 +2417,9 @@ class kFileSelector(KspNativeControl, metaclass=KspNativeControlMeta):
             raise RuntimeError('has to be used inside init callback')
         rt = get_runtime_val(path)
         if not isinstance(rt, str):
-            raise TypeError(
-                'return_format has to be of type ' +
-                '{t}, passed {p}'.format(t=(str, KspStrVar, AstBase),
-                                         p=type(path)))
+            raise TypeError('return_format has to be of type ' +
+                            '{t}, passed {p}'.format(
+                                t=(str, KspStrVar, AstBase), p=type(path)))
         if isinstance(path, str):
             path = f'"{path}"'
         if hasattr(path, '_get_compiled'):
@@ -2438,18 +2431,16 @@ class kFileSelector(KspNativeControl, metaclass=KspNativeControlMeta):
         if KSP.is_compiled():
             Output().put(string)
 
-    def column_width(self,
-                     width: Union[int, KspIntVar, AstBase]):
+    def column_width(self, width: Union[int, KspIntVar, AstBase]):
         '''sets the width of the browser columns.
         Can only be used in the init callback.'''
         if not KSP.in_init():
             raise RuntimeError('has to be used inside init callback')
         rt = get_runtime_val(width)
         if not isinstance(rt, int):
-            raise TypeError(
-                'return_format has to be of type ' +
-                '{t}, passed {p}'.format(t=(int, KspIntVar, AstBase),
-                                         p=type(width)))
+            raise TypeError('return_format has to be of type ' +
+                            '{t}, passed {p}'.format(
+                                t=(int, KspIntVar, AstBase), p=type(width)))
         if hasattr(width, '_get_compiled'):
             width = width._get_compiled()
         if hasattr(width, 'expand'):
@@ -2459,8 +2450,7 @@ class kFileSelector(KspNativeControl, metaclass=KspNativeControlMeta):
         if KSP.is_compiled():
             Output().put(string)
 
-    def file_type(self,
-                  file_type: bControlFileTypeConst):
+    def file_type(self, file_type: bControlFileTypeConst):
         '''sets the file type for file selector.
         Can only be used in the init callback.
         The following file types are available:
@@ -2470,10 +2460,9 @@ class kFileSelector(KspNativeControl, metaclass=KspNativeControlMeta):
         if not KSP.in_init():
             raise RuntimeError('has to be used inside init callback')
         if not isinstance(file_type, bControlFileTypeConst):
-            raise TypeError(
-                'return_format has to be of type ' +
-                '{t}, passed {p}'.format(t=bControlFileTypeConst,
-                                         p=type(file_type)))
+            raise TypeError('return_format has to be of type ' +
+                            '{t}, passed {p}'.format(
+                                t=bControlFileTypeConst, p=type(file_type)))
         if hasattr(file_type, '_get_compiled'):
             file_type = file_type._get_compiled()
         if hasattr(file_type, 'expand'):
@@ -2485,7 +2474,6 @@ class kFileSelector(KspNativeControl, metaclass=KspNativeControlMeta):
 
 
 class kLabelMeta(KspNativeControlMeta):
-
     def __new__(self, name, bases, dct):
         cls = super().__new__(self, name, bases, dct)
         cls._decl_name = 'label'
@@ -2498,11 +2486,9 @@ class kLabelMeta(KspNativeControlMeta):
         cls.textpos_y = init_textpos_y(cls)
         cls.text_alignment = init_text_alignment(cls)
 
-        cls.dnd_behaviour = ControlPar('dnd_behaviour', cls, kArrInt,
-                                       kParIntVar, int, 1,
-                                       set_control_par,
-                                       get_control_par,
-                                       CONTROL_PAR_DND_BEHAVIOUR)
+        cls.dnd_behaviour = ControlPar(
+            'dnd_behaviour', cls, kArrInt, kParIntVar, int, 1, set_control_par,
+            get_control_par, CONTROL_PAR_DND_BEHAVIOUR)
 
         return cls
 
@@ -2527,53 +2513,48 @@ class kLabel(KspNativeControl, metaclass=kLabelMeta):
 
     See KspNativeControl doc for future explanation'''
 
-    def __init__(self, name: Optional[str]=None,
-                 persist: bool=False, preserve: bool=False,
-                 parent: ParentTuple=None,
-                 x: Optional[int]=None, y: Optional[int]=None,
-                 width: Optional[int]=None,
-                 height: Optional[int]=None):
-        super().__init__(name=name, persist=persist,
-                         preserve=preserve, parent=parent,
-                         x=x, y=y, width=width, height=height)
+    def __init__(self,
+                 name: Optional[str] = None,
+                 persist: bool = False,
+                 preserve: bool = False,
+                 parent: ParentTuple = None,
+                 x: Optional[int] = None,
+                 y: Optional[int] = None,
+                 width: Optional[int] = None,
+                 height: Optional[int] = None):
+        super().__init__(
+            name=name,
+            persist=persist,
+            preserve=preserve,
+            parent=parent,
+            x=x,
+            y=y,
+            width=width,
+            height=height)
 
 
 class kLevelMeterMeta(KspNativeControlMeta):
-
     def __new__(self, name, bases, dct):
         cls = super().__new__(self, name, bases, dct)
         cls._decl_name = 'level_meter'
 
-        cls.bg_color = ControlPar('bg_color', cls, kArrInt, kParIntVar,
-                                  int, 1,
-                                  set_control_par,
-                                  get_control_par,
+        cls.bg_color = ControlPar('bg_color', cls, kArrInt, kParIntVar, int, 1,
+                                  set_control_par, get_control_par,
                                   CONTROL_PAR_BG_COLOR)
-        cls.off_color = ControlPar('off_color', cls, kArrInt, kParIntVar,
-                                   int, 1,
-                                   set_control_par,
-                                   get_control_par,
+        cls.off_color = ControlPar('off_color', cls, kArrInt, kParIntVar, int,
+                                   1, set_control_par, get_control_par,
                                    CONTROL_PAR_OFF_COLOR)
-        cls.on_color = ControlPar('on_color', cls, kArrInt, kParIntVar,
-                                  int, 1,
-                                  set_control_par,
-                                  get_control_par,
+        cls.on_color = ControlPar('on_color', cls, kArrInt, kParIntVar, int, 1,
+                                  set_control_par, get_control_par,
                                   CONTROL_PAR_ON_COLOR)
-        cls.overload_color = ControlPar('overload_color', cls,
-                                        kArrInt, kParIntVar,
-                                        int, 1,
-                                        set_control_par,
-                                        get_control_par,
-                                        CONTROL_PAR_OVERLOAD_COLOR)
+        cls.overload_color = ControlPar(
+            'overload_color', cls, kArrInt, kParIntVar, int, 1,
+            set_control_par, get_control_par, CONTROL_PAR_OVERLOAD_COLOR)
         cls.peak_color = ControlPar('peak_color', cls, kArrInt, kParIntVar,
-                                    int, 1,
-                                    set_control_par,
-                                    get_control_par,
+                                    int, 1, set_control_par, get_control_par,
                                     CONTROL_PAR_PEAK_COLOR)
-        cls.vertical = ControlPar('vertical', cls, kArrInt, kParIntVar,
-                                  int, 1,
-                                  set_control_par,
-                                  get_control_par,
+        cls.vertical = ControlPar('vertical', cls, kArrInt, kParIntVar, int, 1,
+                                  set_control_par, get_control_par,
                                   CONTROL_PAR_VERTICAL)
 
         return cls
@@ -2598,15 +2579,25 @@ class kLevelMeter(KspNativeControl, metaclass=kLevelMeterMeta):
 
     See KspNativeControl doc for future explanation'''
 
-    def __init__(self, name: Optional[str]=None,
-                 persist: bool=False, preserve: bool=False,
-                 parent: ParentTuple=None,
-                 x: Optional[int]=None, y: Optional[int]=None,
-                 width: Optional[int]=None,
-                 height: Optional[int]=None):
-        super().__init__(name=name, persist=persist,
-                         preserve=preserve, parent=parent,
-                         x=x, y=y, width=width, height=height,)
+    def __init__(self,
+                 name: Optional[str] = None,
+                 persist: bool = False,
+                 preserve: bool = False,
+                 parent: ParentTuple = None,
+                 x: Optional[int] = None,
+                 y: Optional[int] = None,
+                 width: Optional[int] = None,
+                 height: Optional[int] = None):
+        super().__init__(
+            name=name,
+            persist=persist,
+            preserve=preserve,
+            parent=parent,
+            x=x,
+            y=y,
+            width=width,
+            height=height,
+        )
 
     def attach(self, channel: int, bus: int):
         ch_rt = get_runtime_val(channel)
@@ -2633,22 +2624,16 @@ class kLevelMeter(KspNativeControl, metaclass=kLevelMeterMeta):
 
 
 class kMenuMeta(kButtonMeta):
-
     def __new__(self, name, bases, dct):
         cls = super().__new__(self, name, bases, dct)
         cls._decl_name = 'menu'
 
-        cls.num_items = ControlPar('num_items', cls, kArrInt, kParIntVar,
-                                   int, 1,
-                                   set_control_par,
-                                   get_control_par,
+        cls.num_items = ControlPar('num_items', cls, kArrInt, kParIntVar, int,
+                                   1, set_control_par, get_control_par,
                                    CONTROL_PAR_NUM_ITEMS)
-        cls.selected_item_idx = ControlPar('selected_item_idx',
-                                           cls, kArrInt, kParIntVar,
-                                           int, 1,
-                                           set_control_par,
-                                           get_control_par,
-                                           CONTROL_PAR_SELECTED_ITEM_IDX)
+        cls.selected_item_idx = ControlPar(
+            'selected_item_idx', cls, kArrInt, kParIntVar, int, 1,
+            set_control_par, get_control_par, CONTROL_PAR_SELECTED_ITEM_IDX)
 
         return cls
 
@@ -2663,7 +2648,6 @@ class kMenuMeta(kButtonMeta):
 
 
 class MenuItem:
-
     def __init__(self, text, val, idx):
         self.idx = idx
         self.text = text
@@ -2676,13 +2660,24 @@ class kMenu(KspNativeControl, metaclass=kMenuMeta):
 
     See KspNativeControl doc for future explanation'''
 
-    def __init__(self, name: Optional[str]=None,
-                 persist: bool=False, preserve: bool=False,
-                 parent: object=None, x: int=None, y: int=None,
-                 width: int=None, height: int=None):
-        super().__init__(name=name, persist=persist, preserve=preserve,
-                         parent=parent, x=x, y=y,
-                         width=width, height=height)
+    def __init__(self,
+                 name: Optional[str] = None,
+                 persist: bool = False,
+                 preserve: bool = False,
+                 parent: object = None,
+                 x: int = None,
+                 y: int = None,
+                 width: int = None,
+                 height: int = None):
+        super().__init__(
+            name=name,
+            persist=persist,
+            preserve=preserve,
+            parent=parent,
+            x=x,
+            y=y,
+            width=width,
+            height=height)
 
         self._items = list()
         self._items_amount = int()
@@ -2693,7 +2688,7 @@ class kMenu(KspNativeControl, metaclass=kMenuMeta):
     def _set_value(self, val, prop_ret):
         self.var <<= val
 
-    def add_item(self, text: str, value: int, idx: int=None):
+    def add_item(self, text: str, value: int, idx: int = None):
         '''create a menu entry
         <text>
         the text of the menu entry
@@ -2716,9 +2711,12 @@ class kMenu(KspNativeControl, metaclass=kMenuMeta):
         if isinstance(text, str):
             text = f'"{text}"'
         Output().put(
-            f'add_menu_item({get_compiled(self.var)}, {get_compiled(text)}, {get_compiled(value)})')
-        self._items.append(MenuItem(get_runtime_val(
-            text), get_runtime_val(value), get_runtime_val(idx)))
+            f'add_menu_item({get_compiled(self.var)}, {get_compiled(text)}, {get_compiled(value)})'
+        )
+        self._items.append(
+            MenuItem(
+                get_runtime_val(text), get_runtime_val(value),
+                get_runtime_val(idx)))
         item = self._items[0]
         self._items_amount += 1
 
@@ -2753,15 +2751,14 @@ class kMenu(KspNativeControl, metaclass=kMenuMeta):
 
 
 class GetMenuItemStr(BuiltInFuncStr):
-
     def __init__(self):
-        super().__init__('get_menu_item_str',
-                         args=OrderedDict(
-                             menu_or_id=(kMenu, int, KspIntVar, AstBase),
-                             idx=(int, KspIntVar, AstBase)))
+        super().__init__(
+            'get_menu_item_str',
+            args=OrderedDict(
+                menu_or_id=(kMenu, int, KspIntVar, AstBase),
+                idx=(int, KspIntVar, AstBase)))
 
-    def __call__(self, menu_or_id: Union[kMenu, int],
-                 idx: int):
+    def __call__(self, menu_or_id: Union[kMenu, int], idx: int):
         '''returns the string value of the menu’s entry.
         <menu_or_id>
         the ID of the menu that you want to modify or kMenu instance
@@ -2781,15 +2778,14 @@ get_menu_item_str = GetMenuItemStr().__call__
 
 
 class GetMenuItemValue(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('get_menu_item_value',
-                         args=OrderedDict(
-                             menu_or_id=(kMenu, int, KspIntVar, AstBase),
-                             idx=(int, KspIntVar, AstBase)))
+        super().__init__(
+            'get_menu_item_value',
+            args=OrderedDict(
+                menu_or_id=(kMenu, int, KspIntVar, AstBase),
+                idx=(int, KspIntVar, AstBase)))
 
-    def __call__(self, menu_or_id: Union[kMenu, int],
-                 idx: int):
+    def __call__(self, menu_or_id: Union[kMenu, int], idx: int):
         '''returns the value of the menu’s entry.
         <menu_or_id>
         the ID of the menu that you want to modify or kMenu instance
@@ -2811,15 +2807,14 @@ get_menu_item_value = GetMenuItemValue().__call__
 
 
 class GetMenuItemVisibility(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('get_menu_item_visibility',
-                         args=OrderedDict(
-                             menu_or_id=(kMenu, int, KspIntVar, AstBase),
-                             idx=(int, KspIntVar, AstBase)))
+        super().__init__(
+            'get_menu_item_visibility',
+            args=OrderedDict(
+                menu_or_id=(kMenu, int, KspIntVar, AstBase),
+                idx=(int, KspIntVar, AstBase)))
 
-    def __call__(self, menu_or_id: Union[kMenu, int],
-                 idx: int):
+    def __call__(self, menu_or_id: Union[kMenu, int], idx: int):
         '''returns 1 if the menu entry is visible, otherwise 0.
         <menu_or_id>
         the ID of the menu that you want to modify, or kMenu instance
@@ -2839,16 +2834,15 @@ get_menu_item_visibility = GetMenuItemVisibility().__call__
 
 
 class SetMenuItemStr(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('set_menu_item_str',
-                         args=OrderedDict(
-                             menu_or_id=(kMenu, int, KspIntVar, AstBase),
-                             idx=(int, KspIntVar, AstBase),
-                             text=(str, KspStrVar, AstBase)))
+        super().__init__(
+            'set_menu_item_str',
+            args=OrderedDict(
+                menu_or_id=(kMenu, int, KspIntVar, AstBase),
+                idx=(int, KspIntVar, AstBase),
+                text=(str, KspStrVar, AstBase)))
 
-    def __call__(self, menu_or_id: Union[kMenu, int],
-                 idx: int, text: str):
+    def __call__(self, menu_or_id: Union[kMenu, int], idx: int, text: str):
         '''sets the text of a menu entry.
         <menu_or_id>
         the ID of the menu that you want to modify or kMenu instance
@@ -2874,16 +2868,15 @@ set_menu_item_str = SetMenuItemStr().__call__
 
 
 class SetMenuItemValue(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('set_menu_item_value',
-                         args=OrderedDict(
-                             menu_or_id=(kMenu, int, KspIntVar, AstBase),
-                             idx=(int, KspIntVar, AstBase),
-                             value=(int, KspIntVar, AstBase)))
+        super().__init__(
+            'set_menu_item_value',
+            args=OrderedDict(
+                menu_or_id=(kMenu, int, KspIntVar, AstBase),
+                idx=(int, KspIntVar, AstBase),
+                value=(int, KspIntVar, AstBase)))
 
-    def __call__(self, menu_or_id: Union[kMenu, int],
-                 idx: int, value: int):
+    def __call__(self, menu_or_id: Union[kMenu, int], idx: int, value: int):
         '''sets the value of a menu entry.
         <menu_or_id>
         the ID of the menu that you want to modify or kMenu instance
@@ -2909,16 +2902,15 @@ set_menu_item_value = SetMenuItemValue().__call__
 
 
 class SetMenuItemVisibility(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('set_menu_item_visibility',
-                         args=OrderedDict(
-                             menu_or_id=(kMenu, int, KspIntVar, AstBase),
-                             idx=(int, KspIntVar, AstBase),
-                             value=(int, KspIntVar, AstBase)))
+        super().__init__(
+            'set_menu_item_visibility',
+            args=OrderedDict(
+                menu_or_id=(kMenu, int, KspIntVar, AstBase),
+                idx=(int, KspIntVar, AstBase),
+                value=(int, KspIntVar, AstBase)))
 
-    def __call__(self, menu_or_id: Union[kMenu, int],
-                 idx: int, value: int):
+    def __call__(self, menu_or_id: Union[kMenu, int], idx: int, value: int):
         '''sets the visibility of a menu entry.
         <menu_or_id>
         the ID of the menu that you want to modify or kMenu instance
@@ -2946,7 +2938,6 @@ set_menu_item_visibility = SetMenuItemVisibility().__call__
 
 
 class kSliderMeta(KspNativeControlMeta):
-
     def __new__(self, name, bases, dct):
         cls = super().__new__(self, name, bases, dct)
         cls._decl_name = 'slider'
@@ -2957,17 +2948,13 @@ class kSliderMeta(KspNativeControlMeta):
         cls.automation_name = init_automation_name(cls)
         cls.allow_automation = init_allow_automation(cls)
         cls.automation_id = init_automation_id(cls)
-        cls.mouse_behaviour = ControlPar('mouse_behaviour', cls,
-                                         kArrInt, kParIntVar,
-                                         int, 1,
-                                         set_control_par,
-                                         get_control_par,
-                                         CONTROL_PAR_MOUSE_BEHAVIOUR)
+        cls.mouse_behaviour = ControlPar(
+            'mouse_behaviour', cls, kArrInt, kParIntVar, int, 1,
+            set_control_par, get_control_par, CONTROL_PAR_MOUSE_BEHAVIOUR)
 
         return cls
 
-    def __call__(cls, min_val: int, max_val: int, *args,
-                 **kwargs):
+    def __call__(cls, min_val: int, max_val: int, *args, **kwargs):
 
         obj = super().__call__(min_val, max_val, *args, **kwargs)
         value_min_max(obj, min_val, max_val)
@@ -2990,21 +2977,29 @@ class kSlider(KspNativeControl, metaclass=kSliderMeta):
     See KspNativeControl doc for future explanation
     '''
 
-    def __init__(self, min_val: int, max_val: int,
-                 name: Optional[str]=None,
-                 persist: bool=False, preserve: bool=False,
-                 parent: object=None,
-                 x: int=None, y: int=None,
-                 width: int=None, height: int=None):
-        super().__init__(name=name, persist=persist,
-                         preserve=preserve,
-                         parent=parent,
-                         x=x, y=y, width=width,
-                         height=height)
+    def __init__(self,
+                 min_val: int,
+                 max_val: int,
+                 name: Optional[str] = None,
+                 persist: bool = False,
+                 preserve: bool = False,
+                 parent: object = None,
+                 x: int = None,
+                 y: int = None,
+                 width: int = None,
+                 height: int = None):
+        super().__init__(
+            name=name,
+            persist=persist,
+            preserve=preserve,
+            parent=parent,
+            x=x,
+            y=y,
+            width=width,
+            height=height)
 
 
 class kTextEditMeta(KspNativeControlMeta):
-
     def __new__(self, name, bases, dct):
         cls = super().__new__(self, name, bases, dct)
         cls._decl_name = 'text_edit'
@@ -3039,17 +3034,27 @@ class kTextEdit(KspNativeControl, metaclass=kTextEditMeta):
     See KspNativeControl doc for future explanation'''
     _var_type = kStr
 
-    def __init__(self, name: Optional[str]=None,
-                 persist: bool=False, preserve: bool=False,
-                 parent: object=None, x: int=None, y: int=None,
-                 width: int=None, height: int=None):
-        super().__init__(name=name, persist=persist, preserve=preserve,
-                         parent=parent, x=x, y=y,
-                         width=width, height=height)
+    def __init__(self,
+                 name: Optional[str] = None,
+                 persist: bool = False,
+                 preserve: bool = False,
+                 parent: object = None,
+                 x: int = None,
+                 y: int = None,
+                 width: int = None,
+                 height: int = None):
+        super().__init__(
+            name=name,
+            persist=persist,
+            preserve=preserve,
+            parent=parent,
+            x=x,
+            y=y,
+            width=width,
+            height=height)
 
 
 class kValueEditMeta(KspNativeControlMeta):
-
     def __new__(self, name, bases, dct):
         cls = super().__new__(self, name, bases, dct)
         cls._decl_name = 'value_edit'
@@ -3061,16 +3066,14 @@ class kValueEditMeta(KspNativeControlMeta):
         cls.font_type = init_font_type(cls)
         cls.textpos_y = init_textpos_y(cls)
         cls.text_alignment = init_text_alignment(cls)
-        cls.show_arrows = ControlPar('show_arrows', cls, kArrInt,
-                                     kParIntVar, int, 1,
-                                     set_control_par,
-                                     get_control_par,
+        cls.show_arrows = ControlPar('show_arrows', cls, kArrInt, kParIntVar,
+                                     int, 1, set_control_par, get_control_par,
                                      CONTROL_PAR_SHOW_ARROWS)
 
         return cls
 
-    def __call__(cls, min_val: int, max_val: int, display_ratio: int,
-                 *args, **kwargs):
+    def __call__(cls, min_val: int, max_val: int, display_ratio: int, *args,
+                 **kwargs):
 
         if not isinstance(min_val, int):
             raise TypeError('"min_val" arg has to be instance of int' +
@@ -3083,8 +3086,8 @@ class kValueEditMeta(KspNativeControlMeta):
                             f' of {(int, bControlValueEditConst)}' +
                             f' pasted {type(display_ratio)}')
 
-        obj = super().__call__(min_val, max_val, display_ratio,
-                               *args, **kwargs)
+        obj = super().__call__(min_val, max_val, display_ratio, *args,
+                               **kwargs)
         if isinstance(display_ratio, bControlValueEditConst):
             display_ratio = display_ratio._get_compiled()
         obj._decl_postfix = f'({min_val}, {max_val}, {display_ratio})'
@@ -3115,63 +3118,54 @@ class kValueEdit(KspNativeControl, metaclass=kValueEditMeta):
     See KspNativeControl doc for future explanation
     '''
 
-    def __init__(self, min_val: int, max_val: int, display_ratio: int,
-                 name: Optional[str]=None,
-                 persist: bool=False, preserve: bool=False,
-                 parent: object=None, x: int=None, y: int=None,
-                 width: int=None, height: int=None):
-        super().__init__(name=name, persist=persist,
-                         preserve=preserve, parent=parent,
-                         x=x, y=y,
-                         width=width, height=height)
+    def __init__(self,
+                 min_val: int,
+                 max_val: int,
+                 display_ratio: int,
+                 name: Optional[str] = None,
+                 persist: bool = False,
+                 preserve: bool = False,
+                 parent: object = None,
+                 x: int = None,
+                 y: int = None,
+                 width: int = None,
+                 height: int = None):
+        super().__init__(
+            name=name,
+            persist=persist,
+            preserve=preserve,
+            parent=parent,
+            x=x,
+            y=y,
+            width=width,
+            height=height)
 
 
 class kWaveFormMeta(KspNativeControlMeta):
-
     def __new__(self, name, bases, dct):
         cls = super().__new__(self, name, bases, dct)
         cls._decl_name = 'waveform'
 
-        cls.bar_color = ControlPar(
-            'bar_color', cls, kInt,
-            kParIntVar, int, 1,
-            set_control_par,
-            get_control_par,
-            CONTROL_PAR_BAR_COLOR)
+        cls.bar_color = ControlPar('bar_color', cls, kInt, kParIntVar, int, 1,
+                                   set_control_par, get_control_par,
+                                   CONTROL_PAR_BAR_COLOR)
         cls.zero_line_color = ControlPar(
-            'zero_line_color', cls, kInt,
-            kParIntVar, int, 1,
-            set_control_par,
-            get_control_par,
-            CONTROL_PAR_ZERO_LINE_COLOR)
-        cls.bg_color = ControlPar(
-            'bg_color', cls, kInt,
-            kParIntVar, int, 1,
-            set_control_par,
-            get_control_par,
-            CONTROL_PAR_BG_COLOR)
-        cls.wave_color = ControlPar(
-            'wave_color', cls, kInt,
-            kParIntVar, int, 1,
-            set_control_par,
-            get_control_par,
-            CONTROL_PAR_WAVE_COLOR)
+            'zero_line_color', cls, kInt, kParIntVar, int, 1, set_control_par,
+            get_control_par, CONTROL_PAR_ZERO_LINE_COLOR)
+        cls.bg_color = ControlPar('bg_color', cls, kInt, kParIntVar, int, 1,
+                                  set_control_par, get_control_par,
+                                  CONTROL_PAR_BG_COLOR)
+        cls.wave_color = ControlPar('wave_color', cls, kInt, kParIntVar, int,
+                                    1, set_control_par, get_control_par,
+                                    CONTROL_PAR_WAVE_COLOR)
         cls.wave_cursor_color = ControlPar(
-            'wave_cursor_color', cls, kInt,
-            kParIntVar, int, 1,
-            set_control_par,
-            get_control_par,
-            CONTROL_PAR_WAVE_CURSOR_COLOR)
+            'wave_cursor_color', cls, kInt, kParIntVar, int, 1,
+            set_control_par, get_control_par, CONTROL_PAR_WAVE_CURSOR_COLOR)
         cls.slicemarkers_color = ControlPar(
-            'slicemarkers_color', cls, kInt,
-            kParIntVar, int, 1,
-            set_control_par,
-            get_control_par,
-            CONTROL_PAR_SLICEMARKERS_COLOR)
-        cls.bg_alpha = ControlPar('bg_alpha', cls, kInt,
-                                  kParIntVar, int, 1,
-                                  set_control_par,
-                                  get_control_par,
+            'slicemarkers_color', cls, kInt, kParIntVar, int, 1,
+            set_control_par, get_control_par, CONTROL_PAR_SLICEMARKERS_COLOR)
+        cls.bg_alpha = ControlPar('bg_alpha', cls, kInt, kParIntVar, int, 1,
+                                  set_control_par, get_control_par,
                                   CONTROL_PAR_BG_ALPHA)
 
         return cls
@@ -3193,16 +3187,15 @@ class kWaveFormMeta(KspNativeControlMeta):
 
 
 class GetWfProperty(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('get_ui_wf_property',
-                         args=OrderedDict(
-                             waveform='kWaveForm',
-                             prop=bWaveFormPropConst,
-                             idx=(int, KspIntVar, AstBase)))
+        super().__init__(
+            'get_ui_wf_property',
+            args=OrderedDict(
+                waveform='kWaveForm',
+                prop=bWaveFormPropConst,
+                idx=(int, KspIntVar, AstBase)))
 
-    def __call__(self, waveform: 'kWaveForm',
-                 prop: bWaveFormPropConst,
+    def __call__(self, waveform: 'kWaveForm', prop: bWaveFormPropConst,
                  idx: Union[int, KspIntVar, AstBase]):
         '''returns the value of the waveform’s different properties.
         <waveform>
@@ -3231,17 +3224,16 @@ get_ui_wf_property = GetWfProperty().__call__
 
 
 class SetWfProperty(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__('set_ui_wf_property',
-                         args=OrderedDict(
-                             waveform='kWaveForm',
-                             prop=bWaveFormPropConst,
-                             idx=(int, KspIntVar, AstBase),
-                             value=(int, KspIntVar, AstBase)))
+        super().__init__(
+            'set_ui_wf_property',
+            args=OrderedDict(
+                waveform='kWaveForm',
+                prop=bWaveFormPropConst,
+                idx=(int, KspIntVar, AstBase),
+                value=(int, KspIntVar, AstBase)))
 
-    def __call__(self, waveform: 'kWaveForm',
-                 prop: bWaveFormPropConst,
+    def __call__(self, waveform: 'kWaveForm', prop: bWaveFormPropConst,
                  idx: Union[int, KspIntVar, AstBase],
                  value: Union[int, KspIntVar, AstBase]):
         '''sets different properties for the waveform control
@@ -3278,13 +3270,24 @@ class kWaveForm(KspNativeControl, metaclass=kWaveFormMeta):
 
     See KspNativeControl doc for future explanation'''
 
-    def __init__(self, name: Optional[str]=None,
-                 persist: bool=False, preserve: bool=False,
-                 parent: object=None, x: int=None, y: int=None,
-                 width: int=None, height: int=None):
-        super().__init__(name=name, persist=persist,
-                         preserve=preserve, parent=parent,
-                         x=x, y=y, width=width, height=height)
+    def __init__(self,
+                 name: Optional[str] = None,
+                 persist: bool = False,
+                 preserve: bool = False,
+                 parent: object = None,
+                 x: int = None,
+                 y: int = None,
+                 width: int = None,
+                 height: int = None):
+        super().__init__(
+            name=name,
+            persist=persist,
+            preserve=preserve,
+            parent=parent,
+            x=x,
+            y=y,
+            width=width,
+            height=height)
         self._zone = None
         self._props = \
             {UI_WF_PROP_PLAY_CURSOR.id: dict(),
@@ -3320,9 +3323,8 @@ class kWaveForm(KspNativeControl, metaclass=kWaveFormMeta):
         if hasattr(flags, 'expand'):
             flags = flags.expand()
         if KSP.is_compiled():
-            Output().put(
-                f'attach_zone({self.var._get_compiled()}, ' +
-                f'{zone_id}, {flags})')
+            Output().put(f'attach_zone({self.var._get_compiled()}, ' +
+                         f'{zone_id}, {flags})')
         self._zone = zone_rt
 
     @property
@@ -3332,8 +3334,7 @@ class kWaveForm(KspNativeControl, metaclass=kWaveFormMeta):
     def get_property(self, prop: bWaveFormPropConst, index: int):
         return get_ui_wf_property(self, prop, index)
 
-    def set_property(self, prop: bWaveFormPropConst, index: int,
-                     value: int):
+    def set_property(self, prop: bWaveFormPropConst, index: int, value: int):
         return set_ui_wf_property(self, prop, index, value)
 
     def _get_property(self, prop, idx):
@@ -3352,34 +3353,23 @@ class kWaveForm(KspNativeControl, metaclass=kWaveFormMeta):
 
 
 class kTableMeta(KspNativeControlMeta):
-
     def __new__(self, name, bases, dct):
         cls = super().__new__(self, name, bases, dct)
         cls._decl_name = 'table'
         cls._def_width = 178
         cls._def_height = 18
 
-        cls.value = ControlPar('value', cls, kArrInt,
-                               kParArrIntVar, int, 1,
-                               set_control_par_arr,
-                               get_control_par_arr,
+        cls.value = ControlPar('value', cls, kArrInt, kParArrIntVar, int, 1,
+                               set_control_par_arr, get_control_par_arr,
                                CONTROL_PAR_VALUE)
-        cls.bar_color = ControlPar(
-            'bar_color', cls, kInt,
-            kParIntVar, int, 1,
-            set_control_par,
-            get_control_par,
-            CONTROL_PAR_BAR_COLOR)
+        cls.bar_color = ControlPar('bar_color', cls, kInt, kParIntVar, int, 1,
+                                   set_control_par, get_control_par,
+                                   CONTROL_PAR_BAR_COLOR)
         cls.zero_line_color = ControlPar(
-            'zero_line_color', cls, kInt,
-            kParIntVar, int, 1,
-            set_control_par,
-            get_control_par,
-            CONTROL_PAR_ZERO_LINE_COLOR)
-        cls.idx = ControlPar('idx', cls, kArrInt,
-                             kParArrIntVar, int, 1,
-                             set_control_par_arr,
-                             get_control_par_arr,
+            'zero_line_color', cls, kInt, kParIntVar, int, 1, set_control_par,
+            get_control_par, CONTROL_PAR_ZERO_LINE_COLOR)
+        cls.idx = ControlPar('idx', cls, kArrInt, kParArrIntVar, int, 1,
+                             set_control_par_arr, get_control_par_arr,
                              NI_CONTROL_PAR_IDX)
         cls.default = init_default(cls)
 
@@ -3387,8 +3377,7 @@ class kTableMeta(KspNativeControlMeta):
 
     def __call__(cls, size: int, val_range: int, *args, **kwargs):
 
-        obj = super().__call__(*args, size=size,
-                               **kwargs)
+        obj = super().__call__(*args, size=size, **kwargs)
         obj._decl_postfix = f'[{size}](1, 1, {val_range})'
         cls.value._init_control(obj, None, obj.var)
         cls.bar_color._init_control(obj, None)
@@ -3410,64 +3399,57 @@ class kTable(KspNativeControl, metaclass=kTableMeta):
     See KspNativeControl doc for future explanation'''
     _var_type = kArrInt
 
-    def __init__(self, size: int=0, val_range: int=0,
-                 name: Optional[str]=None,
-                 persist: bool=False, preserve: bool=False,
-                 parent: object=None, x: int=None, y: int=None,
-                 width: int=None, height: int=None):
-        super().__init__(name=name, persist=persist,
-                         preserve=preserve, parent=parent,
-                         x=x, y=y, width=width, height=height)
+    def __init__(self,
+                 size: int = 0,
+                 val_range: int = 0,
+                 name: Optional[str] = None,
+                 persist: bool = False,
+                 preserve: bool = False,
+                 parent: object = None,
+                 x: int = None,
+                 y: int = None,
+                 width: int = None,
+                 height: int = None):
+        super().__init__(
+            name=name,
+            persist=persist,
+            preserve=preserve,
+            parent=parent,
+            x=x,
+            y=y,
+            width=width,
+            height=height)
 
 
 class kXyMeta(KspNativeControlMeta):
-
     def __new__(self, name, bases, dct):
         cls = super().__new__(self, name, bases, dct)
         cls._decl_name = 'xy'
         cls._def_width = 85
         cls._def_height = 40
 
-        cls.value = ControlPar('value', cls, kArrInt,
-                               kParArrIntVar, int, 1,
-                               set_control_par_arr,
-                               get_control_par_arr,
+        cls.value = ControlPar('value', cls, kArrInt, kParArrIntVar, int, 1,
+                               set_control_par_arr, get_control_par_arr,
                                CONTROL_PAR_VALUE)
-        cls.mouse_behaviour_x = ControlPar('mouse_behaviour_x',
-                                           cls, kArrInt,
-                                           kParIntVar, int, 1,
-                                           set_control_par,
-                                           get_control_par,
-                                           CONTROL_PAR_MOUSE_BEHAVIOUR_X)
-        cls.mouse_behaviour_y = ControlPar('mouse_behaviour_y',
-                                           cls, kArrInt,
-                                           kParIntVar, int, 1,
-                                           set_control_par,
-                                           get_control_par,
-                                           CONTROL_PAR_MOUSE_BEHAVIOUR_Y)
-        cls.mouse_mode = ControlPar('mouse_mode',
-                                    cls, kArrInt,
-                                    kParIntVar, int, 1,
-                                    set_control_par,
-                                    get_control_par,
+        cls.mouse_behaviour_x = ControlPar(
+            'mouse_behaviour_x', cls, kArrInt, kParIntVar, int, 1,
+            set_control_par, get_control_par, CONTROL_PAR_MOUSE_BEHAVIOUR_X)
+        cls.mouse_behaviour_y = ControlPar(
+            'mouse_behaviour_y', cls, kArrInt, kParIntVar, int, 1,
+            set_control_par, get_control_par, CONTROL_PAR_MOUSE_BEHAVIOUR_Y)
+        cls.mouse_mode = ControlPar('mouse_mode', cls, kArrInt, kParIntVar,
+                                    int, 1, set_control_par, get_control_par,
                                     CONTROL_PAR_MOUSE_MODE)
-        cls.cursor_picture = ControlPar('cursor_picture',
-                                        cls, kArrStr,
-                                        kParArrStrVar, str, 1,
-                                        set_control_par_str_arr,
-                                        get_control_par_str_arr,
-                                        CONTROL_PAR_CURSOR_PICTURE)
-        cls.hide_arr = ControlPar('hide_arr',
-                                  cls, kArrInt,
-                                  kParArrIntVar, int, 1,
-                                  set_control_par_arr,
-                                  get_control_par_arr,
+        cls.cursor_picture = ControlPar(
+            'cursor_picture', cls, kArrStr, kParArrStrVar, str, 1,
+            set_control_par_str_arr, get_control_par_str_arr,
+            CONTROL_PAR_CURSOR_PICTURE)
+        cls.hide_arr = ControlPar('hide_arr', cls, kArrInt, kParArrIntVar, int,
+                                  1, set_control_par_arr, get_control_par_arr,
                                   CONTROL_PAR_HIDE)
-        cls.active_index = ControlPar('active_idx', cls, kArrInt,
-                                      kParIntVar, int, 1,
-                                      set_control_par_arr,
-                                      get_control_par_arr,
-                                      CONTROL_PAR_ACTIVE_INDEX)
+        cls.active_index = ControlPar(
+            'active_idx', cls, kArrInt, kParIntVar, int, 1,
+            set_control_par_arr, get_control_par_arr, CONTROL_PAR_ACTIVE_INDEX)
 
         return cls
 
@@ -3519,11 +3501,22 @@ class kXy(KspNativeControl, metaclass=kXyMeta):
     '''
     _var_type = kArrReal
 
-    def __init__(self, size: int=0,
-                 name: Optional[str]=None,
-                 persist: bool=False, preserve: bool=False,
-                 parent: object=None, x: int=None, y: int=None,
-                 width: int=None, height: int=None):
-        super().__init__(name=name, persist=persist,
-                         preserve=preserve, parent=parent,
-                         x=x, y=y, width=width, height=height)
+    def __init__(self,
+                 size: int = 0,
+                 name: Optional[str] = None,
+                 persist: bool = False,
+                 preserve: bool = False,
+                 parent: object = None,
+                 x: int = None,
+                 y: int = None,
+                 width: int = None,
+                 height: int = None):
+        super().__init__(
+            name=name,
+            persist=persist,
+            preserve=preserve,
+            parent=parent,
+            x=x,
+            y=y,
+            width=width,
+            height=height)
