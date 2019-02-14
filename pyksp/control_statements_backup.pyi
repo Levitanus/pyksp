@@ -277,16 +277,12 @@ _T5 = ty.TypeVar('_T5', int, str, float)
 _T6 = ty.TypeVar('_T6', int, str, float)
 _T7 = ty.TypeVar('_T7', int, str, float)
 
-_I = ty.TypeVar('_I', bt.VarBase[int, int], bt.VarInt)
-_F = ty.TypeVar('_F', bt.VarBase[float, float], bt.VarFloat)
-_S = ty.TypeVar('_S', bt.VarBase[str, str], bt.VarStr)
-_IA = ty.TypeVar('_IA', bt.ArrBase[bt.VarBase[int, int], ty.List[int], int],
-                 bt.ArrInt)
-_FA = ty.TypeVar('_FA',
-                 bt.ArrBase[bt.VarBase[float, float], ty.List[float], float],
-                 bt.ArrFloat)
-_SA = ty.TypeVar('_SA', bt.ArrBase[bt.VarBase[str, str], ty.List[str], str],
-                 bt.ArrStr)
+_I = bt.VarBase[int, int]
+_F = bt.VarBase[float, float]
+_S = bt.VarBase[str, str]
+_IA = bt.ArrBase[bt.VarBase[int, int], ty.List[int], int]
+_FA = bt.ArrBase[bt.VarBase[float, float], ty.List[float], float]
+_SA = bt.ArrBase[bt.VarBase[str, str], ty.List[str], str]
 
 
 @ty.overload

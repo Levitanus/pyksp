@@ -16,31 +16,41 @@ class LocMeta(ab.KSPBaseMeta):
 
 
 class Loc(metaclass=LocMeta):
-    pass
+    """Spetial class can be used as callable argument annotation.
+
+    when used in function or method decorated with vrs,
+        new KSP variable will be created and passed to the
+        every function call.
+    when used in function or method decorated with func,
+        stack area will be allocated and returned as KSP var
+    Loc[type] produces variables
+    Loc[type, size: int] produces array of specified size
+    """
 
 
+# CPD-OFF
 class LocArrInt(bt.ArrInt):
-    pass
+    _ref_type = int
 
 
 class LocArrStr(bt.ArrStr):
-    pass
+    _ref_type = str
 
 
 class LocArrFloat(bt.ArrFloat):
-    pass
+    _ref_type = float
 
 
 class LocInt(bt.VarInt):
-    pass
+    _ref_type = int
 
 
 class LocStr(bt.VarStr):
-    pass
+    _ref_type = str
 
 
 class LocFloat(bt.VarFloat):
-    pass
+    _ref_type = float
 
 
 # CPD-ON
@@ -54,16 +64,25 @@ def vrs(f: F) -> F:
 
 
 class OutMeta(ab.KSPBaseMeta):
-    calls: int = 0
+    calls: int = ...
 
     def __getitem__(cls, arg: ty.Union[type, ty.Tuple[type, int]]) -> type:
         ...
 
 
 class Out(metaclass=OutMeta):
-    pass
+    """Spetial class can be used as func argument annotation.
+
+    can be used only in function or method decorated with func,
+        stack area will be allocated and returned as KSP var,
+        then returned to variable, passed as argument.
+        If no var passed, no error is raised.
+    Out[type] produces variables
+    Out[type, size: int] produces array of specified size
+    """
 
 
+# CPD-OFF
 class OutArrInt(bt.ArrInt):
     pass
 
@@ -88,17 +107,26 @@ class OutFloat(bt.VarFloat):
     pass
 
 
+# CPD-ON
 class InMeta(ab.KSPBaseMeta):
-    calls: int = 0
+    calls: int = ...
 
     def __getitem__(cls, arg: ty.Union[type, ty.Tuple[type, int]]) -> type:
         ...
 
 
 class In(metaclass=InMeta):
-    pass
+    """Spetial class can be used as func argument annotation.
+
+    can be used only in function or method decorated with func,
+        arg will recieve the KSP var of specified type
+        stack area will be allocated and could be used as KKSP variable
+    In[type] produces variables
+    In[type, size: int] produces array of specified size
+    """
 
 
+# CPD-OFF
 class InArrInt(bt.ArrInt):
     pass
 
@@ -128,11 +156,15 @@ class InFloat(bt.VarFloat):
 
 class SubArray(bt.ArrBase[bt.KVT, bt.KLT, bt.KT]):
     array: bt.ArrBase[bt.KVT, bt.KLT, bt.KT]
-    _start_idx: int
-    _stop_idx: int
+    _start_idx: bt.ProcessInt
+    _stop_idx: bt.ProcessInt
+    _ref_type: ty.Type[bt.KT]
+    _size: int
 
-    def __init__(self, array: bt.ArrBase[bt.KVT, bt.KLT, bt.KT],
-                 start_idx: int, stop_idx: int) -> None:
+    def __init__(
+        self, array: bt.ArrBase[bt.KVT, bt.KLT, bt.KT],
+        start_idx: bt.ProcessInt, stop_idx: bt.ProcessInt
+    ) -> None:
         ...
 
     def name(self) -> ty.NoReturn:  # type: ignore

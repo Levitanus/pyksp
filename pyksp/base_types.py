@@ -1,4 +1,4 @@
-"""Base KSP types and compiler mechanics."""  # type: ignore
+"""Base KSP types and compiler mechanics."""
 import typing as ty
 from functools import singledispatch
 from abc import abstractmethod
@@ -15,13 +15,16 @@ from .abstract import KSP
 T = ty.TypeVar("T")
 KT = ty.TypeVar("KT", int, float, str)
 NT = ty.TypeVar("NT", int, float)
-VHT = ty.TypeVar('VHT', int, str, float, ty.List[int], ty.List[str],
-                 ty.List[float])
+VHT = ty.TypeVar(
+    'VHT', int, str, float, ty.List[int], ty.List[str], ty.List[float]
+)
 KLT = ty.TypeVar('KLT', ty.List[int], ty.List[str], ty.List[float])
 
-KVT = ty.TypeVar('KVT', bound='VarBase')
-KAT = ty.TypeVar('KAT', bound='ArrBase')
-KVAT = ty.TypeVar('KVAT', 'ArrBase', 'VarBase')
+KVT = ty.TypeVar('KVT', 'VarInt', 'VarStr', 'VarFloat')
+KAT = ty.TypeVar('KAT', 'ArrInt', 'ArrStr', 'ArrFloat')
+KVAT = ty.TypeVar(
+    'KVAT', 'VarInt', 'VarStr', 'VarFloat', 'ArrInt', 'ArrStr', 'ArrFloat'
+)
 
 ATU = ty.Union["VarBase[KT, KT]", "AstBase[KT]", "Magic[KT]", KT]
 NVU = ty.Union["AstBase[KT]", "Magic[KT]", KT]
@@ -96,9 +99,10 @@ class AstConcatString(AstBase[str], ConcatsStrings):
         """Accept args and initialize ref_type."""
         for idx, arg in enumerate((arg1, arg2)):
             if not isinstance(arg, STT):
-                raise TypeError(f"arg {idx} ({arg}) has " +
-                                f"to be of type {STU}"  # type: ignore
-                                )
+                raise TypeError(
+                    f"arg {idx} ({arg}) has " +
+                    f"to be of type {STU}"  # type: ignore
+                )
         self._ref_type = str
         self.arg1 = arg1
         self.arg2 = arg2
@@ -123,9 +127,11 @@ def ducktype_num_magic(method: NFT) -> NFT:
         other = self._check_for_int(other)  # type: ignore
         value = get_value(other)
         if not isinstance(value, self._ref_type):
-            raise TypeError(f"incompatible type: {type(other)}"  # type: ignore
-                            f" -> NT = {self._ref_type}:"
-                            f" {NTU[self._ref_type]}")
+            raise TypeError(
+                f"incompatible type: {type(other)}"  # type: ignore
+                f" -> NT = {self._ref_type}:"
+                f" {NTU[self._ref_type]}"
+            )
         return method(self, other)
 
     return ty.cast(NFT, wrpapper)
@@ -324,7 +330,8 @@ def to_float(value: ProcessInt) -> "AstFloat":
 def _ducktype_var_val(ref: VarIU, val: KT) -> None:
     if not isinstance(val, ref):
         raise TypeError(
-            f'value {val} is incompatible with reference-type {ref}')
+            f'value {val} is incompatible with reference-type {ref}'
+        )
 
 
 def _ducktype_arr_val(ref: VarIU, val: VHT) -> None:
@@ -393,13 +400,13 @@ class VarBase(KspObject, HasInit, ty.Generic[VHT, KT], Magic[KT]):
     read_persistent: ty.ClassVar[Persist] = Persist("make_persistent")
 
     def __init__(
-            self,
-            value: VHT,
-            name: str = "",
-            persist: Persist = not_persistent,
-            preserve_name: bool = False,
-            *,
-            local: bool = False,
+        self,
+        value: VHT,
+        name: str = "",
+        persist: Persist = not_persistent,
+        preserve_name: bool = False,
+        *,
+        local: bool = False,
     ) -> None:
         """Initialize.
 
@@ -465,7 +472,9 @@ class VarBase(KspObject, HasInit, ty.Generic[VHT, KT], Magic[KT]):
         if not isinstance(val, self._ref_type):
             raise TypeError(
                 'accepts only RT values of type {r}, pasted{v}'.format(
-                    r=self._ref_type, v=val))
+                    r=self._ref_type, v=val
+                )
+            )
         self._value.set(val)
 
     def read(self) -> None:
@@ -489,8 +498,10 @@ class VarBase(KspObject, HasInit, ty.Generic[VHT, KT], Magic[KT]):
         obj.name.postfix = postfix
         return obj
 
-    def _make_copy(self, other: ty.Union[NVU, 'VarBase[KT, KT]'], value: VHT,
-                   new_type: ty.Type[KVT]) -> KVT:
+    def _make_copy(
+        self, other: ty.Union[NVU, 'VarBase[KT, KT]'], value: VHT,
+        new_type: ty.Type[KVT]
+    ) -> KVT:
         """Return new Var[self._ref_type] object, depends on input val."""
         otpt = self.get_out()
         otpt.put_immediatly(AstAssign(self, other))
@@ -525,13 +536,13 @@ class VarStr(VarBase[str, str], ConcatsStrings):
     """String KSP Var."""
 
     def __init__(
-            self,
-            value: str = "",
-            name: str = "",
-            persist: VarBase.Persist = VarBase.not_persistent,
-            preserve_name: bool = False,
-            *,
-            local: bool = False,
+        self,
+        value: str = "",
+        name: str = "",
+        persist: VarBase.Persist = VarBase.not_persistent,
+        preserve_name: bool = False,
+        *,
+        local: bool = False,
     ) -> None:
         """Initialize.
 
@@ -552,9 +563,10 @@ class VarStr(VarBase[str, str], ConcatsStrings):
     def __ilshift__(self, other: STU) -> "VarStr":
         """Return new Str object with name of self and value of other."""
         if not isinstance(other, STT):
-            raise TypeError("incompatible type for assignement: " +
-                            f"{type(other)} -> {STU}"  # type: ignore
-                            )
+            raise TypeError(
+                "incompatible type for assignement: " +
+                f"{type(other)} -> {STU}"  # type: ignore
+            )
         value = get_value(other)
         if not isinstance(value, str):
             value = f"{value}"
@@ -577,13 +589,15 @@ class VarStr(VarBase[str, str], ConcatsStrings):
 class Num(VarBase[NT, NT], ProcessNum[NT], ty.Generic[NT, KVT]):
     """Generic KSP numeric Var (int or float)."""
 
-    def __init__(self,
-                 value: NT,
-                 name: str = "",
-                 persist: VarBase.Persist = VarBase.not_persistent,
-                 preserve_name: bool = False,
-                 *,
-                 local: bool = False) -> None:
+    def __init__(
+        self,
+        value: NT,
+        name: str = "",
+        persist: VarBase.Persist = VarBase.not_persistent,
+        preserve_name: bool = False,
+        *,
+        local: bool = False
+    ) -> None:
         """Initialize.
 
         Value is Optional if instantiated within indexation[]
@@ -637,13 +651,15 @@ class Num(VarBase[NT, NT], ProcessNum[NT], ty.Generic[NT, KVT]):
 class VarInt(Num[int, "VarInt"], ProcessInt):
     """Int KSP Var."""
 
-    def __init__(self,
-                 value: int = 0,
-                 name: str = "",
-                 persist: VarBase.Persist = VarBase.not_persistent,
-                 preserve_name: bool = False,
-                 *,
-                 local: bool = False) -> None:
+    def __init__(
+        self,
+        value: int = 0,
+        name: str = "",
+        persist: VarBase.Persist = VarBase.not_persistent,
+        preserve_name: bool = False,
+        *,
+        local: bool = False
+    ) -> None:
         """Initialize.
 
         Value is Optional if instantiated within indexation[]
@@ -696,13 +712,15 @@ class VarInt(Num[int, "VarInt"], ProcessInt):
 class VarFloat(Num[float, "VarFloat"], ProcessFloat):
     """Real KSP Var."""
 
-    def __init__(self,
-                 value: float = 0.0,
-                 name: str = "",
-                 persist: VarBase.Persist = VarBase.not_persistent,
-                 preserve_name: bool = False,
-                 *,
-                 local: bool = False) -> None:
+    def __init__(
+        self,
+        value: float = 0.0,
+        name: str = "",
+        persist: VarBase.Persist = VarBase.not_persistent,
+        preserve_name: bool = False,
+        *,
+        local: bool = False
+    ) -> None:
         """Initialize.
 
         Value is Optional if instantiated within indexation[]
@@ -823,8 +841,8 @@ class ArrBase(VarBase[VHT, KT], ty.Generic[KVT, VHT, KT]):
         """Return Var[self._ref_type] instance, bounded to the cell at idx."""
         c_idx, r_idx = self._resolve_idx(idx)
         if self.is_compiled():
-            obj = Var[self._ref_type](  # type: ignore
-                0, self.name.name, local=True)
+            obj = Var[self._ref_type  # type: ignore
+                     ](0, self.name.name, local=True)
             obj.name.postfix = f"[{c_idx}]"  # type: ignore
             obj.name.prefix = self.name.prefix  # type: ignore
             return obj  # type: ignore
@@ -835,8 +853,11 @@ class ArrBase(VarBase[VHT, KT], ty.Generic[KVT, VHT, KT]):
         if self.is_compiled():
             return
         if not isinstance(value, Var[self._ref_type]):
-            raise TypeError("has to be of type {T}[{r}], pasted: {v}".format(
-                T=VarBase, r=self._ref_type, v=value))
+            raise TypeError(
+                "has to be of type {T}[{r}], pasted: {v}".format(
+                    T=VarBase, r=self._ref_type, v=value
+                )
+            )
         c_idx, r_idx = self._resolve_idx(idx)  # pylint: disable=W0612
         r_val = value.val
         value._value = self._vars[r_idx]._value  # type: ignore
@@ -851,10 +872,10 @@ class ArrBase(VarBase[VHT, KT], ty.Generic[KVT, VHT, KT]):
         if isinstance(self._vars[r_idx], VarBase):
             obj = self._vars[r_idx]  # type: ignore
         else:
-            self._vars[r_idx] = Var[self._ref_type](  # type: ignore
-                self._value[r_idx],
-                self.name.name,
-                local=True)
+            self._vars[r_idx] = Var[  # type: ignore
+                self._ref_type](
+                    self._value[r_idx], self.name.name, local=True
+                )
             obj = self._vars[r_idx]  # type: ignore
         obj.name.postfix = f"[{c_idx}]"
         obj.name.prefix = self.name.prefix
@@ -898,10 +919,12 @@ class ArrBase(VarBase[VHT, KT], ty.Generic[KVT, VHT, KT]):
         value = ""
 
         if len(self._init_seq) != 1 or self._init_seq[0]:
-            value = ", ".join([
-                self._gen_decl_seq_item(idx, i)
-                for idx, i in enumerate(self._init_seq)
-            ])
+            value = ", ".join(
+                [
+                    self._gen_decl_seq_item(idx, i)
+                    for idx, i in enumerate(self._init_seq)
+                ]
+            )
         if value:
             value = f" := ({value})"
         return [f"declare {self.name()}[{self._size}]{value}"]
@@ -926,7 +949,9 @@ class ArrBase(VarBase[VHT, KT], ty.Generic[KVT, VHT, KT]):
         if not isinstance(get_value(value), self._ref_type):
             raise TypeError(
                 "pasted value of wront type: {v}, expected {r}".format(
-                    v=value, r=self._ref_type))
+                    v=value, r=self._ref_type
+                )
+            )
         if isinstance(value, Var[self._ref_type]):
             self._recieved_rt = True
         _value = get_value(value)
@@ -1025,7 +1050,7 @@ class VarMeta(type):
     """Var getitem helper metaclass."""
 
     def __getitem__(cls, ref: ty.Union[VarIU, ty.Tuple[VarIU, int]]
-                    ) -> ty.Union[VarRU, ty.Type['ArrType']]:
+                   ) -> ty.Union[VarRU, ty.Type['ArrType']]:
         """Return VarBase[ref] object."""
         size: ty.Optional[int] = None
         if isinstance(ref, tuple):
@@ -1152,7 +1177,7 @@ class ArrMeta(type):
 
     @getitem_proxy.register(tuple)  # type: ignore
     def _(ref: ty.Tuple[ty.Type[int], int]  # type: ignore
-          ) -> ty.Type['ArrType']:
+         ) -> ty.Type['ArrType']:
         if isinstance(ref, tuple):
             size = ref[1]
             _ref = ref[0]
@@ -1278,8 +1303,9 @@ class AstBuiltInBase(AstRoot, AstBase[KT]):
     args: ty.List[str]
     string: str
 
-    def __init__(self, ret_val: ty.Optional[KT], string: str,
-                 *args: ATU) -> None:
+    def __init__(
+        self, ret_val: ty.Optional[KT], string: str, *args: ATU
+    ) -> None:
         if ret_val is not None:
             self._ref_type = get_value_type(ret_val)
         else:
@@ -1406,9 +1432,10 @@ class AstCanBeBool(AstOperatorDoubleStandart[NT], AstBool[NT]):
     arg2_pure: ty.Union[NT, bool]  # type: ignore
 
     def __init__(
-            self,
-            arg1: NTU[NT],  # pylint: disable=W0231
-            arg2: NTU[NT]) -> None:  # pylint: disable=W0231
+        self,
+        arg1: NTU[NT],  # pylint: disable=W0231
+        arg2: NTU[NT]
+    ) -> None:  # pylint: disable=W0231
         """Calculate as bitwise as bool values and strings."""
         if isinstance(arg1, AstBool):
             self._ref_type = bool
@@ -1534,8 +1561,9 @@ class AstMul(AstOperatorDoubleStandart[NT], ProcessFloat, ProcessInt):
         return self.arg1_pure * self.arg2_pure
 
 
-class OperatorComparisson(AstOperatorDoubleStandart[NT], ProcessFloat,
-                          ProcessInt, AstBool[NT]):
+class OperatorComparisson(
+    AstOperatorDoubleStandart[NT], ProcessFloat, ProcessInt, AstBool[NT]
+):
     """Base class for "just boolean" AST operators."""
 
     def expand(self) -> str:

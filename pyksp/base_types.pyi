@@ -19,9 +19,18 @@ VHT = ty.TypeVar('VHT', int, str, float, ty.List[int], ty.List[str],
                  ty.List[float])
 KLT = ty.TypeVar('KLT', ty.List[int], ty.List[str], ty.List[float])
 
-KVT = ty.TypeVar('KVT', bound='VarBase')
-KAT = ty.TypeVar('KAT', bound='ArrBase')
-KVAT = ty.TypeVar('KVAT', 'ArrBase', 'VarBase')
+KVT = ty.TypeVar('KVT', 'VarBase[int,int]', 'VarBase[str,str]',
+                 'VarBase[float,float]', 'VarInt', 'VarStr', 'VarFloat')
+KAT = ty.TypeVar('KAT', 'ArrBase[VarBase[int,int],ty.List[int],int]',
+                 'ArrBase[VarBase[str,str],ty.List[str],str]',
+                 'ArrBase[VarBase[float,float],ty.List[float],float]',
+                 'ArrInt', 'ArrStr', 'ArrFloat')
+KVAT = ty.TypeVar(
+    'KVAT', 'VarBase[int,int]', 'VarBase[str,str]', 'VarBase[float,float]',
+    'ArrBase[VarBase[int,int],ty.List[int],int]',
+    'ArrBase[VarBase[str,str],ty.List[str],str]',
+    'ArrBase[VarBase[float,float],ty.List[float],float]', 'VarInt', 'VarStr',
+    'VarFloat', 'ArrInt', 'ArrStr', 'ArrFloat')
 
 ATU = ty.Union["VarBase[KT, KT]", "AstBase[KT]", "Magic[KT]", KT]
 NVU = ty.Union["AstBase[KT]", "Magic[KT]", KT]
@@ -401,7 +410,7 @@ class VarBase(KspObject, HasInit, ty.Generic[VHT, KT], Magic[KT]):
         makes var persistent, if not."""
         ...
 
-    def copy(self: KVT, name: str, prefix: str, postfix: str) -> KVT:
+    def copy(self, name: str, prefix: str, postfix: str) -> KVT:
         """Return new object of self type.
 
         For arr cells obj._array and obj._idx are loosed.

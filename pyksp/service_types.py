@@ -48,43 +48,43 @@ class Loc(metaclass=LocMeta):
 if ty.TYPE_CHECKING:
 
     class LocArrInt(bt.ArrInt):
-        pass
+        _ref_type = int
 
     class LocArrStr(bt.ArrStr):
-        pass
+        _ref_type = str
 
     class LocArrFloat(bt.ArrFloat):
-        pass
+        _ref_type = float
 
     class LocInt(bt.VarInt):
-        pass
+        _ref_type = int
 
     class LocStr(bt.VarStr):
-        pass
+        _ref_type = str
 
     class LocFloat(bt.VarFloat):
-        pass
+        _ref_type = float
 
     # CPD-ON
 else:
 
     class LocArrInt(Loc, bt.ArrInt):
-        pass
+        _ref_type = int
 
     class LocArrStr(Loc, bt.ArrStr):
-        pass
+        _ref_type = str
 
     class LocArrFloat(Loc, bt.ArrFloat):
-        pass
+        _ref_type = float
 
     class LocInt(Loc, bt.VarInt):
-        pass
+        _ref_type = int
 
     class LocStr(Loc, bt.VarStr):
-        pass
+        _ref_type = str
 
     class LocFloat(Loc, bt.VarFloat):
-        pass
+        _ref_type = float
 
 
 T = ty.TypeVar('T')
@@ -283,13 +283,13 @@ else:
 
 class SubArray(bt.ArrBase[bt.KVT, bt.KLT, bt.KT]):
     array: bt.ArrBase[bt.KVT, bt.KLT, bt.KT]
-    _start_idx: int
-    _stop_idx: int
+    _start_idx: bt.ProcessInt
+    _stop_idx: bt.ProcessInt
     _ref_type: ty.Type[bt.KT]
     _size: int
 
     def __init__(self, array: bt.ArrBase[bt.KVT, bt.KLT, bt.KT],
-                 start_idx: int, stop_idx: int) -> None:
+                 start_idx: bt.ProcessInt, stop_idx: bt.ProcessInt) -> None:
         if stop_idx > len(array):
             raise TypeError(
                 f'len of arr is {len(array)}, stop_idx is {stop_idx}')
@@ -297,7 +297,8 @@ class SubArray(bt.ArrBase[bt.KVT, bt.KLT, bt.KT]):
         self._start_idx = start_idx
         self._stop_idx = stop_idx
         self._ref_type = self.array._ref_type
-        self._size = self._stop_idx + 1 - self._start_idx
+        self._size = bt.get_value(self._stop_idx) + 1 - bt.get_value(
+            self._start_idx)
 
     def name(self) -> ty.NoReturn:  # type: ignore
         raise RuntimeError("shouldn't be used directly in code")
@@ -306,7 +307,7 @@ class SubArray(bt.ArrBase[bt.KVT, bt.KLT, bt.KT]):
     def val(self) -> bt.KLT:
         # TODO: change val behaviour for arrays
         return [
-            self.array[i].val for i in range(
+            self.array[i].val for i in range(  # type: ignore
                 bt.get_value(self._start_idx), bt.get_value(self._stop_idx +
                                                             1))
         ]
@@ -320,7 +321,7 @@ class SubArray(bt.ArrBase[bt.KVT, bt.KLT, bt.KT]):
         for idx, i in enumerate(val):
             self.array.val[idx + bt.get_value(self._start_idx)] = i
 
-    def _get_subarr_idx(self, idx: bt.NTU[int]) -> int:
+    def _get_subarr_idx(self, idx: bt.NTU[int]) -> bt.ProcessInt:
         if bt.get_value(idx) < 0:
             return self._stop_idx
         return self._start_idx

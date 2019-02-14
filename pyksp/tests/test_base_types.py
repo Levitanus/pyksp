@@ -72,7 +72,11 @@ class TestBasics(TestBase):
         s <<= "1" + s
         self.assertEqual(s.val, "122")
         self.assertEqual(out.get()[-1].line, '@s := "1" & @s')
-        self.assertEqual(s.get_decl_line(), ["declare @s", '@s := "s_val"'])
+        self.assertEqual(
+            s.get_decl_line(),
+            ["declare @s",
+             '@s := "s_val"']
+        )
         ab.KSP.refresh()
 
 
@@ -140,8 +144,11 @@ class TestInts(TestBase):
         self.assertEqual(out.get()[-1].line, "dec($n)")
         n.read()
         self.assertEqual(out.get()[-1].line, "read_persistent_var($n)")
-        self.assertEqual(n.generate_init(),
-                         ['declare $n', 'make_persistent($n)'])
+        self.assertEqual(
+            n.generate_init(),
+            ['declare $n',
+             'make_persistent($n)']
+        )
         old = n
         n += 1
         new = n
@@ -231,8 +238,10 @@ class TestInts(TestBase):
         self.assertTrue(n | 2)
         self.assertFalse((n != 3) | (n == 2))
         self.assertEqual((n | 3).get_value(), 3)
-        self.assertEqual(((n != 3) | (n == 2)).expand_bool(),
-                         "$n # 3 or $n = 2")
+        self.assertEqual(
+            ((n != 3) | (n == 2)).expand_bool(),
+            "$n # 3 or $n = 2"
+        )
         self.assertEqual(
             ((n != 3) | (n == 2) & (n != 4)).expand_bool(),
             "$n # 3 or $n = 2 and $n # 4",
@@ -325,7 +334,10 @@ class TestArray(TestBase):
         a.append(test)
         self.assertEqual(out.get()[-1].line, "%a[3] := $test")
         self.assertEqual(len(a), 4)
-        self.assertEqual(a.get_decl_line(), ["declare %a[4] := (5, 6, 4)"])
+        self.assertEqual(
+            a.get_decl_line(),
+            ["declare %a[4] := (5, 6, 4)"]
+        )
         ab.KSP.set_callback(True)  # type: ignore
         with self.assertRaises(RuntimeError):
             a.append(2)
@@ -370,12 +382,15 @@ class TestArray(TestBase):
     def test_str(self) -> None:
         a = bt.Arr[str](['a', 'b'], name='str_arr')
         a.append('c')
-        self.assertEqual(a.get_decl_line(), [
-            'declare !str_arr[3]',
-            '!str_arr[0] := "a"',
-            '!str_arr[1] := "b"',
-            '!str_arr[2] := "c"',
-        ])
+        self.assertEqual(
+            a.get_decl_line(),
+            [
+                'declare !str_arr[3]',
+                '!str_arr[0] := "a"',
+                '!str_arr[1] := "b"',
+                '!str_arr[2] := "c"',
+            ]
+        )
         with self.assertRaises(RuntimeError):
             a.read()
 
@@ -448,18 +463,50 @@ class TestTypes(ut.TestCase):
         self.assertNotIsInstance(fa, bt.Var[int, 0])
 
         with self.assertRaises(TypeError):
-            self.assertNotIsInstance(fa, bt.Var[object()])  # type: ignore
+            self.assertNotIsInstance(
+                fa,
+                bt.Var[object()]  # type: ignore
+            )
         with self.assertRaises(TypeError):
             self.assertNotIsInstance(fa, bt.Var[float, -1])
 
-        self.assertIsInstance(bt.Var(2, name=n, local=True), bt.Var[int])
-        self.assertIsInstance(bt.Var("2", name=n, local=True), bt.Var[str])
-        self.assertIsInstance(bt.Var(2.0, name=n, local=True), bt.Var[float])
+        self.assertIsInstance(
+            bt.Var(2,
+                   name=n,
+                   local=True),
+            bt.Var[int]
+        )
+        self.assertIsInstance(
+            bt.Var("2",
+                   name=n,
+                   local=True),
+            bt.Var[str]
+        )
+        self.assertIsInstance(
+            bt.Var(2.0,
+                   name=n,
+                   local=True),
+            bt.Var[float]
+        )
 
-        self.assertNotIsInstance(bt.Var(2, name=n, local=True), bt.Var[float])
         self.assertNotIsInstance(
-            bt.Var("2", name=n, local=True), bt.Var[float])
-        self.assertNotIsInstance(bt.Var(2.0, name=n, local=True), bt.Var[int])
+            bt.Var(2,
+                   name=n,
+                   local=True),
+            bt.Var[float]
+        )
+        self.assertNotIsInstance(
+            bt.Var("2",
+                   name=n,
+                   local=True),
+            bt.Var[float]
+        )
+        self.assertNotIsInstance(
+            bt.Var(2.0,
+                   name=n,
+                   local=True),
+            bt.Var[int]
+        )
 
 
 # pylint: enable=W0104, R0915
