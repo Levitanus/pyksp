@@ -11,7 +11,12 @@ from . import abstract as ab
 class LocMeta(ab.KSPBaseMeta):
     calls: int = ...
 
-    def __getitem__(cls, arg: ty.Union[type, ty.Tuple[type, int]]) -> type:
+    def __getitem__(
+        cls,
+        arg: ty.Union[type,
+                      ty.Tuple[type,
+                               int]]
+    ) -> type:
         ...
 
 
@@ -66,7 +71,12 @@ def vrs(f: F) -> F:
 class OutMeta(ab.KSPBaseMeta):
     calls: int = ...
 
-    def __getitem__(cls, arg: ty.Union[type, ty.Tuple[type, int]]) -> type:
+    def __getitem__(
+        cls,
+        arg: ty.Union[type,
+                      ty.Tuple[type,
+                               int]]
+    ) -> type:
         ...
 
 
@@ -111,7 +121,12 @@ class OutFloat(bt.VarFloat):
 class InMeta(ab.KSPBaseMeta):
     calls: int = ...
 
-    def __getitem__(cls, arg: ty.Union[type, ty.Tuple[type, int]]) -> type:
+    def __getitem__(
+        cls,
+        arg: ty.Union[type,
+                      ty.Tuple[type,
+                               int]]
+    ) -> type:
         ...
 
 
@@ -162,8 +177,12 @@ class SubArray(bt.ArrBase[bt.KVT, bt.KLT, bt.KT]):
     _size: int
 
     def __init__(
-        self, array: bt.ArrBase[bt.KVT, bt.KLT, bt.KT],
-        start_idx: bt.ProcessInt, stop_idx: bt.ProcessInt
+        self,
+        array: bt.ArrBase[bt.KVT,
+                          bt.KLT,
+                          bt.KT],
+        start_idx: bt.NTU[int],
+        stop_idx: bt.NTU[int]
     ) -> None:
         ...
 

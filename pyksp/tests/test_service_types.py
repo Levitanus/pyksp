@@ -8,8 +8,13 @@ from .. import abstract as ab
 
 # CPD-OFF
 @st.vrs
-def simple_func(arg1: int, *, arg2: st.Loc[int], arg3: st.Loc[str, 6]
-                ) -> ty.Tuple[int, st.LocInt, st.LocArrStr]:
+def simple_func(arg1: int,
+                *,
+                arg2: st.Loc[int],
+                arg3: st.Loc[str,
+                             6]) -> ty.Tuple[int,
+                                             st.LocInt,
+                                             st.LocArrStr]:
     return arg1, arg2, arg3
 
 
@@ -19,8 +24,15 @@ def simple_func(arg1: int, *, arg2: st.Loc[int], arg3: st.Loc[str, 6]
 class SimpleClass:
     @st.vrs
     def simple_method(
-            self, arg1: int, *, arg2: st.Loc[int],
-            arg3: st.Loc[str, 6]) -> ty.Tuple[int, st.LocInt, st.LocArrStr]:
+        self,
+        arg1: int,
+        *,
+        arg2: st.Loc[int],
+        arg3: st.Loc[str,
+                     6]
+    ) -> ty.Tuple[int,
+                  st.LocInt,
+                  st.LocArrStr]:
         return arg1, arg2, arg3
 
 
@@ -34,16 +46,22 @@ class TestVrs(KTest):
         self.assertIsInstance(m_ret[0], int)
         self.assertIsInstance(m_ret[1], bt.Var[int])
         self.assertIsInstance(m_ret[2], bt.Var[str, 6])
-        self.assertEqual(f_ret[1].name(),
-                         '$pyksp_tests_test_service_types_simple_func_arg2')
-        self.assertEqual(f_ret[2].name(),
-                         '!pyksp_tests_test_service_types_simple_func_arg3')
+        self.assertEqual(
+            f_ret[1].name(),
+            '$pyksp_tests_test_service_types_simple_func_arg2'
+        )
+        self.assertEqual(
+            f_ret[2].name(),
+            '!pyksp_tests_test_service_types_simple_func_arg3'
+        )
         self.assertEqual(
             m_ret[1].name(),
-            '$pyksp_tests_test_service_types_SimpleClass_simple_method_arg2')
+            '$pyksp_tests_test_service_types_SimpleClass_simple_method_arg2'
+        )
         self.assertEqual(
             m_ret[2].name(),
-            '!pyksp_tests_test_service_types_SimpleClass_simple_method_arg3')
+            '!pyksp_tests_test_service_types_SimpleClass_simple_method_arg3'
+        )
         self.assertTrue(simple_func(5))
 
         self.assertTrue(issubclass(st.In[int], bt.Var[int]))
