@@ -8,6 +8,30 @@ from . import abstract as ab
 # CPD-OFF
 
 
+class ServiceArrInt(bt.ArrInt):
+    _ref_type = int
+
+
+class ServiceArrStr(bt.ArrStr):
+    _ref_type = str
+
+
+class ServiceArrFloat(bt.ArrFloat):
+    _ref_type = float
+
+
+class ServiceInt(bt.VarInt):
+    _ref_type = int
+
+
+class ServiceStr(bt.VarStr):
+    _ref_type = str
+
+
+class ServiceFloat(bt.VarFloat):
+    _ref_type = float
+
+
 class LocMeta(ab.KSPBaseMeta):
     calls: int = ...
 
@@ -34,27 +58,27 @@ class Loc(metaclass=LocMeta):
 
 
 # CPD-OFF
-class LocArrInt(bt.ArrInt):
+class LocArrInt(ServiceArrInt):
     _ref_type = int
 
 
-class LocArrStr(bt.ArrStr):
+class LocArrStr(ServiceArrStr):
     _ref_type = str
 
 
-class LocArrFloat(bt.ArrFloat):
+class LocArrFloat(ServiceArrFloat):
     _ref_type = float
 
 
-class LocInt(bt.VarInt):
+class LocInt(ServiceInt):
     _ref_type = int
 
 
-class LocStr(bt.VarStr):
+class LocStr(ServiceStr):
     _ref_type = str
 
 
-class LocFloat(bt.VarFloat):
+class LocFloat(ServiceFloat):
     _ref_type = float
 
 
@@ -93,27 +117,27 @@ class Out(metaclass=OutMeta):
 
 
 # CPD-OFF
-class OutArrInt(bt.ArrInt):
+class OutArrInt(ServiceArrInt):
     pass
 
 
-class OutArrStr(bt.ArrStr):
+class OutArrStr(ServiceArrStr):
     pass
 
 
-class OutArrFloat(bt.ArrFloat):
+class OutArrFloat(ServiceArrFloat):
     pass
 
 
-class OutInt(bt.VarInt):
+class OutInt(ServiceInt):
     pass
 
 
-class OutStr(bt.VarStr):
+class OutStr(ServiceStr):
     pass
 
 
-class OutFloat(bt.VarFloat):
+class OutFloat(ServiceFloat):
     pass
 
 
@@ -142,27 +166,27 @@ class In(metaclass=InMeta):
 
 
 # CPD-OFF
-class InArrInt(bt.ArrInt):
+class InArrInt(ServiceArrInt):
     pass
 
 
-class InArrStr(bt.ArrStr):
+class InArrStr(ServiceArrStr):
     pass
 
 
-class InArrFloat(bt.ArrFloat):
+class InArrFloat(ServiceArrFloat):
     pass
 
 
-class InInt(bt.VarInt):
+class InInt(ServiceInt):
     pass
 
 
-class InStr(bt.VarStr):
+class InStr(ServiceStr):
     pass
 
 
-class InFloat(bt.VarFloat):
+class InFloat(ServiceFloat):
     pass
 
 

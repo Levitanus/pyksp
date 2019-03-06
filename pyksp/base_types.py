@@ -16,15 +16,25 @@ T = ty.TypeVar("T")
 KT = ty.TypeVar("KT", int, float, str)
 NT = ty.TypeVar("NT", int, float)
 VHT = ty.TypeVar(
-    'VHT', int, str, float, ty.List[int], ty.List[str], ty.List[float]
+    'VHT',
+    int,
+    str,
+    float,
+    ty.List[int],
+    ty.List[str],
+    ty.List[float]
 )
 KLT = ty.TypeVar('KLT', ty.List[int], ty.List[str], ty.List[float])
 
-KVT = ty.TypeVar('KVT', 'VarInt', 'VarStr', 'VarFloat')
-KAT = ty.TypeVar('KAT', 'ArrInt', 'ArrStr', 'ArrFloat')
-KVAT = ty.TypeVar(
-    'KVAT', 'VarInt', 'VarStr', 'VarFloat', 'ArrInt', 'ArrStr', 'ArrFloat'
+KVT = ty.TypeVar('KVT', bound='VarBase')
+KVT_1 = ty.TypeVar('KVT_1', bound='VarBase')
+KAT = ty.TypeVar(
+    'KAT',
+    bound=ty.Union['ArrBase[VarBase[int,int],ty.List[int],int]',
+                   'ArrBase[VarBase[str,str],ty.List[str],str]',
+                   'ArrBase[VarBase[float,float],ty.List[float],float]']
 )
+KVAT = ty.TypeVar('KVAT', bound=ty.Union['VarBase', 'ArrBase'])
 
 ATU = ty.Union["VarBase[KT, KT]", "AstBase[KT]", "Magic[KT]", KT]
 NVU = ty.Union["AstBase[KT]", "Magic[KT]", KT]
@@ -36,7 +46,9 @@ PNTF = ty.TypeVar("PNTF", bound='ProcessNum[float]', covariant=True)
 NFT = ty.TypeVar("NFT", bound=ty.Callable[..., ty.Any])
 
 VarIU = ty.Union[ty.Type[int], ty.Type[str], ty.Type[float]]
-VarRU = ty.Union[ty.Type["VarInt"], ty.Type["VarFloat"], ty.Type["VarStr"]]
+VarRU = ty.Union[ty.Type["VarInt"],
+                 ty.Type["VarFloat"],
+                 ty.Type["VarStr"]]
 ArrRU = ty.Type[ty.Union["ArrInt", "ArrFloat", "ArrStr"]]
 
 
@@ -142,7 +154,9 @@ class ProcessNum(Magic[NT]):
 
     _ref_type: ty.Type[NT]
 
-    def _check_for_int(self, other: NTU[NT]) -> ty.Union[NTU[NT], float]:
+    def _check_for_int(self,
+                       other: NTU[NT]) -> ty.Union[NTU[NT],
+                                                   float]:
         """Convert int to float if self._ref_type is float."""
         if isinstance(other, int) and issubclass(self._ref_type, float):
             return float(other)
@@ -396,7 +410,9 @@ class VarBase(KspObject, HasInit, ty.Generic[VHT, KT], Magic[KT]):
 
     not_persistent: ty.ClassVar[Persist] = Persist()
     persistent: ty.ClassVar[Persist] = Persist("make_persistent")
-    inst_persistent: ty.ClassVar[Persist] = Persist("make_instr_persistent")
+    inst_persistent: ty.ClassVar[Persist] = Persist(
+        "make_instr_persistent"
+    )
     read_persistent: ty.ClassVar[Persist] = Persist("make_persistent")
 
     def __init__(
@@ -472,7 +488,8 @@ class VarBase(KspObject, HasInit, ty.Generic[VHT, KT], Magic[KT]):
         if not isinstance(val, self._ref_type):
             raise TypeError(
                 'accepts only RT values of type {r}, pasted{v}'.format(
-                    r=self._ref_type, v=val
+                    r=self._ref_type,
+                    v=val
                 )
             )
         self._value.set(val)
@@ -486,20 +503,30 @@ class VarBase(KspObject, HasInit, ty.Generic[VHT, KT], Magic[KT]):
         if self._persist is VarBase.not_persistent:
             self._persist = self.persistent
         out = self.get_out()
-        out.put_immediatly(AstString(f"read_persistent_var({self.name()})"))
+        out.put_immediatly(
+            AstString(f"read_persistent_var({self.name()})")
+        )
 
-    def copy(self: KVT, name: str, prefix: str, postfix: str) -> KVT:
+    def copy(self, name: str, prefix: str, postfix: str) -> KVT:
         """Return new object of self type.
 
         For arr cells obj._array and obj._idx are loosed.
         init_val is loosed."""
-        obj = self.__class__(self.val, name=name, local=True)
+        obj = ty.cast(
+            KVT,
+            self.__class__(self.val,
+                           name=name,
+                           local=True)
+        )
         obj.name.prefix = prefix
         obj.name.postfix = postfix
         return obj
 
     def _make_copy(
-        self, other: ty.Union[NVU, 'VarBase[KT, KT]'], value: VHT,
+        self,
+        other: ty.Union[NVU,
+                        'VarBase[KT, KT]'],
+        value: VHT,
         new_type: ty.Type[KVT]
     ) -> KVT:
         """Return new Var[self._ref_type] object, depends on input val."""
@@ -511,7 +538,7 @@ class VarBase(KspObject, HasInit, ty.Generic[VHT, KT], Magic[KT]):
         prefix = self.name.prefix
         postfix = self.name.postfix
         if isinstance(other, new_type):
-            ret_obj = other.copy(name, prefix, postfix)
+            ret_obj: KVT = other.copy(name, prefix, postfix)
         else:
             ret_obj = new_type(value, name, local=True)
             ret_obj.name.prefix = prefix
@@ -612,7 +639,7 @@ class Num(VarBase[NT, NT], ProcessNum[NT], ty.Generic[NT, KVT]):
             local=local,
         )
 
-    def __ilshift__(self, other: ATU[NT]) -> KVT:
+    def __ilshift__(self: KVT_1, other: ATU[NT]) -> KVT_1:
         """Return new Num[self._ref_type] object.
 
         with name of self and value of other."""
@@ -626,20 +653,20 @@ class Num(VarBase[NT, NT], ProcessNum[NT], ty.Generic[NT, KVT]):
         return out
 
     @ducktype_num_magic
-    def __iadd__(self, other: NTU[NT]) -> KVT:  # type: ignore
-        return self.__ilshift__(AstAdd(self, other))
+    def __iadd__(self: KVT_1, other: NTU[NT]) -> KVT_1:  # type: ignore
+        return self.__ilshift__(AstAdd(self, other))  # type: ignore
 
     @ducktype_num_magic
     def __isub__(self, other: NTU[NT]) -> KVT:  # type: ignore
-        return self.__ilshift__(AstSub(self, other))
+        return self.__ilshift__(AstSub(self, other))  # type: ignore
 
     @ducktype_num_magic
     def __imul__(self, other: NTU[NT]) -> KVT:  # type: ignore
-        return self.__ilshift__(AstMul(self, other))
+        return self.__ilshift__(AstMul(self, other))  # type: ignore
 
     @ducktype_num_magic
     def __itruediv__(self, other: NTU[NT]) -> KVT:  # type: ignore
-        return self.__ilshift__(AstDiv(self, other))
+        return self.__ilshift__(AstDiv(self, other))  # type: ignore
 
     def __iand__(self, other: NTU[NT]) -> ty.NoReturn:
         raise RuntimeError('has not to be used')
@@ -683,7 +710,9 @@ class VarInt(Num[int, "VarInt"], ProcessInt):
         other = self._check_for_int(other)  # type: ignore
         value = get_value(other)
         if not isinstance(value, self._ref_type):
-            raise TypeError(f"assigned to a value of wrong type: {value}")
+            raise TypeError(
+                f"assigned to a value of wrong type: {value}"
+            )
         ret_obj = self._make_copy(other, value, VarInt)
 
         return ret_obj
@@ -744,7 +773,9 @@ class VarFloat(Num[float, "VarFloat"], ProcessFloat):
         other = self._check_for_int(other)  # type: ignore
         value = get_value(other)
         if not isinstance(value, self._ref_type):
-            raise TypeError(f"assigned to a value of wrong type: {value}")
+            raise TypeError(
+                f"assigned to a value of wrong type: {value}"
+            )
         ret_obj = self._make_copy(other, value, VarFloat)
 
         return ret_obj
@@ -831,10 +862,14 @@ class ArrBase(VarBase[VHT, KT], ty.Generic[KVT, VHT, KT]):
         c_idx = get_compiled(idx)
         r_idx = get_value(idx)
         if not isinstance(r_idx, int):
-            raise IndexError(f"index has to be resolved to int, pasted: {idx}")
+            raise IndexError(
+                f"index has to be resolved to int, pasted: {idx}"
+            )
         if r_idx < 0:
             r_idx = self.__len__() - abs(r_idx)
-            c_idx = get_compiled(self.__len__() - abs(idx))  # type: ignore
+            c_idx = get_compiled(
+                self.__len__() - abs(idx)  # type: ignore
+            )
         return c_idx, r_idx
 
     def __getitem__(self, idx: NTU[int]) -> KVT:
@@ -842,7 +877,9 @@ class ArrBase(VarBase[VHT, KT], ty.Generic[KVT, VHT, KT]):
         c_idx, r_idx = self._resolve_idx(idx)
         if self.is_compiled():
             obj = Var[self._ref_type  # type: ignore
-                     ](0, self.name.name, local=True)
+                      ](0,
+                        self.name.name,
+                        local=True)
             obj.name.postfix = f"[{c_idx}]"  # type: ignore
             obj.name.prefix = self.name.prefix  # type: ignore
             return obj  # type: ignore
@@ -855,7 +892,9 @@ class ArrBase(VarBase[VHT, KT], ty.Generic[KVT, VHT, KT]):
         if not isinstance(value, Var[self._ref_type]):
             raise TypeError(
                 "has to be of type {T}[{r}], pasted: {v}".format(
-                    T=VarBase, r=self._ref_type, v=value
+                    T=VarBase,
+                    r=self._ref_type,
+                    v=value
                 )
             )
         c_idx, r_idx = self._resolve_idx(idx)  # pylint: disable=W0612
@@ -874,7 +913,9 @@ class ArrBase(VarBase[VHT, KT], ty.Generic[KVT, VHT, KT]):
         else:
             self._vars[r_idx] = Var[  # type: ignore
                 self._ref_type](
-                    self._value[r_idx], self.name.name, local=True
+                    self._value[r_idx],
+                    self.name.name,
+                    local=True
                 )
             obj = self._vars[r_idx]  # type: ignore
         obj.name.postfix = f"[{c_idx}]"
@@ -896,7 +937,9 @@ class ArrBase(VarBase[VHT, KT], ty.Generic[KVT, VHT, KT]):
         if i is None:
             return str(self._ref_type())
         if not isinstance(i, self._ref_type):
-            raise TypeError(f"value ({i}) at idx {idx} of a wrong type: {i}")
+            raise TypeError(
+                f"value ({i}) at idx {idx} of a wrong type: {i}"
+            )
         return str(i)
 
     def get_decl_line(self) -> ty.List[str]:
@@ -910,7 +953,9 @@ class ArrBase(VarBase[VHT, KT], ty.Generic[KVT, VHT, KT]):
         out = [f"declare {self.name()}[{self._size}]"]
         for idx, i in enumerate(self._init_seq):
             if not isinstance(i, str):
-                raise TypeError(f'value {i} at idx {idx} is not of type str')
+                raise TypeError(
+                    f'value {i} at idx {idx} is not of type str'
+                )
             out.append(f'{self.name()}[{idx}] := "{i}"')
         return out
 
@@ -921,8 +966,9 @@ class ArrBase(VarBase[VHT, KT], ty.Generic[KVT, VHT, KT]):
         if len(self._init_seq) != 1 or self._init_seq[0]:
             value = ", ".join(
                 [
-                    self._gen_decl_seq_item(idx, i)
-                    for idx, i in enumerate(self._init_seq)
+                    self._gen_decl_seq_item(idx,
+                                            i) for idx,
+                    i in enumerate(self._init_seq)
                 ]
             )
         if value:
@@ -949,7 +995,8 @@ class ArrBase(VarBase[VHT, KT], ty.Generic[KVT, VHT, KT]):
         if not isinstance(get_value(value), self._ref_type):
             raise TypeError(
                 "pasted value of wront type: {v}, expected {r}".format(
-                    v=value, r=self._ref_type
+                    v=value,
+                    r=self._ref_type
                 )
             )
         if isinstance(value, Var[self._ref_type]):
@@ -1049,8 +1096,12 @@ class ArrFloat(ArrBase[VarFloat, ty.List[float], float]):
 class VarMeta(type):
     """Var getitem helper metaclass."""
 
-    def __getitem__(cls, ref: ty.Union[VarIU, ty.Tuple[VarIU, int]]
-                   ) -> ty.Union[VarRU, ty.Type['ArrType']]:
+    def __getitem__(cls,
+                    ref: ty.Union[VarIU,
+                                  ty.Tuple[VarIU,
+                                           int]]
+                    ) -> ty.Union[VarRU,
+                                  ty.Type['ArrType']]:
         """Return VarBase[ref] object."""
         size: ty.Optional[int] = None
         if isinstance(ref, tuple):
@@ -1176,8 +1227,9 @@ class ArrMeta(type):
         raise TypeError('subscribe with one of int, str, float')
 
     @getitem_proxy.register(tuple)  # type: ignore
-    def _(ref: ty.Tuple[ty.Type[int], int]  # type: ignore
-         ) -> ty.Type['ArrType']:
+    def _(ref: ty.Tuple[ty.Type[int],  # type: ignore
+                        int]
+          ) -> ty.Type['ArrType']:
         if isinstance(ref, tuple):
             size = ref[1]
             _ref = ref[0]
@@ -1304,7 +1356,10 @@ class AstBuiltInBase(AstRoot, AstBase[KT]):
     string: str
 
     def __init__(
-        self, ret_val: ty.Optional[KT], string: str, *args: ATU
+        self,
+        ret_val: ty.Optional[KT],
+        string: str,
+        *args: ATU
     ) -> None:
         if ret_val is not None:
             self._ref_type = get_value_type(ret_val)
@@ -1562,7 +1617,10 @@ class AstMul(AstOperatorDoubleStandart[NT], ProcessFloat, ProcessInt):
 
 
 class OperatorComparisson(
-    AstOperatorDoubleStandart[NT], ProcessFloat, ProcessInt, AstBool[NT]
+    AstOperatorDoubleStandart[NT],
+    ProcessFloat,
+    ProcessInt,
+    AstBool[NT]
 ):
     """Base class for "just boolean" AST operators."""
 

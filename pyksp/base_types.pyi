@@ -15,22 +15,21 @@ from .abstract import KSP
 T = ty.TypeVar("T")
 KT = ty.TypeVar("KT", int, float, str)
 NT = ty.TypeVar("NT", int, float)
-VHT = ty.TypeVar('VHT', int, str, float, ty.List[int], ty.List[str],
-                 ty.List[float])
+VHT = ty.TypeVar(
+    'VHT',
+    int,
+    str,
+    float,
+    ty.List[int],
+    ty.List[str],
+    ty.List[float]
+)
 KLT = ty.TypeVar('KLT', ty.List[int], ty.List[str], ty.List[float])
 
-KVT = ty.TypeVar('KVT', 'VarBase[int,int]', 'VarBase[str,str]',
-                 'VarBase[float,float]', 'VarInt', 'VarStr', 'VarFloat')
-KAT = ty.TypeVar('KAT', 'ArrBase[VarBase[int,int],ty.List[int],int]',
-                 'ArrBase[VarBase[str,str],ty.List[str],str]',
-                 'ArrBase[VarBase[float,float],ty.List[float],float]',
-                 'ArrInt', 'ArrStr', 'ArrFloat')
-KVAT = ty.TypeVar(
-    'KVAT', 'VarBase[int,int]', 'VarBase[str,str]', 'VarBase[float,float]',
-    'ArrBase[VarBase[int,int],ty.List[int],int]',
-    'ArrBase[VarBase[str,str],ty.List[str],str]',
-    'ArrBase[VarBase[float,float],ty.List[float],float]', 'VarInt', 'VarStr',
-    'VarFloat', 'ArrInt', 'ArrStr', 'ArrFloat')
+KVT = ty.TypeVar('KVT', bound='VarBase')
+KVT_1 = ty.TypeVar('KVT_1', bound='VarBase')
+KAT = ty.TypeVar('KAT', bound=ty.Union['ArrBase'])
+KVAT = ty.TypeVar('KVAT', bound=ty.Union['VarBase', 'ArrBase'])
 
 ATU = ty.Union["VarBase[KT, KT]", "AstBase[KT]", "Magic[KT]", KT]
 NVU = ty.Union["AstBase[KT]", "Magic[KT]", KT]
@@ -42,7 +41,9 @@ PNTF = ty.TypeVar("PNTF", bound='ProcessNum[float]', covariant=True)
 NFT = ty.TypeVar("NFT", bound=ty.Callable[..., ty.Any])
 
 VarIU = ty.Union[ty.Type[int], ty.Type[str], ty.Type[float]]
-VarRU = ty.Union[ty.Type["VarInt"], ty.Type["VarFloat"], ty.Type["VarStr"]]
+VarRU = ty.Union[ty.Type["VarInt"],
+                 ty.Type["VarFloat"],
+                 ty.Type["VarStr"]]
 ArrRU = ty.Type[ty.Union["ArrInt", "ArrFloat", "ArrStr"]]
 
 
@@ -353,17 +354,19 @@ class VarBase(KspObject, HasInit, ty.Generic[VHT, KT], Magic[KT]):
 
     not_persistent: ty.ClassVar[Persist] = Persist()
     persistent: ty.ClassVar[Persist] = Persist("make_persistent")
-    inst_persistent: ty.ClassVar[Persist] = Persist("make_instr_persistent")
+    inst_persistent: ty.ClassVar[Persist] = Persist(
+        "make_instr_persistent"
+    )
     read_persistent: ty.ClassVar[Persist] = Persist("make_persistent")
 
     def __init__(
-            self,
-            value: VHT,
-            name: str = "",
-            persist: Persist = not_persistent,
-            preserve_name: bool = False,
-            *,
-            local: bool = False,
+        self,
+        value: VHT,
+        name: str = "",
+        persist: Persist = not_persistent,
+        preserve_name: bool = False,
+        *,
+        local: bool = False,
     ) -> None:
         """Initialize.
 
@@ -373,8 +376,11 @@ class VarBase(KspObject, HasInit, ty.Generic[VHT, KT], Magic[KT]):
         local only for internal library usage."""
         ...
 
-    def _bound_to_array(self, array: 'ArrBase[KVT, VHT, KT]',
-                        idx: int) -> None:
+    def _bound_to_array(
+        self,
+        array: 'ArrBase[KVT, VHT, KT]',
+        idx: int
+    ) -> None:
         """Bound var to Arr cell."""
         ...
 
@@ -417,8 +423,13 @@ class VarBase(KspObject, HasInit, ty.Generic[VHT, KT], Magic[KT]):
         init_val is loosed."""
         ...
 
-    def _make_copy(self, other: ty.Union[NVU, 'VarBase[KT, KT]'], value: VHT,
-                   new_type: ty.Type[KVT]) -> KVT:
+    def _make_copy(
+        self,
+        other: ty.Union[NVU,
+                        'VarBase[KT, KT]'],
+        value: VHT,
+        new_type: ty.Type[KVT]
+    ) -> KVT:
         """Return new Var[self._ref_type] object, depends on input val."""
         ...
 
@@ -435,13 +446,13 @@ class VarStr(VarBase[str, str], ConcatsStrings):
     """String KSP Var."""
 
     def __init__(
-            self,
-            value: str = "",
-            name: str = "",
-            persist: VarBase.Persist = VarBase.not_persistent,
-            preserve_name: bool = False,
-            *,
-            local: bool = False,
+        self,
+        value: str = "",
+        name: str = "",
+        persist: VarBase.Persist = VarBase.not_persistent,
+        preserve_name: bool = False,
+        *,
+        local: bool = False,
     ) -> None:
         """Initialize.
 
@@ -451,7 +462,7 @@ class VarStr(VarBase[str, str], ConcatsStrings):
         local only for internal library usage."""
         ...
 
-    def __ilshift__(self, other: STU) -> "VarStr":
+    def __ilshift__(self: KVT_1, other: STU) -> KVT_1:
         """Return new Str object with name of self and value of other."""
         ...
 
@@ -459,7 +470,7 @@ class VarStr(VarBase[str, str], ConcatsStrings):
         """Return List[str] of simple declaration."""
         ...
 
-    def __iadd__(self, other: STU) -> "VarStr":  # type: ignore
+    def __iadd__(self: KVT_1, other: STU) -> KVT_1:  # type: ignore
         """Return new Str object, keep concatenated self+string."""
         ...
 
@@ -468,13 +479,15 @@ class Num(VarBase[NT, NT], ProcessNum[NT], ty.Generic[NT, KVT]):
     """Generic KSP numeric Var (int or float)."""
     _ref_type: ty.Type[NT]
 
-    def __init__(self,
-                 value: NT,
-                 name: str = "",
-                 persist: VarBase.Persist = VarBase.not_persistent,
-                 preserve_name: bool = False,
-                 *,
-                 local: bool = False) -> None:
+    def __init__(
+        self,
+        value: NT,
+        name: str = "",
+        persist: VarBase.Persist = VarBase.not_persistent,
+        preserve_name: bool = False,
+        *,
+        local: bool = False
+    ) -> None:
         """Initialize.
 
         Value is Optional if instantiated within indexation[]
@@ -490,19 +503,22 @@ class Num(VarBase[NT, NT], ProcessNum[NT], ty.Generic[NT, KVT]):
         ...
 
     @ducktype_num_magic
-    def __iadd__(self, other: NTU[NT]) -> KVT:  # type: ignore
+    def __iadd__(self: KVT_1, other: NTU[NT]) -> KVT_1:  # type: ignore
         ...
 
     @ducktype_num_magic
-    def __isub__(self, other: NTU[NT]) -> KVT:  # type: ignore
+    def __isub__(self: KVT_1, other: NTU[NT]) -> KVT_1:  # type: ignore
         ...
 
     @ducktype_num_magic
-    def __imul__(self, other: NTU[NT]) -> KVT:  # type: ignore
+    def __imul__(self: KVT_1, other: NTU[NT]) -> KVT_1:  # type: ignore
         ...
 
     @ducktype_num_magic
-    def __itruediv__(self, other: NTU[NT]) -> KVT:  # type: ignore
+    def __itruediv__(  # type: ignore
+        self: KVT_1,
+        other: NTU[NT]
+    ) -> KVT_1:
         ...
 
     def __iand__(self, other: NTU[NT]) -> ty.NoReturn:
@@ -513,22 +529,27 @@ class Num(VarBase[NT, NT], ProcessNum[NT], ty.Generic[NT, KVT]):
 
 
 class VarInt(Num[int, "VarInt"], ProcessInt):
-    def __init__(self,
-                 value: int = 0,
-                 name: str = "",
-                 persist: VarBase.Persist = VarBase.not_persistent,
-                 preserve_name: bool = False,
-                 *,
-                 local: bool = False) -> None:
+    def __init__(
+        self,
+        value: int = 0,
+        name: str = "",
+        persist: VarBase.Persist = VarBase.not_persistent,
+        preserve_name: bool = False,
+        *,
+        local: bool = False
+    ) -> None:
         ...
 
-    def __ilshift__(self, other: ATU[NT]) -> 'VarInt':  # type: ignore
+    def __ilshift__(  # type: ignore
+        self: KVT_1,
+        other: ATU[NT]
+    ) -> KVT_1:
         """Return new Num[self._ref_type] object.
 
         with name of self and value of other."""
 
     @ducktype_num_magic
-    def __imod__(self, other: NTU[int]) -> "VarInt":  # type: ignore
+    def __imod__(self: KVT_1, other: NTU[int]) -> KVT_1:  # type: ignore
         ...
 
     def inc(self) -> None:
@@ -541,22 +562,27 @@ class VarInt(Num[int, "VarInt"], ProcessInt):
 
 
 class VarFloat(Num[float, "VarFloat"], ProcessFloat):
-    def __init__(self,
-                 value: float = 0.0,
-                 name: str = "",
-                 persist: VarBase.Persist = VarBase.not_persistent,
-                 preserve_name: bool = False,
-                 *,
-                 local: bool = False) -> None:
+    def __init__(
+        self,
+        value: float = 0.0,
+        name: str = "",
+        persist: VarBase.Persist = VarBase.not_persistent,
+        preserve_name: bool = False,
+        *,
+        local: bool = False
+    ) -> None:
         ...
 
-    def __ilshift__(self, other: ATU[NT]) -> 'VarFloat':
+    def __ilshift__(self: KVT_1, other: ATU[NT]) -> KVT_1:
         """Return new Num[self._ref_type] object.
 
         with name of self and value of other."""
 
     @ducktype_num_magic
-    def __ipow__(self, other: NTU[float]) -> "VarFloat":  # type: ignore
+    def __ipow__(  # type: ignore
+        self: KVT_1,
+        other: NTU[float]
+    ) -> KVT_1:
         ...
 
 
@@ -606,14 +632,14 @@ class ArrBase(VarBase[VHT, KT], ty.Generic[KVT, VHT, KT]):
         ...
 
     def __init__(
-            self,
-            value: VHT,
-            name: str = "",
-            persist: VarBase.Persist = VarBase.not_persistent,
-            preserve_name: bool = False,
-            size: ty.Optional[int] = None,
-            *,
-            local: bool = False,
+        self,
+        value: VHT,
+        name: str = "",
+        persist: VarBase.Persist = VarBase.not_persistent,
+        preserve_name: bool = False,
+        size: ty.Optional[int] = None,
+        *,
+        local: bool = False,
     ) -> None:
         """Represent all three types of KSP arrays.
 
@@ -659,42 +685,45 @@ class ArrBase(VarBase[VHT, KT], ty.Generic[KVT, VHT, KT]):
 
 class ArrStr(ArrBase[VarStr, ty.List[str], str]):
     def __init__(
-            self,
-            value: ty.Union[str, ty.List[str]] = "",
-            name: str = "",
-            persist: VarBase.Persist = VarBase.not_persistent,
-            preserve_name: bool = False,
-            size: ty.Optional[int] = None,
-            *,
-            local: bool = False,
+        self,
+        value: ty.Union[str,
+                        ty.List[str]] = "",
+        name: str = "",
+        persist: VarBase.Persist = VarBase.not_persistent,
+        preserve_name: bool = False,
+        size: ty.Optional[int] = None,
+        *,
+        local: bool = False,
     ) -> None:
         ...
 
 
 class ArrInt(ArrBase[VarInt, ty.List[int], int]):
     def __init__(
-            self,
-            value: ty.Union[int, ty.List[int]] = 0,
-            name: str = "",
-            persist: VarBase.Persist = VarBase.not_persistent,
-            preserve_name: bool = False,
-            size: ty.Optional[int] = None,
-            *,
-            local: bool = False,
+        self,
+        value: ty.Union[int,
+                        ty.List[int]] = 0,
+        name: str = "",
+        persist: VarBase.Persist = VarBase.not_persistent,
+        preserve_name: bool = False,
+        size: ty.Optional[int] = None,
+        *,
+        local: bool = False,
     ) -> None:
         ...
 
 
 class ArrFloat(ArrBase[VarFloat, ty.List[float], float]):
     def __init__(
-            self,
-            value: ty.Union[float, ty.List[float]] = 0.0,
-            name: str = "",
-            persist: VarBase.Persist = VarBase.not_persistent,
-            preserve_name: bool = False,
-            size: ty.Optional[int] = None,
-            *,
-            local: bool = False,
+        self,
+        value: ty.Union[float,
+                        ty.List[float]] = 0.0,
+        name: str = "",
+        persist: VarBase.Persist = VarBase.not_persistent,
+        preserve_name: bool = False,
+        size: ty.Optional[int] = None,
+        *,
+        local: bool = False,
     ) -> None:
         ...
 
@@ -715,7 +744,9 @@ class VarMeta(type):
         ...
 
     @ty.overload
-    def __getitem__(cls, ref: ty.Tuple[VarIU, int]) -> ty.Type['ArrType']:
+    def __getitem__(cls,
+                    ref: ty.Tuple[VarIU,
+                                  int]) -> ty.Type['ArrType']:
         ...
 
     def __instancecheck__(cls, inst: object) -> bool:
@@ -725,81 +756,81 @@ class VarMeta(type):
 class Var(metaclass=VarMeta):
     @ty.overload
     def __new__(
-            cls,
-            value: int,
-            name: str = "",
-            persist: VarBase.Persist = VarBase.not_persistent,
-            preserve_name: bool = False,
-            *,
-            local: bool = False,
+        cls,
+        value: int,
+        name: str = "",
+        persist: VarBase.Persist = VarBase.not_persistent,
+        preserve_name: bool = False,
+        *,
+        local: bool = False,
     ) -> 'VarInt':
         """Return new object of proper base concrete class."""
         ...
 
     @ty.overload
     def __new__(
-            cls,
-            value: float,
-            name: str = "",
-            persist: VarBase.Persist = VarBase.not_persistent,
-            preserve_name: bool = False,
-            *,
-            local: bool = False,
+        cls,
+        value: float,
+        name: str = "",
+        persist: VarBase.Persist = VarBase.not_persistent,
+        preserve_name: bool = False,
+        *,
+        local: bool = False,
     ) -> 'VarFloat':
         """Return new object of proper base concrete class."""
         ...
 
     @ty.overload
     def __new__(
-            cls,
-            value: str,
-            name: str = "",
-            persist: VarBase.Persist = VarBase.not_persistent,
-            preserve_name: bool = False,
-            *,
-            local: bool = False,
+        cls,
+        value: str,
+        name: str = "",
+        persist: VarBase.Persist = VarBase.not_persistent,
+        preserve_name: bool = False,
+        *,
+        local: bool = False,
     ) -> 'VarStr':
         """Return new object of proper base concrete class."""
         ...
 
     @ty.overload
     def __new__(
-            cls,
-            value: ty.List[int],
-            name: str = "",
-            persist: VarBase.Persist = VarBase.not_persistent,
-            preserve_name: bool = False,
-            size: ty.Optional[int] = None,
-            *,
-            local: bool = False,
+        cls,
+        value: ty.List[int],
+        name: str = "",
+        persist: VarBase.Persist = VarBase.not_persistent,
+        preserve_name: bool = False,
+        size: ty.Optional[int] = None,
+        *,
+        local: bool = False,
     ) -> 'ArrInt':
         """Return new object of proper base concrete class."""
         ...
 
     @ty.overload
     def __new__(
-            cls,
-            value: ty.List[float],
-            name: str = "",
-            persist: VarBase.Persist = VarBase.not_persistent,
-            preserve_name: bool = False,
-            size: ty.Optional[int] = None,
-            *,
-            local: bool = False,
+        cls,
+        value: ty.List[float],
+        name: str = "",
+        persist: VarBase.Persist = VarBase.not_persistent,
+        preserve_name: bool = False,
+        size: ty.Optional[int] = None,
+        *,
+        local: bool = False,
     ) -> 'ArrFloat':
         """Return new object of proper base concrete class."""
         ...
 
     @ty.overload
     def __new__(
-            cls,
-            value: ty.List[str],
-            name: str = "",
-            persist: VarBase.Persist = VarBase.not_persistent,
-            preserve_name: bool = False,
-            size: ty.Optional[int] = None,
-            *,
-            local: bool = False,
+        cls,
+        value: ty.List[str],
+        name: str = "",
+        persist: VarBase.Persist = VarBase.not_persistent,
+        preserve_name: bool = False,
+        size: ty.Optional[int] = None,
+        *,
+        local: bool = False,
     ) -> 'ArrStr':
         """Return new object of proper base concrete class."""
         ...
@@ -821,7 +852,9 @@ class ArrMeta(type):
         ...
 
     @ty.overload
-    def __getitem__(cls, ref: ty.Tuple[VarIU, int]) -> ty.Type['ArrType']:
+    def __getitem__(cls,
+                    ref: ty.Tuple[VarIU,
+                                  int]) -> ty.Type['ArrType']:
         ...
 
     def __instancecheck__(cls, inst: object) -> bool:
@@ -844,42 +877,42 @@ class ArrType(metaclass=ArrTypeMeta):
 class Arr(metaclass=ArrMeta):
     @ty.overload
     def __new__(
-            cls,
-            value: ty.List[int],
-            name: str = "",
-            persist: VarBase.Persist = VarBase.not_persistent,
-            preserve_name: bool = False,
-            size: ty.Optional[int] = None,
-            *,
-            local: bool = False,
+        cls,
+        value: ty.List[int],
+        name: str = "",
+        persist: VarBase.Persist = VarBase.not_persistent,
+        preserve_name: bool = False,
+        size: ty.Optional[int] = None,
+        *,
+        local: bool = False,
     ) -> 'ArrInt':
         """Return new object of proper base concrete class."""
         ...
 
     @ty.overload
     def __new__(
-            cls,
-            value: ty.List[float],
-            name: str = "",
-            persist: VarBase.Persist = VarBase.not_persistent,
-            preserve_name: bool = False,
-            size: ty.Optional[int] = None,
-            *,
-            local: bool = False,
+        cls,
+        value: ty.List[float],
+        name: str = "",
+        persist: VarBase.Persist = VarBase.not_persistent,
+        preserve_name: bool = False,
+        size: ty.Optional[int] = None,
+        *,
+        local: bool = False,
     ) -> 'ArrFloat':
         """Return new object of proper base concrete class."""
         ...
 
     @ty.overload
     def __new__(
-            cls,
-            value: ty.List[str],
-            name: str = "",
-            persist: VarBase.Persist = VarBase.not_persistent,
-            preserve_name: bool = False,
-            size: ty.Optional[int] = None,
-            *,
-            local: bool = False,
+        cls,
+        value: ty.List[str],
+        name: str = "",
+        persist: VarBase.Persist = VarBase.not_persistent,
+        preserve_name: bool = False,
+        size: ty.Optional[int] = None,
+        *,
+        local: bool = False,
     ) -> 'ArrStr':
         """Return new object of proper base concrete class."""
         ...
@@ -891,7 +924,11 @@ class AstAssign(AstRoot[KT]):
     to_arg: "VarBase[KT,KT]"
     from_arg: ATU
 
-    def __init__(self, to_arg: "VarBase[KT,KT]", from_arg: ATU[KT]) -> None:
+    def __init__(
+        self,
+        to_arg: "VarBase[KT,KT]",
+        from_arg: ATU[KT]
+    ) -> None:
         ...
 
     def expand(self) -> str:
@@ -910,8 +947,12 @@ class AstBuiltInBase(AstRoot, AstBase[KT]):
     args: ty.List[str]
     string: str
 
-    def __init__(self, ret_val: ty.Optional[KT], string: str,
-                 *args: ATU) -> None:
+    def __init__(
+        self,
+        ret_val: ty.Optional[KT],
+        string: str,
+        *args: ATU
+    ) -> None:
         ...
 
     def expand(self) -> str:
@@ -924,7 +965,9 @@ class AstBuiltInBase(AstRoot, AstBase[KT]):
 
 
 class AstOperatorUnary(  # type: ignore
-        AstBase[NT], ProcessNum[NT]):
+    AstBase[NT],
+    ProcessNum[NT]
+):
     """Base class for AST numeric operator.
 
     arg parced
@@ -1012,7 +1055,10 @@ def _check_if_bool(arg: NTU[NT]) -> ty.Union[NT, bool]:
     ...
 
 
-class AstCanBeBool(AstOperatorDoubleStandart[NT], AstBool[NT]):  # type: ignore
+class AstCanBeBool(  # type: ignore
+    AstOperatorDoubleStandart[NT],
+    AstBool[NT]
+):
     """Combines Standart double and bool AST operators."""
     string_bool: ty.ClassVar[str]
     arg1_pure: ty.Union[NT, bool]  # type: ignore

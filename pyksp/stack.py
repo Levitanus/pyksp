@@ -1,3 +1,4 @@
+"""Stack and StackArray classes."""
 import typing as ty
 
 from . import abstract as ab
@@ -7,6 +8,7 @@ from . import service_types as st
 
 
 class StackArray(ty.Generic[bt.KAT]):
+    """Handle arrays with their pointers and initializators."""
     array: bt.KAT
     ptr: bt.ArrInt
     idx: bt.VarInt
@@ -22,6 +24,13 @@ class StackArray(ty.Generic[bt.KAT]):
         size: int = 32768,
         depth: int = 100
     ) -> None:
+        """Initialize.
+
+        name is unique arrays name
+        ref is type of array, being handled (ArrInt, ArrStr, ArrFloat)
+        size is main arr size (32768 by default)
+        depth is ptr array size (100 by default)
+        """
         self._ref = ref
         self._size = size
         self._depth = depth
@@ -41,15 +50,18 @@ class StackArray(ty.Generic[bt.KAT]):
             return
 
     def push(self, size: int) -> None:
+        """Shift ptr by size."""
         self._check_init()
         self.idx.inc()
         self.ptr[self.idx + 1] <<= self.ptr[self.idx] + size
 
     def pop(self) -> None:
+        """Decrease index by the last frame size."""
         self.idx.dec()
 
     @property
     def index(self) -> bt.VarInt:
+        """Return current frame ptr."""
         return self.ptr[self.idx + 1]
 
 
@@ -66,17 +78,26 @@ vars_u = ty.Union[int,
 
 
 class Stack(ab.KSP):
+    """Implement parametrized stack (mostly, for handling functions).
+
+    name used for unique indentification of all stack objects.
+    within push(*vars_) method all input int, str, float and KSP objects
+    can be passed to the stack arrays and returned as their items.
+    pop method decreases ptrs of arrays used in frame and returns
+    Dict[Type[Union[int,str,float]], int] of used sizes.
+    """
     arrays: ty.Dict[ty.Type[ty.Union[int, str, float]], StackArray]
     frames: ty.List[ty.Dict[type, int]]
 
     def __init__(self, name: str) -> None:
+        """Initialize."""
         self.arrays = dict()
         self.frames = list()
         for n, t in (('int', int), ('str', str), ('float', float)):
             self.arrays[t] = StackArray(f'{name}_{n}', bt.Arr[t])
 
     def push(self, *vars_: vars_u) -> ty.Tuple[bt.Magic, ...]:
-        sizes: ty.Dict[type, int] = {int: 0, str: 0, float: 0}
+        """Pass vars to stack arrays and return their items."""
         idxes: ty.Dict[type,
                        ty.Tuple[bt.ProcessInt,
                                 int]] = {
@@ -88,9 +109,10 @@ class Stack(ab.KSP):
                                         (self.arrays[float].index,
                                          0)
                                 }
-        out_vars: ty.List[bt.Magic] = list()
-        for var in vars_:
-            out_vars.append(self._push_var(var, sizes, idxes))
+        out_vars: ty.List[bt.Magic] = [
+            self._push_var(var,
+                           idxes) for var in vars_
+        ]
         frame = {
             int: idxes[int][1],
             str: idxes[str][1],
@@ -106,8 +128,6 @@ class Stack(ab.KSP):
     def _push_var(
         self,
         var: vars_u,
-        sizes: ty.Dict[type,
-                       int],
         idxes: ty.Dict[type,
                        ty.Tuple[bt.ProcessInt,
                                 int]]
@@ -118,10 +138,12 @@ class Stack(ab.KSP):
             ref = var._ref_type
         idx, shift = idxes[ref]
         if isinstance(var, st.LocMeta):
-            return self._push_loc(ref, var, idx, shift, idxes)
+            return self._push_loc(ref, var, idxes)
         if isinstance(var, bt.ArrBase):
             return self._push_arr(  # type: ignore
-                ref, var, idx, shift, idxes
+                ref,
+                var,
+                idxes
             )
         ret4 = self.arrays[ref].array[idx + shift]
         ret4 <<= var
@@ -135,13 +157,12 @@ class Stack(ab.KSP):
                               str,
                               float]],
         var: st.LocMeta,
-        idx: bt.ProcessInt,
-        shift: int,
         idxes: ty.Dict[type,
                        ty.Tuple[bt.ProcessInt,
                                 int]]
     ) -> ty.Union[bt.VarBase,
                   st.SubArray]:
+        idx, shift = idxes[ref]
         if hasattr(var, 'size'):
             ret = st.SubArray(
                 self.arrays[ref].array,
@@ -160,12 +181,11 @@ class Stack(ab.KSP):
         self,
         ref: ty.Type[bt.KT],
         var: bt.ArrBase,
-        idx: bt.ProcessInt,
-        shift: int,
         idxes: ty.Dict[type,
                        ty.Tuple[bt.ProcessInt,
                                 int]]
     ) -> st.SubArray:
+        idx, shift = idxes[ref]
         ret3 = st.SubArray(
             self.arrays[ref].array,
             idx + shift,
@@ -178,6 +198,9 @@ class Stack(ab.KSP):
         return ret3
 
     def pop(self) -> ty.Dict[type, int]:
+        """Shift down ptr of arrays, used in frame.
+
+        Returns dict with size of areas, used in this frame."""
         frame = self.frames.pop()
         for ref in frame:
             if frame[ref]:

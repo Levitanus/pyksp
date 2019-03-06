@@ -29,25 +29,61 @@ def _vrs_inference(node, context=None):  # type: ignore
     return (node, )
 
 
+def _func_inference(node, context=None):  # type: ignore
+    return _vrs_inference(node, context)
+
+
 # MANAGER.register_transform(astroid.FunctionDef, _transform_lru_cache,
 #                            _looks_like_lru_cache)
 
 
-def _looks_like_service_types_member(node, member):  # type: ignore
+def _looks_like_service_types_member(  # type: ignore
+    node,
+    member,
+    module_name
+):
     """Check if the given Call node is a functools.partial call"""
     if not node.decorators:
         return
     if not isinstance(node.decorators.nodes[0], astroid.Attribute):
         return
     attr = node.decorators.nodes[0]
-    if attr.attrname == 'vrs':
+    if attr.attrname == member:
         module = attr.expr.inferred()[0]
-        return module.name == 'pyksp.service_types'
+        return module.name == 'pyksp.%s' % module_name
     return False
 
 
-_looks_like_partial = partial(_looks_like_service_types_member, member="vrs")
+# def _looks_like_func(node):  # type: ignore
+#     """Check if the given Call node is a functools.partial call"""
+#     if not node.decorators:
+#         return
+#     if not isinstance(node.decorators.nodes[0], astroid.Attribute):
+#         return
+#     attr = node.decorators.nodes[0]
+#     if attr.attrname == 'func':
+#         module = attr.expr.inferred()[0]
+#         return module.name == 'pyksp.functions'
+#     return False
 
-MANAGER.register_transform(astroid.FunctionDef,
-                           astroid.inference_tip(_vrs_inference),
-                           _looks_like_partial)
+_looks_like_vrs = partial(
+    _looks_like_service_types_member,
+    member="vrs",
+    module_name='service_types'
+)
+_looks_like_func = partial(
+    _looks_like_service_types_member,
+    member="func",
+    module_name='functions'
+)
+
+MANAGER.register_transform(
+    astroid.FunctionDef,
+    astroid.inference_tip(_vrs_inference),
+    _looks_like_vrs
+)
+MANAGER.register_transform(
+    astroid.FunctionDef,
+    astroid.inference_tip(_func_inference),
+    _looks_like_func
+)

@@ -26,17 +26,19 @@ class TestEventListener(ut.TestCase):
 
 
 class TestKspObject(ut.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         ab.KSP.refresh()
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         ab.KSP.refresh()
 
     class WithoutInit(ab.KspObject):
-        def __init__(self,
-                     name: str = 'test_object',
-                     *,
-                     has_init: bool = False) -> None:
+        def __init__(
+            self,
+            name: str = 'test_object',
+            *,
+            has_init: bool = False
+        ) -> None:
             super().__init__(ab.NameBase(name), has_init=has_init)
 
         def generate_init(self) -> ty.List[str]:
@@ -49,8 +51,10 @@ class TestKspObject(ut.TestCase):
     def runTest(self) -> None:
         self.WithInit()
         self.WithoutInit()
-        self.assertEqual(self.WithInit.generate_inits(),
-                         ['init of test_object'])
+        self.assertEqual(
+            self.WithInit.generate_inits(),
+            ['init of test_object']
+        )
 
 
 class TestNames(ut.TestCase):
@@ -204,7 +208,8 @@ class TestOutput(ut.TestCase):
         out.close_block(ab.OutputBlock('else', 'end if'))
 
         out.close_block(ab.OutputBlock('on init', 'end on'))
-        out_str = dedent('''
+        out_str = dedent(
+            '''
             on init
                 line
                 if
@@ -220,7 +225,8 @@ class TestOutput(ut.TestCase):
                         line
                     end if
                 end if
-            end on''')[1:]
+            end on'''
+        )[1:]
         self.assertEqual(out.get_str(), out_str)
         got = out.get()
         newOut = ab.Output(0)
@@ -232,7 +238,11 @@ class TestOutput(ut.TestCase):
         out.open_block(ab.OutputBlock('if', 'end if'))
         out.put_immediatly(self.ast)
         out.wait_for_block(
-            ab.OutputBlock('if', 'end if'), ab.OutputBlock('else', 'end if'))
+            ab.OutputBlock('if',
+                           'end if'),
+            ab.OutputBlock('else',
+                           'end if')
+        )
 
     def test_blocking(self) -> None:
         out = ab.Output(0)
