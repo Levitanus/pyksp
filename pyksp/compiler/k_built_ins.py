@@ -10,7 +10,7 @@ from typing import Tuple
 from typing import Union
 
 import math
-
+import random
 
 # from .abstract import KspObject
 from .abstract import Output
@@ -30,7 +30,6 @@ from .native_types import kStr
 from .native_types import kReal
 from .native_types import kArrReal
 from .native_types import kNone
-
 
 all_callbacks = object()
 
@@ -53,8 +52,8 @@ def get_compiled(val):
 
 def _all_subclasses(cls):
     return set(cls.__subclasses__()).union(
-        [s for c in cls.__subclasses__()
-         for s in _all_subclasses(c)])
+        [s for c in cls.__subclasses__() for s in _all_subclasses(c)]
+    )
 
 
 class Callback(KSP):
@@ -63,8 +62,12 @@ class Callback(KSP):
     __current = None
     __id = int()
 
-    def __init__(self, header: str, cb_type: 'bCallbackVar',
-                 built_in_vars: Tuple[str]):
+    def __init__(
+        self,
+        header: str,
+        cb_type: 'bCallbackVar',
+        built_in_vars: Tuple[str]
+    ):
         Callback.__callbacks.append(self)
         self._header = header
         self.__lines = list()
@@ -115,8 +118,9 @@ class Callback(KSP):
                         'probably, used as decorator of class method.' +
                         ' Invoke as function with method name as' +
                         ' argument. Example: init(self.method)' +
-                        'or use as decorator with no arguments passed\n' +
-                        f'original exception: {e}')
+                        'or use as decorator with no arguments passed\n'
+                        + f'original exception: {e}'
+                    )
                 except KeyError:
                     func()
         out.extend(self.__lines)
@@ -158,23 +162,22 @@ class InitCallbackCl(Callback):
 
 
 class Control(KSP):
-
     def __init__(self, control: KspVar):
         self.lines = list()
         self.control = control
 
 
 class UiControlCallbackCl(Callback):
-
     def __init__(self, cb_type):
-        super().__init__('ui_control', cb_type, ('control',))
+        super().__init__('ui_control', cb_type, ('control', ))
         self.__controls = dict()
 
-    def open(self, control: KspVar=None):
+    def open(self, control: KspVar = None):
         super().open()
         if control and control.name() in self.__controls.keys():
-            raise RuntimeError(f'callback of {control.name()} has' +
-                               ' been set yet')
+            raise RuntimeError(
+                f'callback of {control.name()} has' + ' been set yet'
+            )
         if not control:
             control = self._last_control
         else:
@@ -200,7 +203,6 @@ class UiControlCallbackCl(Callback):
 
 
 class FunctionCallbackCl(Callback):
-
     def __init__(self):
         super().__init__('function', -1, tuple())
         self.__root = None
@@ -283,7 +285,8 @@ class BuiltIn(KSP):
             return
         if KSP.callback() not in self._callbacks:
             raise RuntimeError(
-                f'can be used only in {self._callbacks} callbacks')
+                f'can be used only in {self._callbacks} callbacks'
+            )
 
     @staticmethod
     def refresh():
@@ -292,7 +295,6 @@ class BuiltIn(KSP):
 
 
 class BuilInVar(BuiltIn):
-
     def set_value(self, val):
         self._value = val
 
@@ -300,25 +302,44 @@ class BuilInVar(BuiltIn):
 class BuiltInIntVar(BuilInVar, kInt):
     ''''''
 
-    def __init__(self, name: str, callbacks=all_callbacks,
-                 def_val: int=1):
+    def __init__(
+        self,
+        name: str,
+        callbacks=all_callbacks,
+        def_val: int = 1
+    ):
         BuiltIn.__init__(self, callbacks=callbacks)
-        kInt.__init__(self, value=def_val, name=name, preserve=False,
-                      is_local=True, persist=False)
+        kInt.__init__(
+            self,
+            value=def_val,
+            name=name,
+            preserve=False,
+            is_local=True,
+            persist=False
+        )
 
 
 class BuiltInRealVar(BuilInVar, kReal):
     ''''''
 
-    def __init__(self, name: str, callbacks=all_callbacks,
-                 def_val: float=1.0):
+    def __init__(
+        self,
+        name: str,
+        callbacks=all_callbacks,
+        def_val: float = 1.0
+    ):
         BuiltIn.__init__(self, callbacks=callbacks)
-        kReal.__init__(self, value=def_val, name=name, preserve=False,
-                       is_local=True, persist=False)
+        kReal.__init__(
+            self,
+            value=def_val,
+            name=name,
+            preserve=False,
+            is_local=True,
+            persist=False
+        )
 
 
 class BuiltInArray(BuiltIn, KspArray):
-
     def __init__(self, callbacks=all_callbacks):
         BuiltIn.__init__(self, callbacks=callbacks)
 
@@ -340,30 +361,42 @@ class BuiltInArray(BuiltIn, KspArray):
 
 
 class BuiltInArrayInt(BuiltInArray, kArrInt):
-
     def __init__(self, name, size, callbacks=all_callbacks):
         BuiltInArray.__init__(self, callbacks=callbacks)
-        kArrInt.__init__(self, sequence=[0] * size,
-                         name=name, size=size,
-                         preserve=False, persist=False,
-                         is_local=True)
+        kArrInt.__init__(
+            self,
+            sequence=[0] * size,
+            name=name,
+            size=size,
+            preserve=False,
+            persist=False,
+            is_local=True
+        )
 
 
 class BuiltInArrayReal(BuiltInArray, kArrReal):
-
     def __init__(self, name, size, callbacks=all_callbacks):
         BuiltInArray.__init__(self, callbacks=callbacks)
-        kArrReal.__init__(self, sequence=[0.0] * size,
-                          name=name, size=size,
-                          preserve=False, persist=False,
-                          is_local=True)
+        kArrReal.__init__(
+            self,
+            sequence=[0.0] * size,
+            name=name,
+            size=size,
+            preserve=False,
+            persist=False,
+            is_local=True
+        )
 
 
 class BuiltInFunc(BuiltIn):
-
-    def __init__(self, name: str, callbacks=all_callbacks,
-                 args: OrderedDict=None, def_ret=None,
-                 no_parentesis=False):
+    def __init__(
+        self,
+        name: str,
+        callbacks=all_callbacks,
+        args: OrderedDict = None,
+        def_ret=None,
+        no_parentesis=False
+    ):
         self._name = name
         self._args = args
         self._def_ret = def_ret
@@ -386,8 +419,10 @@ class BuiltInFunc(BuiltIn):
         else:
             ref = arg
         if not isinstance(val, ref):
-            raise TypeError(f'arg "{key}" has to be of type {ref}. ' +
-                            f'pasted {type(val)}')
+            raise TypeError(
+                f'arg "{key}" has to be of type {ref}. ' +
+                f'pasted {type(val)}'
+            )
         return native_val
 
     def __call__(self, *args):
@@ -447,67 +482,107 @@ class BuiltInFunc(BuiltIn):
 
 
 class BuiltInFuncInt(BuiltInFunc):
-
-    def __init__(self, name: str, callbacks=all_callbacks,
-                 args: OrderedDict=None, def_ret=None,
-                 no_parentesis=False):
-        BuiltInFunc.__init__(self, name=name,
-                             callbacks=callbacks,
-                             args=args,
-                             no_parentesis=no_parentesis,
-                             def_ret=def_ret)
-        self._var = kInt(name=name,
-                         preserve=False, is_local=True,
-                         persist=False)
+    def __init__(
+        self,
+        name: str,
+        callbacks=all_callbacks,
+        args: OrderedDict = None,
+        def_ret=None,
+        no_parentesis=False
+    ):
+        BuiltInFunc.__init__(
+            self,
+            name=name,
+            callbacks=callbacks,
+            args=args,
+            no_parentesis=no_parentesis,
+            def_ret=def_ret
+        )
+        self._var = kInt(
+            name=name,
+            preserve=False,
+            is_local=True,
+            persist=False
+        )
 
 
 class BuiltInFuncStr(BuiltInFunc):
-
-    def __init__(self, name: str, callbacks=all_callbacks,
-                 args: OrderedDict=None, def_ret=None,
-                 no_parentesis=False):
-        BuiltInFunc.__init__(self, name=name,
-                             callbacks=callbacks,
-                             args=args,
-                             no_parentesis=no_parentesis,
-                             def_ret=def_ret)
-        self._var = kStr(name=name,
-                         preserve=False, is_local=True,
-                         persist=False)
+    def __init__(
+        self,
+        name: str,
+        callbacks=all_callbacks,
+        args: OrderedDict = None,
+        def_ret=None,
+        no_parentesis=False
+    ):
+        BuiltInFunc.__init__(
+            self,
+            name=name,
+            callbacks=callbacks,
+            args=args,
+            no_parentesis=no_parentesis,
+            def_ret=def_ret
+        )
+        self._var = kStr(
+            name=name,
+            preserve=False,
+            is_local=True,
+            persist=False
+        )
 
 
 class BuiltInFuncReal(BuiltInFunc):
+    def __init__(
+        self,
+        name: str,
+        callbacks=all_callbacks,
+        args: OrderedDict = None,
+        def_ret=None,
+        no_parentesis=False
+    ):
+        BuiltInFunc.__init__(
+            self,
+            name=name,
+            callbacks=callbacks,
+            args=args,
+            no_parentesis=no_parentesis,
+            def_ret=def_ret
+        )
+        self._var = kReal(
+            name=name,
+            preserve=False,
+            is_local=True,
+            persist=False
+        )
 
-    def __init__(self, name: str, callbacks=all_callbacks,
-                 args: OrderedDict=None, def_ret=None,
-                 no_parentesis=False):
-        BuiltInFunc.__init__(self, name=name,
-                             callbacks=callbacks,
-                             args=args,
-                             no_parentesis=no_parentesis,
-                             def_ret=def_ret)
-        self._var = kReal(name=name,
-                          preserve=False, is_local=True,
-                          persist=False)
 
-
-exit = BuiltInFuncInt('exit', no_parentesis=True,
-                      def_ret=kNone()).__call__
-reset_ksp_timer = BuiltInFuncInt('reset_ksp_timer', no_parentesis=True,
-                                 def_ret=kNone()).__call__
-ignore_controller = BuiltInFuncInt('ignore_controller',
-                                   no_parentesis=True,
-                                   def_ret=kNone()).__call__
+exit = BuiltInFuncInt(
+    'exit',
+    no_parentesis=True,
+    def_ret=kNone()
+).__call__
+reset_ksp_timer = BuiltInFuncInt(
+    'reset_ksp_timer',
+    no_parentesis=True,
+    def_ret=kNone()
+).__call__
+ignore_controller = BuiltInFuncInt(
+    'ignore_controller',
+    no_parentesis=True,
+    def_ret=kNone()
+).__call__
 
 
 class MessageFunc(BuiltInFuncInt):
-
     def __init__(self, *args):
-        super().__init__('message', callbacks=all_callbacks,
-                         def_ret=kNone())
+        super().__init__(
+            'message',
+            callbacks=all_callbacks,
+            def_ret=kNone()
+        )
         # self._old_call = BuiltInFuncInt.__call__
 
-    def __call__(self, *args, sep: str=', '):
+    def __call__(self, *args, sep: str = ', '):
         '''behaves like print in python. Just rints args not in stdout
         but in the bottom line of Kontakt GUI.
         For the logging purpose use kLog and logpr'''
@@ -530,7 +605,8 @@ class MessageFunc(BuiltInFuncInt):
         for char in sep:
             if char in ('\n', '\r', '\t', '\v'):
                 raise AttributeError(
-                    f'symbol {repr(char)} is not allowed')
+                    f'symbol {repr(char)} is not allowed'
+                )
 
 
 message = MessageFunc().__call__
@@ -558,58 +634,87 @@ NI_CB_TYPE_UI_CONTROL = bCallbackVar('NI_CB_TYPE_UI_CONTROL')
 NI_CB_TYPE_UI_UPDATE = bCallbackVar('NI_CB_TYPE_UI_UPDATE')
 NI_CB_TYPE_MIDI_IN = bCallbackVar('NI_CB_TYPE_MIDI_IN')
 
-AsyncCompleteCallback = Callback('async_complete',
-                                 NI_CB_TYPE_ASYNC_OUT,
-                                 ('NI_ASYNC_EXIT_STATUS', 'NI_ASYNC_ID'))
-ControllerCallback = Callback('controller',
-                              NI_CB_TYPE_CONTROLLER,
-                              ('CC_NUM',))
-InitCallback = Callback('init',
-                        NI_CB_TYPE_INIT,
-                        tuple())
-ListenerCallback = Callback('listener',
-                            NI_CB_TYPE_LISTENER,
-                            ('NI_SIGNAL_TYPE',))
-NoteCallback = Callback('note',
-                        NI_CB_TYPE_NOTE,
-                        ('EVENT_NOTE', 'EVENT_VELOCITY',
-                         'EVENT_ID'))
-PersistenceCallback = Callback('persistence_changed',
-                               NI_CB_TYPE_PERSISTENCE_CHANGED,
-                               tuple())
-PgsCallback = Callback('pgs_changed',
-                       NI_CB_TYPE_PGS, tuple())
-PolyAtCallback = Callback('poly_at',
-                          NI_CB_TYPE_POLY_AT,
-                          ('POLY_AT_NUM',))
-ReleaseCallback = Callback('release',
-                           NI_CB_TYPE_RELEASE,
-                           ('EVENT_NOTE', 'EVENT_VELOCITY',
-                            'EVENT_ID'))
-MidiCallback = Callback('midi_in',
-                        NI_CB_TYPE_MIDI_IN,
-                        ('MIDI_COMMAND', 'MIDI_CHANNEL',
-                            'MIDI_BYTE_1', 'MIDI_BYTE_2'))
-RpnCallback = Callback('rpn',
-                       NI_CB_TYPE_RPN,
-                       ('RPN_ADDRESS', 'RPN_VALUE'))
-NrpnCallback = Callback('nrpn',
-                        NI_CB_TYPE_NRPN,
-                        ('RPN_ADDRESS', 'RPN_VALUE'))
-UiUpdateCallback = Callback('ui_update',
-                            NI_CB_TYPE_UI_UPDATE,
-                            tuple())
-UiControlCallback = UiControlCallbackCl(
-    NI_CB_TYPE_UI_CONTROL)
+AsyncCompleteCallback = Callback(
+    'async_complete',
+    NI_CB_TYPE_ASYNC_OUT,
+    ('NI_ASYNC_EXIT_STATUS',
+     'NI_ASYNC_ID')
+)
+ControllerCallback = Callback(
+    'controller',
+    NI_CB_TYPE_CONTROLLER,
+    ('CC_NUM',
+     )
+)
+InitCallback = Callback('init', NI_CB_TYPE_INIT, tuple())
+ListenerCallback = Callback(
+    'listener',
+    NI_CB_TYPE_LISTENER,
+    ('NI_SIGNAL_TYPE',
+     )
+)
+NoteCallback = Callback(
+    'note',
+    NI_CB_TYPE_NOTE,
+    ('EVENT_NOTE',
+     'EVENT_VELOCITY',
+     'EVENT_ID')
+)
+PersistenceCallback = Callback(
+    'persistence_changed',
+    NI_CB_TYPE_PERSISTENCE_CHANGED,
+    tuple()
+)
+PgsCallback = Callback('pgs_changed', NI_CB_TYPE_PGS, tuple())
+PolyAtCallback = Callback(
+    'poly_at',
+    NI_CB_TYPE_POLY_AT,
+    ('POLY_AT_NUM',
+     )
+)
+ReleaseCallback = Callback(
+    'release',
+    NI_CB_TYPE_RELEASE,
+    ('EVENT_NOTE',
+     'EVENT_VELOCITY',
+     'EVENT_ID')
+)
+MidiCallback = Callback(
+    'midi_in',
+    NI_CB_TYPE_MIDI_IN,
+    ('MIDI_COMMAND',
+     'MIDI_CHANNEL',
+     'MIDI_BYTE_1',
+     'MIDI_BYTE_2')
+)
+RpnCallback = Callback(
+    'rpn',
+    NI_CB_TYPE_RPN,
+    ('RPN_ADDRESS',
+     'RPN_VALUE')
+)
+NrpnCallback = Callback(
+    'nrpn',
+    NI_CB_TYPE_NRPN,
+    ('RPN_ADDRESS',
+     'RPN_VALUE')
+)
+UiUpdateCallback = Callback('ui_update', NI_CB_TYPE_UI_UPDATE, tuple())
+UiControlCallback = UiControlCallbackCl(NI_CB_TYPE_UI_CONTROL)
 FunctionCallback = FunctionCallbackCl()
-
 
 CURRENT_SCRIPT_SLOT = BuiltInIntVar('CURRENT_SCRIPT_SLOT')
 GROUPS_SELECTED = BuiltInArrayInt('GROUPS_SELECTED', 700)
-NI_ASYNC_EXIT_STATUS = BuiltInIntVar('NI_ASYNC_EXIT_STATUS',
-                                     callbacks=(AsyncCompleteCallback,))
-NI_ASYNC_ID = BuiltInIntVar('NI_ASYNC_ID',
-                            callbacks=(AsyncCompleteCallback,))
+NI_ASYNC_EXIT_STATUS = BuiltInIntVar(
+    'NI_ASYNC_EXIT_STATUS',
+    callbacks=(AsyncCompleteCallback,
+               )
+)
+NI_ASYNC_ID = BuiltInIntVar(
+    'NI_ASYNC_ID',
+    callbacks=(AsyncCompleteCallback,
+               )
+)
 NI_BUS_OFFSET = BuiltInIntVar('NI_BUS_OFFSET')
 NUM_GROUPS = BuiltInIntVar('NUM_GROUPS')
 NUM_OUTPUT_CHANNELS = BuiltInIntVar('NUM_OUTPUT_CHANNELS')
@@ -637,11 +742,13 @@ REF_GROUP_IDX = BuiltInIntVar('REF_GROUP_IDX')
 ALL_GROUPS = BuiltInIntVar('ALL_GROUPS')
 ALL_EVENTS = BuiltInIntVar('ALL_EVENTS')
 
-
 KEY_DOWN = BuiltInArrayInt('KEY_DOWN', 128)
 KEY_DOWN_OCT = BuiltInArrayInt('KEY_DOWN_OCT', 12)
-DISTANCE_BAR_START = BuiltInIntVar('DISTANCE_BAR_START',
-                                   callbacks=(NoteCallback,))
+DISTANCE_BAR_START = BuiltInIntVar(
+    'DISTANCE_BAR_START',
+    callbacks=(NoteCallback,
+               )
+)
 DURATION_BAR = BuiltInIntVar('DURATION_BAR')
 DURATION_QUARTER = BuiltInIntVar('DURATION_QUARTER')
 DURATION_EIGHTH = BuiltInIntVar('DURATION_EIGHTH')
@@ -668,7 +775,8 @@ NI_SYNC_UNIT_HALF = bTempoUnitVar('NI_SYNC_UNIT_HALF')
 NI_SYNC_UNIT_HALF_TRIPLET = bTempoUnitVar('NI_SYNC_UNIT_HALF_TRIPLET')
 NI_SYNC_UNIT_QUARTER = bTempoUnitVar('NI_SYNC_UNIT_QUARTER')
 NI_SYNC_UNIT_QUARTER_TRIPLET = bTempoUnitVar(
-    'NI_SYNC_UNIT_QUARTER_TRIPLET')
+    'NI_SYNC_UNIT_QUARTER_TRIPLET'
+)
 NI_SYNC_UNIT_8TH = bTempoUnitVar('NI_SYNC_UNIT_8TH')
 NI_SYNC_UNIT_8TH_TRIPLET = bTempoUnitVar('NI_SYNC_UNIT_8TH_TRIPLET')
 NI_SYNC_UNIT_16TH = bTempoUnitVar('NI_SYNC_UNIT_16TH')
@@ -690,8 +798,11 @@ NI_SIGNAL_TRANSP_STOP = bListenerConst('NI_SIGNAL_TRANSP_STOP')
 NI_SIGNAL_TRANSP_START = bListenerConst('NI_SIGNAL_TRANSP_START')
 NI_SIGNAL_TIMER_MS = bListenerConst('NI_SIGNAL_TIMER_MS')
 NI_SIGNAL_TIMER_BEAT = bListenerConst('NI_SIGNAL_TIMER_BEAT')
-NI_SIGNAL_TYPE = bListenerConst('NI_SIGNAL_TYPE',
-                                callbacks=(ListenerCallback,))
+NI_SIGNAL_TYPE = bListenerConst(
+    'NI_SIGNAL_TYPE',
+    callbacks=(ListenerCallback,
+               )
+)
 
 NI_MATH_PI = BuiltInRealVar('NI_MATH_PI')
 NI_MATH_E = BuiltInRealVar('NI_MATH_E')
@@ -700,11 +811,13 @@ NI_MATH_E.set_value(math.e)
 
 
 class Exp(BuiltInFuncReal):
-
     def __init__(self):
-        super().__init__(name='exp',
-                         args=OrderedDict(
-                             value=(KspRealVar, float, AstBase)))
+        super().__init__(
+            name='exp',
+            args=OrderedDict(value=(KspRealVar,
+                                    float,
+                                    AstBase))
+        )
 
     def calculate(self, value):
         return math.exp(get_runtime_val(value))
@@ -718,11 +831,13 @@ exp = Exp().__call__
 
 
 class IntToReal(BuiltInFuncReal):
-
     def __init__(self):
-        super().__init__(name='int_to_real',
-                         args=OrderedDict(
-                             value=(KspIntVar, int, AstBase)))
+        super().__init__(
+            name='int_to_real',
+            args=OrderedDict(value=(KspIntVar,
+                                    int,
+                                    AstBase))
+        )
 
     def calculate(self, value):
         return float(get_runtime_val(value))
@@ -736,11 +851,13 @@ int_to_real = IntToReal().__call__
 
 
 class RealToInt(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__(name='real_to_int',
-                         args=OrderedDict(
-                             value=(KspRealVar, float, AstBase)))
+        super().__init__(
+            name='real_to_int',
+            args=OrderedDict(value=(KspRealVar,
+                                    float,
+                                    AstBase))
+        )
 
     def calculate(self, value):
         value = get_runtime_val(value)
@@ -755,24 +872,26 @@ real_to_int = RealToInt().__call__
 
 
 class AbsReal(BuiltInFuncReal):
-
     def __init__(self):
-        super().__init__(name='abs',
-                         args=OrderedDict(
-                             value=(KspRealVar,
-                                    float, AstBase)))
+        super().__init__(
+            name='abs',
+            args=OrderedDict(value=(KspRealVar,
+                                    float,
+                                    AstBase))
+        )
 
     def calculate(self, value):
         return abs(get_runtime_val(value))
 
 
 class AbsInt(BuiltInFuncInt):
-
     def __init__(self):
-        super().__init__(name='abs',
-                         args=OrderedDict(
-                             value=(KspIntVar,
-                                    int, AstBase)))
+        super().__init__(
+            name='abs',
+            args=OrderedDict(value=(KspIntVar,
+                                    int,
+                                    AstBase))
+        )
 
     def calculate(self, value):
         return abs(get_runtime_val(value))
@@ -791,11 +910,13 @@ def kabs(value: Union[KspIntVar, KspRealVar, AstBase, int, float]):
 
 
 class Log(BuiltInFuncReal):
-
     def __init__(self):
-        super().__init__(name='log',
-                         args=OrderedDict(
-                             value=(KspRealVar, float, AstBase)))
+        super().__init__(
+            name='log',
+            args=OrderedDict(value=(KspRealVar,
+                                    float,
+                                    AstBase))
+        )
 
     def calculate(self, value):
         try:
@@ -814,17 +935,23 @@ log = Log().__call__
 
 
 class Pow(BuiltInFuncReal):
-
     def __init__(self):
-        super().__init__(name='pow',
-                         args=OrderedDict(
-                             x=(KspRealVar, float, AstBase),
-                             y=(KspRealVar, float, AstBase)))
+        super().__init__(
+            name='pow',
+            args=OrderedDict(
+                x=(KspRealVar,
+                   float,
+                   AstBase),
+                y=(KspRealVar,
+                   float,
+                   AstBase)
+            )
+        )
 
     def calculate(self, x, y):
         x = get_runtime_val(x)
         y = get_runtime_val(y)
-        return x ** y
+        return x**y
 
     def __call__(self, x: float, y: float):
         '''power (returns the value of x^y)'''
@@ -835,11 +962,13 @@ kpow = Pow().__call__
 
 
 class Sqrt(BuiltInFuncReal):
-
     def __init__(self):
-        super().__init__(name='sqrt',
-                         args=OrderedDict(
-                             value=(KspRealVar, float, AstBase)))
+        super().__init__(
+            name='sqrt',
+            args=OrderedDict(value=(KspRealVar,
+                                    float,
+                                    AstBase))
+        )
 
     def calculate(self, value):
         return math.sqrt(get_runtime_val(value))
@@ -853,11 +982,13 @@ sqrt = Sqrt().__call__
 
 
 class Ceil(BuiltInFuncReal):
-
     def __init__(self):
-        super().__init__(name='ceil',
-                         args=OrderedDict(
-                             value=(KspRealVar, float, AstBase)))
+        super().__init__(
+            name='ceil',
+            args=OrderedDict(value=(KspRealVar,
+                                    float,
+                                    AstBase))
+        )
 
     def calculate(self, value):
         return math.ceil(get_runtime_val(value))
@@ -872,11 +1003,13 @@ ceil = Ceil().__call__
 
 
 class Floor(BuiltInFuncReal):
-
     def __init__(self):
-        super().__init__(name='floor',
-                         args=OrderedDict(
-                             value=(KspRealVar, float, AstBase)))
+        super().__init__(
+            name='floor',
+            args=OrderedDict(value=(KspRealVar,
+                                    float,
+                                    AstBase))
+        )
 
     def calculate(self, value):
         return math.floor(get_runtime_val(value))
@@ -891,11 +1024,13 @@ floor = Floor().__call__
 
 
 class Round(BuiltInFuncReal):
-
     def __init__(self):
-        super().__init__(name='round',
-                         args=OrderedDict(
-                             value=(KspRealVar, float, AstBase)))
+        super().__init__(
+            name='round',
+            args=OrderedDict(value=(KspRealVar,
+                                    float,
+                                    AstBase))
+        )
 
     def calculate(self, value):
         return round(get_runtime_val(value))
@@ -911,11 +1046,13 @@ kround = Round().__call__
 
 
 class Cos(BuiltInFuncReal):
-
     def __init__(self):
-        super().__init__(name='cos',
-                         args=OrderedDict(
-                             value=(KspRealVar, float, AstBase)))
+        super().__init__(
+            name='cos',
+            args=OrderedDict(value=(KspRealVar,
+                                    float,
+                                    AstBase))
+        )
 
     def calculate(self, value):
         return math.cos(get_runtime_val(value))
@@ -929,11 +1066,13 @@ cos = Cos().__call__
 
 
 class Sin(BuiltInFuncReal):
-
     def __init__(self):
-        super().__init__(name='sin',
-                         args=OrderedDict(
-                             value=(KspRealVar, float, AstBase)))
+        super().__init__(
+            name='sin',
+            args=OrderedDict(value=(KspRealVar,
+                                    float,
+                                    AstBase))
+        )
 
     def calculate(self, value):
         return math.sin(get_runtime_val(value))
@@ -947,11 +1086,13 @@ sin = Sin().__call__
 
 
 class Tan(BuiltInFuncReal):
-
     def __init__(self):
-        super().__init__(name='tan',
-                         args=OrderedDict(
-                             value=(KspRealVar, float, AstBase)))
+        super().__init__(
+            name='tan',
+            args=OrderedDict(value=(KspRealVar,
+                                    float,
+                                    AstBase))
+        )
 
     def calculate(self, value):
         return math.tan(get_runtime_val(value))
@@ -965,11 +1106,13 @@ tan = Tan().__call__
 
 
 class Acos(BuiltInFuncReal):
-
     def __init__(self):
-        super().__init__(name='acos',
-                         args=OrderedDict(
-                             value=(KspRealVar, float, AstBase)))
+        super().__init__(
+            name='acos',
+            args=OrderedDict(value=(KspRealVar,
+                                    float,
+                                    AstBase))
+        )
 
     def calculate(self, value):
         return math.acos(get_runtime_val(value))
@@ -983,11 +1126,13 @@ acos = Acos().__call__
 
 
 class Asin(BuiltInFuncReal):
-
     def __init__(self):
-        super().__init__(name='asin',
-                         args=OrderedDict(
-                             value=(KspRealVar, float, AstBase)))
+        super().__init__(
+            name='asin',
+            args=OrderedDict(value=(KspRealVar,
+                                    float,
+                                    AstBase))
+        )
 
     def calculate(self, value):
         return math.asin(get_runtime_val(value))
@@ -1001,11 +1146,13 @@ asin = Asin().__call__
 
 
 class Atan(BuiltInFuncReal):
-
     def __init__(self):
-        super().__init__(name='atan',
-                         args=OrderedDict(
-                             value=(KspRealVar, float, AstBase)))
+        super().__init__(
+            name='atan',
+            args=OrderedDict(value=(KspRealVar,
+                                    float,
+                                    AstBase))
+        )
 
     def calculate(self, value):
         return math.atan(get_runtime_val(value))
@@ -1016,3 +1163,31 @@ class Atan(BuiltInFuncReal):
 
 
 atan = Atan().__call__
+
+
+class Random(BuiltInFuncInt):
+    def __init__(self):
+        super().__init__(
+            name='random',
+            args=OrderedDict(
+                _min=(KspIntVar,
+                      int,
+                      AstBase),
+                _max=(KspIntVar,
+                      int,
+                      AstBase)
+            )
+        )
+
+    def calculate(self, _min, _max):
+        return random.randint(
+            get_runtime_val(_min),
+            get_runtime_val(_max)
+        )
+
+    def __call__(self, _min: int, _max: int):
+        '''return random int between min and max'''
+        return super().__call__(_min, _max)
+
+
+krandom = Random().__call__

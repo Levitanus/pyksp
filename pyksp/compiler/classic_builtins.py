@@ -3,6 +3,7 @@ from .k_built_ins import exit
 from .k_built_ins import reset_ksp_timer
 from .k_built_ins import ignore_controller
 from .k_built_ins import kabs
+from .k_built_ins import krandom
 from .k_built_ins import int_to_real
 from .k_built_ins import real_to_int
 from .k_built_ins import exp

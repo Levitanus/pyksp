@@ -4,6 +4,7 @@
 # sys.path.append(path)
 
 from .base_types import KspVar
+from .base_types import KspArray
 from .base_types import KspIntVar
 from .base_types import KspStrVar
 from .base_types import KspRealVar
